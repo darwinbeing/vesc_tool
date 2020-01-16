@@ -34,9 +34,9 @@ jobs:
       run: |
         qmake -config release "CONFIG += release_lin build_platinum"
         make -j2
-    - name: Upload vesc_tool-linux
-      uses: actions/upload-artifact@v1
-      with:
-        name: vesc_tool-linux
-        path: build/lin/vesc_tool_1.29
+    # - name: Upload vesc_tool-linux
+    #   uses: actions/upload-artifact@v1
+    #   with:
+    #     name: vesc_tool-linux
+    #     path: build/lin/vesc_tool_1.29
 
