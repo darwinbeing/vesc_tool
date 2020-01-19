@@ -1,4 +1,4 @@
-name: Android-macOS
+name: Android2
 on:
   push:
     paths-ignore:
@@ -8,6 +8,8 @@ on:
     paths-ignore:
       - 'README.md'
       - 'LICENSE'
+  schedule:
+      - cron: 0 0 * * 0
 jobs:
   build:
     name: Build
