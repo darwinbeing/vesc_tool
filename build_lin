@@ -50,68 +50,93 @@
 
 # Note: -no-dbus and -skip qtconnectivity can also be added, but then bluetooth and window titlebar menus don't work.
 
+# set -e
+
+# export PATH=/opt/Qt/5.12-static/bin:$PATH
+# rm -rf build/lin/*
+
+# # Original
+# qmake -config release "CONFIG += release_lin build_original"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Platinum
+# qmake -config release "CONFIG += release_lin build_platinum"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Gold
+# qmake -config release "CONFIG += release_lin build_gold"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Silver
+# qmake -config release "CONFIG += release_lin build_silver"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Bronze
+# qmake -config release "CONFIG += release_lin build_bronze"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Free of charge
+# qmake -config release "CONFIG += release_lin build_free"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
 set -e
 
-export PATH=/opt/Qt/5.12-static/bin:$PATH
-rm -rf build/lin/*
+VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
 
-# Original
-qmake -config release "CONFIG += release_lin build_original"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
+export PATH=/opt/Qt/5.9-static/bin:$PATH
+rm -rf build/macos/*
 
-# Platinum
-qmake -config release "CONFIG += release_lin build_platinum"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
+# BuildType=(original platinum gold silver bronze free)
+BuildType=(platinum)
 
-# Gold
-qmake -config release "CONFIG += release_lin build_gold"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
+for type in ${BuildType[@]}; do
+    qmake -config release "CONFIG += release_lin build_${type}"
+    make clean
+    make -j8
+    rm -rf build/lin/obj
+    pushd build/lin
 
-# Silver
-qmake -config release "CONFIG += release_lin build_silver"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
-
-# Bronze
-qmake -config release "CONFIG += release_lin build_bronze"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
-
-# Free of charge
-qmake -config release "CONFIG += release_lin build_free"
-make clean
-make -j8
-rm -rf build/lin/obj
-cd build/lin
-zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
-ls | grep -v '\.zip$' | xargs rm
-cd ../..
-
+    wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
+    mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
+    chmod a+x linuxdeployqt
+    ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage
+    rm -rf vesc_tool_${VT_VERSION}
+    mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
+    popd
+done
