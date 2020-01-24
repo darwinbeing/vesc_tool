@@ -58,8 +58,23 @@ ios {
 }
 
 iOSBuild {
-    QMAKE_INFO_PLIST  = $${PWD}/ios/iOS-Info.plist
-    OTHER_FILES      += $${PWD}/ios/iOS-Info.plist
+    #-- Info.plist (need an "official" one for the App Store)
+    ForAppStore {
+        message(App Store Build)
+        #-- Create official, versioned Info.plist
+        APP_STORE = $$system(cd $${PWD} && $${PWD}/tools/update_ios_version.sh $${PWD}/ios/iOSForAppStore-Info-Source.plist $${PWD}/ios/iOSForAppStore-Info.plist)
+        APP_ERROR = $$find(APP_STORE, "Error")
+        count(APP_ERROR, 1) {
+            error("Error building .plist file. 'ForAppStore' builds are only possible through the official build system.")
+        }
+        QT               += qml-private
+        QMAKE_INFO_PLIST  = $${PWD}/ios/iOSForAppStore-Info.plist
+        OTHER_FILES      += $${PWD}/ios/iOSForAppStore-Info.plist
+    } else {
+        QMAKE_INFO_PLIST  = $${PWD}/ios/iOS-Info.plist
+        OTHER_FILES      += $${PWD}/ios/iOS-Info.plist
+    }
+    
     QMAKE_ASSET_CATALOGS += ios/Images.xcassets
     BUNDLE.files          = ios/VTLaunchScreen.xib $$QMAKE_INFO_PLIST
     QMAKE_BUNDLE_DATA    += BUNDLE

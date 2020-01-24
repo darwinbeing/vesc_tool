@@ -29,9 +29,9 @@ mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/
 rm -rf ${SHADOW_BUILD_DIR}/*
 rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
 
-${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release "CONFIG += release_ios"
+${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios"
 sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
-xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool.xcconfig
+xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig
 
 mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_full.app
 rm -rf ${SHADOW_BUILD_DIR}/*
