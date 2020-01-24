@@ -135,7 +135,7 @@ for type in ${BuildType[@]}; do
     wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
     mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
     chmod a+x linuxdeployqt
-    ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage
+    ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage -unsupported-allow-new-glibc
     rm -rf vesc_tool_${VT_VERSION}
     mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
     popd
