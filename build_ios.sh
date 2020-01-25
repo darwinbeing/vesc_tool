@@ -3,6 +3,10 @@
 # hdiutil attach -nomount ram://2048000
 # diskutil erasevolume HFS+ "RAMDisk" /dev/disk2
 
+PROJECT_NAME=vesc_tool
+SCHEME_NAME=vesc_tool
+DEV_PROFILE_NAME="anyapp"
+
 if [ ! -d /Volumes/RAMDisk ] ; then
     echo 'RAM Disk not found'
     echo 'Only used for App Store builds. It will not work on your computer.'
@@ -22,22 +26,42 @@ rm -rf ${TRAVIS_BUILD_DIR}/build/ios/*
 mkdir -p ${SHADOW_BUILD_DIR} &&
 cd ${SHADOW_BUILD_DIR} &&
 #-- Create project only (build using Xcode)
-${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release "CONFIG += release_ios build_mobile"
+${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios build_mobile"
 sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
-xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool.xcconfig
-mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_mobile.app
-rm -rf ${SHADOW_BUILD_DIR}/*
-rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
+xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig -allowProvisioningUpdates
+xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
+                   	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
+                   	-scheme ${SCHEME_NAME} \
+                   	-destination generic/platform=iOS \
+                   	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive
 
-${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios"
-sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
-xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig
+xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
+                          -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
+			  -exportOptionsPlist ${TRAVIS_BUILD_DIR}/ios/APPStoreExportOptions.plist \
+			  -allowProvisioningUpdates
 
-mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_full.app
-rm -rf ${SHADOW_BUILD_DIR}/*
-rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
+# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_mobile.app
+# rm -rf ${SHADOW_BUILD_DIR}/*
+# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
 
-cd ${TRAVIS_BUILD_DIR}/build/ios
-zip -r vesc_tool-iOS.zip vesc_tool_mobile.app vesc_tool_full.app
-rm -rf vesc_tool_mobile.app
-rm -rf vesc_tool_full.app
+# ${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios"
+# sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
+# xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig -allowProvisioningUpdates
+# xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
+#                    	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
+#                    	-scheme ${SCHEME_NAME} \
+#                    	-destination generic/platform=iOS \
+#                    	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive
+
+# xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
+#                           -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
+#                           -exportProvisioningProfile ${DEV_PROFILE_NAME}
+
+# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_full.app
+# rm -rf ${SHADOW_BUILD_DIR}/*
+# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
+
+# cd ${TRAVIS_BUILD_DIR}/build/ios
+# zip -r vesc_tool-iOS.zip vesc_tool_mobile.app vesc_tool_full.app
+# rm -rf vesc_tool_mobile.app
+# rm -rf vesc_tool_full.app

@@ -14,7 +14,6 @@
 	<string>We do not access it. Apple thinks we do.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>VTLaunchScreen</string>
-	<key>UIRequiredDeviceCapabilities</key>
 	<key>CFBundleIdentifier</key>
 	<string>com.vedder.vesc</string>
 	<key>CFBundleInfoDictionaryVersion</key>
@@ -33,8 +32,8 @@
 	<string>Yes</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-    <key>NSBluetoothPeripheralUsageDescription</key>
-    <string>VT would like to use bluetooth.</string>    
+    	<key>NSBluetoothPeripheralUsageDescription</key>
+    	<string>VT would like to use bluetooth.</string>    
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>
