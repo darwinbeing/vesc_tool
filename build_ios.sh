@@ -33,7 +33,8 @@ xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
                    	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
                    	-scheme ${SCHEME_NAME} \
                    	-destination generic/platform=iOS \
-                   	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive
+                   	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
+			-allowProvisioningUpdates
 
 xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
                           -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
