@@ -6,10 +6,19 @@
 	<false/>
 	<key>method</key>
 	<string>app-store</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.vedder.vesc</key>
+		<string>kaihuceshi_Appstore</string>
+	</dict>
+	<key>signingCertificate</key>
+	<string>iPhone Distribution</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
 	<key>stripSwiftSymbols</key>
 	<true/>
+	<key>teamID</key>
+	<string>XB5DZC4424</string>
 	<key>thinning</key>
 	<string>&lt;none&gt;</string>
 </dict>
