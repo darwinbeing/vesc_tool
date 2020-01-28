@@ -4,7 +4,7 @@ set -e
 
 VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
 
-export PATH=/opt/Qt/5.9-static/bin:$PATH
+export PATH=$HOME/Qt5.12.3/5.12.3/clang_64/bin:$PATH
 rm -rf build/macos/*
 
 # BuildType=(original platinum gold silver bronze free)
