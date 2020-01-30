@@ -1,0 +1,27 @@
+name: CreateTag
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup
+      run: |
+        VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+        echo "::set-env name=VT_VERSION::${VERSION}"
+        Write-Host "Tag:" $VT_VERSION
+    - name: CreateTag
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: actions/create-release@v1.0.0
+      with:
+        tag_name: ${{ VT_VERSION }}
+        release_name: Release ${{ VT_VERSION }}
+        body: ${{ github.event.head_commit.message }}
+        draft: false
+        prerelease: false
+
+
+
