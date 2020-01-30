@@ -10,6 +10,7 @@ jobs:
     - name: Setup
       run: |
         VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+        VERSION=2.02
         echo "::set-env name=VT_VERSION::${VERSION}"
     - name: CreateTag
       env:
