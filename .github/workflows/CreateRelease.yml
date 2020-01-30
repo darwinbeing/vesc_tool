@@ -15,7 +15,30 @@ jobs:
       run: |
         VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
         echo ::set-output name=VERSION::${VT_VERSION}
+    - name: QueryRelease
+      id: QueryRelease
+      shell: pwsh
+      env:
+        githubFullName: ${{ github.event.repository.full_name }}
+      run: |
+        [string]$tag = ${steps.GetVersion.outputs.VERSION}
+        [string]$url = 'https://api.github.com/repos/' + ${env:githubFullName} + '/releases/tags/' + ${tag}
+        $response={}
+        try {
+          $response = Invoke-RestMethod -Uri $url -Method Get
+        } catch {
+          Write-Host "StatusCode:" $_.Exception.Response.StatusCode.value__ 
+          Write-Host "StatusDescription:" $_.Exception.Response.StatusDescription
+          echo "::set-output name=needCreateRelease::true"  
+          return
+        }
+        [string]$latestUpUrl = $response.upload_url
+        Write-Host 'latestUpUrl:'$latestUpUrl
+        if ($latestUpUrl.Length -eq 0) {
+          echo "::set-output name=needCreateRelease::true"  
+        }
     - name: CreateRelease
+      if: steps.QueryRelease.outputs.needCreateRelease == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.CR_TOKEN }}
       uses: actions/create-release@v1.0.0
