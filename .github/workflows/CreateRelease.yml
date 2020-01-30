@@ -21,7 +21,7 @@ jobs:
       env:
         githubFullName: ${{ github.event.repository.full_name }}
       run: |
-        [string]$tag = steps.GetVersion.outputs.VERSION
+        [string]$tag = ${{ steps.GetVersion.outputs.VERSION }}
         [string]$url = 'https://api.github.com/repos/' + ${env:githubFullName} + '/releases/tags/' + ${tag}
         Write-Host "Url:" $url
         $response={}
