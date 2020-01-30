@@ -11,7 +11,7 @@ rm -rf build/macos/*
 BuildType=(platinum)
 
 for type in ${BuildType[@]}; do
-    qmake -config release "CONFIG += release_macos build_${type}"
+    qmake -config release "CONFIG += sdk_no_version_check release_macos build_${type}"
     make clean
     make -j8
     rm -rf build/macos/obj
