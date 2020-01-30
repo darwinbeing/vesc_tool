@@ -37,7 +37,7 @@ jobs:
 
         [string]$tag = ${env:ref}.Substring(${env:ref}.LastIndexOf('/') + 1)
         [string]$url = 'https://api.github.com/repos/' + ${env:githubFullName} + '/releases/tags/' + ${tag}
-        $response = Invoke-RestMethod -Uri $url -Headers @{  Authorization = "Token ${secrets.CR_TOKEN}" } -Method Get
+        $response = Invoke-RestMethod -Uri $url -Headers @{  "Authorization" = "Bearer ${secrets.CR_TOKEN}" } -Method Get
         [string]$latestUpUrl = $response.upload_url
         Write-Host 'latestUpUrl:'$latestUpUrl
         echo "::set-env name=uploadUrl::$latestUpUrl"
