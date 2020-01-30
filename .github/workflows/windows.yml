@@ -1,6 +1,14 @@
 name: Windows
 
-on: release
+on:
+  push:
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+  pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
 
 jobs:
   Qt:
