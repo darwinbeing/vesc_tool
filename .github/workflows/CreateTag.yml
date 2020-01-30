@@ -11,7 +11,7 @@ jobs:
       id: GetVersion
       run: |
         VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
-        VT_VERSION=2.03
+        VT_VERSION=2.02
         echo ::set-output name=VERSION::${VT_VERSION}
     - name: CreateTag
       env:

@@ -1,9 +1,8 @@
 name: Windows
 
 on:
-  create:
-    tags:
-      - '*'
+  release:
+    types: [published]
 
 jobs:
   Qt:
