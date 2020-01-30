@@ -8,17 +8,17 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Setup
+      id: GetVersion
       run: |
-        VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
-        VERSION=2.02
-        echo "::set-env name=VT_VERSION::${VERSION}"
+        VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+        echo ::set-output name=VERSION::${VT_VERSION}
     - name: CreateTag
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       uses: actions/create-release@v1.0.0
       with:
-        tag_name: 2.02
-        release_name: Release 2.02
+        tag_name: ${{ steps.GetVersion.outputs.VERSION }}
+        release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
         body: ${{ github.event.head_commit.message }}
         draft: false
         prerelease: false
