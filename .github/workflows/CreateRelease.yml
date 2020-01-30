@@ -1,4 +1,4 @@
-name: CreateTag
+name: CreateRelease
 
 on: [push, pull_request]
 
@@ -13,7 +13,7 @@ jobs:
         VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
         VT_VERSION=2.02
         echo ::set-output name=VERSION::${VT_VERSION}
-    - name: CreateTag
+    - name: CreateRelease
       env:
         GITHUB_TOKEN: ${{ secrets.CR_TOKEN }}
       uses: actions/create-release@v1.0.0
