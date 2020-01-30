@@ -17,8 +17,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       uses: actions/create-release@v1.0.0
       with:
-        tag_name: ${{ VT_VERSION }}
-        release_name: Release ${{ VT_VERSION }}
+        tag_name: ${ VT_VERSION }
+        release_name: Release ${ VT_VERSION }
         body: ${{ github.event.head_commit.message }}
         draft: false
         prerelease: false
