@@ -2,13 +2,8 @@ name: Windows
 
 on:
   push:
-    paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-  pull_request:
-    paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
+    tags:
+      - '*'
 
 jobs:
   Qt:
