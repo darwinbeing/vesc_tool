@@ -41,7 +41,7 @@ jobs:
     - name: CreateRelease
       if: steps.QueryRelease.outputs.needCreateRelease == 'true'
       env:
-        GITHUB_TOKEN: ${{ secrets.CR_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
       uses: actions/create-release@v1.0.0
       with:
         tag_name: ${{ steps.GetVersion.outputs.VERSION }}
