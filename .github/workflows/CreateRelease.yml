@@ -16,7 +16,6 @@ jobs:
         VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
         echo ::set-output name=VERSION::${VT_VERSION}
     - name: CreateRelease
-      if: steps.QueryRelease.outputs.needCreateRelease == 'true'
       env:
         GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
       uses: darwinbeing/create-release@master
