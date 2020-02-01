@@ -1,6 +1,6 @@
 name: macOS
 
-on: push
+on: [push,release]
 
 jobs:
   Qt:
@@ -44,7 +44,6 @@ jobs:
         Write-Host 'env uploadUrl:'${env:uploadUrl}
     - name: uploadRelease
       id: uploadRelease
-      if: startsWith(github.event.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       uses: actions/upload-release-asset@v1.0.1
