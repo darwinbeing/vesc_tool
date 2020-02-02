@@ -103,28 +103,15 @@ jobs:
       #   with:
       #     name: vesc_tool-android
       #     path: build/android/vesc_tool_mobile.apk
-      - name: getLatestTagRelease
-        if: startsWith(github.event.ref, 'refs/tags/')
-        shell: pwsh
-        env:
-          githubFullName: ${{ github.event.repository.full_name }}
-          ref: ${{ github.event.ref }}
-        run: |
-          [string]$tag = ${env:ref}.Substring(${env:ref}.LastIndexOf('/') + 1)
-          [string]$url = 'https://api.github.com/repos/' + ${env:githubFullName} + '/releases/tags/' + ${tag}
-          $response = Invoke-RestMethod -Uri $url -Method Get
-          [string]$latestUpUrl = $response.upload_url
-          Write-Host 'latestUpUrl:'$latestUpUrl
-          echo "::set-env name=uploadUrl::$latestUpUrl"
-          Write-Host 'env uploadUrl:'${env:uploadUrl}
       - name: uploadRelease
         id: uploadRelease
         if: startsWith(github.event.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
-        uses: actions/upload-release-asset@v1.0.1
+        uses: darwinbeing/upload-release-asset@master
         with:
-          upload_url: ${{ env.uploadUrl }}
+          tag_name: ${{ github.event.ref }}
+          upload_url: ''
           asset_path: build/android/vesc_tool-android.zip
           asset_name: vesc_tool-android.zip
           asset_content_type: application/zip
