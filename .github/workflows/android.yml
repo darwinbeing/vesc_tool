@@ -103,6 +103,7 @@ jobs:
       #     name: vesc_tool-android
       #     path: build/android/vesc_tool_mobile.apk
       - name: getLatestTagRelease
+        if: startsWith(github.event.ref, 'refs/tags/')
         shell: pwsh
         env:
           githubFullName: ${{ github.event.repository.full_name }}
@@ -117,6 +118,7 @@ jobs:
           Write-Host 'env uploadUrl:'${env:uploadUrl}
       - name: uploadRelease
         id: uploadRelease
+        if: startsWith(github.event.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: actions/upload-release-asset@v1.0.1

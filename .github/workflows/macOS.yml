@@ -30,6 +30,7 @@ jobs:
     #     name: vesc_tool-macOS
     #     path: build/macos   
     - name: getLatestTagRelease
+      if: startsWith(github.event.ref, 'refs/tags/')
       shell: pwsh
       env:
         githubFullName: ${{ github.event.repository.full_name }}
@@ -44,6 +45,7 @@ jobs:
         echo "::set-env name=uploadUrl::$latestUpUrl"
         Write-Host 'env uploadUrl:'${env:uploadUrl}
     - name: uploadRelease
+      if: startsWith(github.event.ref, 'refs/tags/')
       id: uploadRelease
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
