@@ -38,7 +38,6 @@ jobs:
       uses: darwinbeing/upload-release-asset@master
       with:
         tag_name: ${{ github.event.ref }}
-        upload_url: ${{ env.uploadUrl }}
         asset_path: ./build/macos/vesc_tool_platinum-macOS.dmg
         asset_name: vesc_tool-macOS.dmg
         asset_content_type: application/applefile
