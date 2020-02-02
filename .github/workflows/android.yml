@@ -120,7 +120,7 @@ jobs:
         id: uploadRelease
         if: startsWith(github.event.ref, 'refs/tags/')
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ env.uploadUrl }}
