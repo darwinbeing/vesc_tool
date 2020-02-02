@@ -1898,6 +1898,10 @@ bool VescInterface::autoconnect()
             continue;
         }
 
+        mSerialPort->flush();
+        Utility::sleepWithEventLoop(100);
+        mPacket->resetState();
+
         QEventLoop loop;
         QTimer timeoutTimer;
         timeoutTimer.setSingleShot(true);
@@ -1907,11 +1911,11 @@ bool VescInterface::autoconnect()
         loop.exec();
 
         if (timeoutTimer.isActive()) {
-            // If the timer is still running a firmware version was received.
+            // If the timer is still running, a firmware version was received.
             res = true;
             break;
         } else {
-            mAutoconnectProgress = (double)i / (double)ports.size();
+            mAutoconnectProgress = double(i) / double(ports.size());
             emit autoConnectProgressUpdated(mAutoconnectProgress, false);
             disconnectPort();
         }
