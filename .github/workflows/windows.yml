@@ -1,11 +1,6 @@
 name: Windows
 
-on:
-  release:
-    types: [created]
-  push:
-    branches:
-      - master
+on: push
 
 jobs:
   Qt:
