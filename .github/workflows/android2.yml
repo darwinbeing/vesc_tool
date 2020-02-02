@@ -2,7 +2,10 @@ name: Android2
 
 on:
   release:
-    types: [published, edited]
+    types: [created]
+  push:
+    branches:
+      - master
 
 jobs:
   build:
