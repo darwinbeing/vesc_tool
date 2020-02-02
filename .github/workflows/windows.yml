@@ -37,20 +37,6 @@ jobs:
     #   with:
     #     name: vesc_tool-win
     #     path: build\win
-    - name: getLatestTagRelease
-      if: startsWith(github.event.ref, 'refs/tags/')
-      shell: pwsh
-      env:
-        githubFullName: ${{ github.event.repository.full_name }}
-        ref: ${{ github.event.ref }}
-      run: |
-        [string]$tag = ${env:ref}.Substring(${env:ref}.LastIndexOf('/') + 1)
-        [string]$url = 'https://api.github.com/repos/' + ${env:githubFullName} + '/releases/tags/' + ${tag}
-        $response = Invoke-RestMethod -Uri $url -Method Get
-        [string]$latestUpUrl = $response.upload_url
-        Write-Host 'latestUpUrl:'$latestUpUrl
-        echo "::set-env name=uploadUrl::$latestUpUrl"
-        Write-Host 'env uploadUrl:'${env:uploadUrl}
     - name: uploadRelease
       if: startsWith(github.event.ref, 'refs/tags/')
       id: uploadRelease
