@@ -1,14 +1,8 @@
 name: Linux
 
 on:
-  push:
-    paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-  pull_request:
-    paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
+  release:
+    types: [published, edited]
 
 jobs:
   Qt:
