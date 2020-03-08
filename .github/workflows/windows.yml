@@ -14,16 +14,16 @@ jobs:
       max-parallel: 6
       matrix:
         qt: [5.12.7]
-        os: [windows-2019]
+        os: [windows-2016]
 
     steps:
     - name: Clone repository
       uses: actions/checkout@v2
     - name: Install Qt
-      uses: jurplel/install-qt-action@v2
+      uses: ouuan/install-qt-action@v2.3.1
       with:
         version: ${{ matrix.qt }}
-        arch: win64_msvc2019_64
+        arch: win64_msvc2017_64
     - name: Install jom
       run: |
         Invoke-WebRequest http://download.qt.io/official_releases/jom/jom.zip -OutFile .\jom.zip

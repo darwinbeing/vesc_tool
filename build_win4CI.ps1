@@ -68,7 +68,7 @@
 [CmdletBinding()]
 param(
     $NumJobs = 8,
-    $MSVC = 2019,
+    $MSVC = 2017,
     $Arch = "x64",
     [switch]$NoPause = $true
 )
