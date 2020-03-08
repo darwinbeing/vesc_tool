@@ -83,7 +83,7 @@
 
 [CmdletBinding()]
 param(
-    $QtVersion = "5.12.3",
+    $QtVersion = "5.12.7",
     $QtRoot = "C:\Qt",
     $QtToolsDir = "$QtRoot\Qt$QtVersion\Tools",
     $QtCreatorDir = "$QtToolsDir\QtCreator",
