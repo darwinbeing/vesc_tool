@@ -33,7 +33,7 @@ rm -rf build/android/*
 
 # armv8
 ANDROID_ARCH=arm64
-export PATH=$HOME/Qt5.12.3/5.12.3/android_arm64_v8a/bin/:$PATH
+export PATH=$HOME/Qt5.12.7/5.12.7/android_arm64_v8a/bin/:$PATH
 export ANDROID_NDK_TOOLCHAIN_PREFIX=aarch64-linux-android
 export ANDROID_NDK_TOOLS_PREFIX=aarch64-linux-android
 
