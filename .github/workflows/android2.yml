@@ -31,7 +31,7 @@ jobs:
 
       - name: Install Qt
         # if: steps.cacheqt.outputs.cache-hit != 'true'
-        uses: jurplel/install-qt-action@v2
+        uses: darwinbeing/install-qt-action@v2
         with:
           # Version of Qt to install
           version: ${{ matrix.qt_ver }}
@@ -39,7 +39,6 @@ jobs:
           target: ${{ matrix.qt_target }}
           # Architecture for Windows/Android
           arch: ${{ matrix.qt_arch }}
-          aqtversion: '==0.7.1'
       - name: Install Android NDK
         run: |
           cd ..
