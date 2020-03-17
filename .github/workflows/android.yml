@@ -40,7 +40,7 @@ jobs:
           target: ${{ matrix.qt_target }}
           # Architecture for Windows/Android
           arch: ${{ matrix.qt_arch }}
-          aqtversion: '==0.71'
+          aqtversion: '==0.7.1'
       - name: Install Android NDK
         run: |
           cd ..
