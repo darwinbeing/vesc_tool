@@ -13,8 +13,8 @@ if [ ! -d /Volumes/RAMDisk ] ; then
     exit 1
 fi
 #-- Set to my local installation
-QMAKE=$HOME/Qt5.12.3/5.12.3/ios/bin/qmake
-export PATH=$HOME/Qt5.12.3/5.12.3/ios/bin:$PATH
+QMAKE=$HOME/Qt5.12.7/5.12.7/ios/bin/qmake
+export PATH=$HOME/Qt5.12.7/5.12.7/ios/bin:$PATH
 #-- Using Travis variables as this will eventually live there
 SHADOW_BUILD_DIR=/Volumes/RAMDisk/build-vesc_tool-iOS-Release
 TRAVIS_BUILD_DIR=$HOME/Developer/vesc_tool
