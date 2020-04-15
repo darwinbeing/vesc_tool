@@ -145,12 +145,12 @@ for type in ${BuildType[@]}; do
     # pushd build/lin
 
     find appdir/
-    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+    wget -c -nv "https://github.com/jimevins/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
     export VERSION="$VT_VERSIONG"
-    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs -no-plugins \
-    -no-translations -no-copy-copyright-files -exclude-libs=libxkbcommon-x11.so.0 -verbose=2 -appimage
+    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
+    -no-translations -no-copy-copyright-files -verbose=2 -appimage
     find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
 
     find vesc_tool*.AppImage
