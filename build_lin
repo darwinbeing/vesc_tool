@@ -147,7 +147,7 @@ for type in ${BuildType[@]}; do
     # pushd build/lin
 
     find appdir/
-    wget -c -nv "https://github.com/jimevins/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
     # export VERSION="$VT_VERSION"
