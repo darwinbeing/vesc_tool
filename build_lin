@@ -141,7 +141,7 @@ for type in ${BuildType[@]}; do
     qmake -config release "CONFIG += release_lin build_${type}"
     make clean
     make INSTALL_ROOT=appdir -j8
-    rm -rf build/lin/obj
+    # rm -rf build/lin/obj
     # pushd build/lin
 
     find appdir
