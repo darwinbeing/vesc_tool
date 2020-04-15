@@ -149,7 +149,7 @@ for type in ${BuildType[@]}; do
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
     export VERSION="$VT_VERSIONG"
-    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -appimage
+    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -appimage -bundle-non-qt-libs
 
     # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
     # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
