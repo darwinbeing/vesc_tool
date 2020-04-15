@@ -149,8 +149,11 @@ for type in ${BuildType[@]}; do
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
     export VERSION="$VT_VERSIONG"
-    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs -no-plugins -exclude-libs=libxkbcommon-x11.so.0 -verbose=2 -appimage
+    ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs -no-plugins \
+    -no-translations -no-copy-copyright-files -exclude-libs=libxkbcommon-x11.so.0 -verbose=2 -appimage
     find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
+
+    find vesc_tool*.AppImage
 
     # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
     # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
