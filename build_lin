@@ -129,6 +129,8 @@
 
 set -e
 
+sudo apt-get install -y libxkbcommon-x11-0
+
 VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
 
 export PATH=/opt/Qt/5.9-static/bin:$PATH
