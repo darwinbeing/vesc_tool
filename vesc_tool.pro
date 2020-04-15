@@ -126,7 +126,7 @@ android: QT += androidextras
 # android: TARGET = vesc_tool
 # !android: TARGET = vesc_tool_$$VT_VERSION
 
-android || ios || unix{
+android || ios || unix {
     TARGET = vesc_tool
 } else {
     TARGET = vesc_tool_$$VT_VERSION
@@ -179,7 +179,7 @@ release_lin {
 
     INSTALL_PREFIX = /usr
     DATADIR=$${INSTALL_PREFIX}/share
-    target.files += vesc_tool_$$VT_VERSION
+    target.files += vesc_tool
     target.path = $${INSTALL_PREFIX}/bin
     desktop.path = $${INSTALL_PREFIX}/share/applications
     desktop.files = linux/vesc_tool.desktop
