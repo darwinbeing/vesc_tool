@@ -181,15 +181,15 @@ release_lin {
     DATADIR=$${INSTALL_PREFIX}/share
     target.files += vesc_tool
     target.path = $${INSTALL_PREFIX}/bin
-    icons16.files = linux/res/icons/16x16/apps/qnapi.png
+    icons16.files = linux/res/icons/16x16/apps/vesc_tool.png
     icons16.path = $${DATADIR}/icons/hicolor/16x16/apps/
-    icons32.files = linux/res/icons/32x32/apps/qnapi.png
+    icons32.files = linux/res/icons/32x32/apps/vesc_tool.png
     icons32.path = $${DATADIR}/icons/hicolor/32x32/apps/
-    icons48.files = linux/res/icons/48x48/apps/qnapi.png
+    icons48.files = linux/res/icons/48x48/apps/vesc_tool.png
     icons48.path = $${DATADIR}/icons/hicolor/48x48/apps/
-    icons128.files = linux/res/icons/128x128/apps/qnapi.png
+    icons128.files = linux/res/icons/128x128/apps/vesc_tool.png
     icons128.path = $${DATADIR}/icons/hicolor/128x128/apps/
-    icons512.files = linux/res/icons/512x512/apps/qnapi.png
+    icons512.files = linux/res/icons/512x512/apps/vesc_tool.png
     icons512.path = $${DATADIR}/icons/hicolor/512x512/apps/
     INSTALLS += icons16 icons32 icons48 icons128 icons512
 
