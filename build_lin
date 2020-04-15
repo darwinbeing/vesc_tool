@@ -150,7 +150,7 @@ for type in ${BuildType[@]}; do
     wget -c -nv "https://github.com/jimevins/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
-    export VERSION="$VT_VERSIONG"
+    # export VERSION="$VT_VERSION"
     ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
     -no-translations -no-copy-copyright-files -verbose=2 -appimage
     find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
