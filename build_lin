@@ -153,6 +153,7 @@ for type in ${BuildType[@]}; do
     # export VERSION="$VT_VERSION"
     ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
     -no-translations -no-copy-copyright-files -verbose=2 -appimage
+    mv vesc_tool-$(git rev-parse --short HEAD)-x86_64.AppImage vesc_tool-x86_64.AppImage
     find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
 
     find vesc_tool*.AppImage
