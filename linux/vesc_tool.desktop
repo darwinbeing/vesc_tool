@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=vesc_tool
+Comment=Qt toolkit to configure the VESC motor controller
+Exec=vesc_tool
+Icon=white
+Categories=Development;

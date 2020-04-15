@@ -76,7 +76,7 @@ iOSBuild {
         QMAKE_INFO_PLIST  = $${PWD}/ios/iOS-Info.plist
         OTHER_FILES      += $${PWD}/ios/iOS-Info.plist
     }
-    
+
     QMAKE_ASSET_CATALOGS += ios/Images.xcassets
     BUNDLE.files          = ios/VTLaunchScreen.xib $$QMAKE_INFO_PLIST
     QMAKE_BUNDLE_DATA    += BUNDLE
@@ -176,6 +176,14 @@ release_lin {
     MOC_DIR = build/lin/obj
     RCC_DIR = build/lin/obj
     UI_DIR = build/lin/obj
+
+    INSTALL_PREFIX = /usr
+    DATADIR=$${INSTALL_PREFIX}/share
+    target.files += vesc_tool_$$VT_VERSION
+    target.path = $${INSTALL_PREFIX}/bin
+    desktop.path = $${INSTALL_PREFIX}/share/applications
+    desktop.files = linux/vesc_tool.desktop
+    INSTALLS += target desktop
 }
 
 release_macos {
