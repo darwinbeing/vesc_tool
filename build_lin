@@ -140,11 +140,11 @@ BuildType=(platinum)
 for type in ${BuildType[@]}; do
     qmake -config release "CONFIG += release_lin build_${type}"
     make clean
-    make INSTALL_ROOT=appdir -j8
+    make INSTALL_ROOT=appdir install
     # rm -rf build/lin/obj
     # pushd build/lin
 
-    find appdir
+    find appdir/
     wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
     chmod a+x linuxdeployqt-continuous-x86_64.AppImage
 
