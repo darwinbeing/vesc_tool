@@ -126,7 +126,7 @@ android: QT += androidextras
 # android: TARGET = vesc_tool
 # !android: TARGET = vesc_tool_$$VT_VERSION
 
-android || ios {
+android || ios || unix{
     TARGET = vesc_tool
 } else {
     TARGET = vesc_tool_$$VT_VERSION
