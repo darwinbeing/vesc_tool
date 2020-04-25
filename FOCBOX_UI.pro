@@ -42,9 +42,45 @@ QT       += charts qml
 
 #QT       += positioning
 
-!android: {
+ios {
+    CONFIG  += iOSBuild
+    CONFIG  -= bitcode
+    DEFINES += __ios__
+    DEFINES += NO_SERIAL_LINK
+    QMAKE_IOS_DEPLOYMENT_TARGET = 11.0
+    QMAKE_APPLE_TARGETED_DEVICE_FAMILY = 1,2 # Universal
+    QMAKE_LFLAGS += -Wl,-no_pie
+}
+
+iOSBuild {
+    #-- Info.plist (need an "official" one for the App Store)
+    ForAppStore {
+        message(App Store Build)
+        #-- Create official, versioned Info.plist
+        APP_STORE = $$system(cd $${PWD} && $${PWD}/tools/update_ios_version.sh $${PWD}/ios/iOSForAppStore-Info-Source.plist $${PWD}/ios/iOSForAppStore-Info.plist)
+        APP_ERROR = $$find(APP_STORE, "Error")
+        count(APP_ERROR, 1) {
+            error("Error building .plist file. 'ForAppStore' builds are only possible through the official build system.")
+        }
+        QT               += qml-private
+        QMAKE_INFO_PLIST  = $${PWD}/ios/iOSForAppStore-Info.plist
+        OTHER_FILES      += $${PWD}/ios/iOSForAppStore-Info.plist
+    } else {
+        QMAKE_INFO_PLIST  = $${PWD}/ios/iOS-Info.plist
+        OTHER_FILES      += $${PWD}/ios/iOS-Info.plist
+    }
+
+    QMAKE_ASSET_CATALOGS += ios/Images.xcassets
+    BUNDLE.files          = ios/FBLaunchScreen.xib $$QMAKE_INFO_PLIST
+    QMAKE_BUNDLE_DATA    += BUNDLE
+}
+
+android || ios {
+    # Android and iOS don't unclude these
+} else {
     # Serial port available
     DEFINES += HAS_SERIALPORT
+    DEFINES += HAS_CANBUS
 }
 
 contains(DEFINES, HAS_BLUETOOTH) {
@@ -57,8 +93,14 @@ contains(DEFINES, HAS_SERIALPORT) {
 
 android: QT += androidextras
 
-android: TARGET = FOCBOX_UI
-!android: TARGET = FOCBOX_UI_$$VT_VERSION
+# android: TARGET = FOCBOX_UI
+# !android: TARGET = FOCBOX_UI_$$VT_VERSION
+
+android || ios || unix:!macx {
+    TARGET = FOCBOX_UI
+} else {
+    TARGET = FOCBOX_UI_$$VT_VERSION
+}
 
 TEMPLATE = app
 
@@ -81,12 +123,29 @@ release_lin {
     UI_DIR = build/lin/obj
 }
 
+release_macos {
+    # brew install qt
+    DESTDIR = build/macos
+    OBJECTS_DIR = build/macos/obj
+    MOC_DIR = build/macos/obj
+    RCC_DIR = build/macos/obj
+    UI_DIR = build/macos/obj
+}
+
 release_android {
     DESTDIR = build/android
     OBJECTS_DIR = build/android/obj
     MOC_DIR = build/android/obj
     RCC_DIR = build/android/obj
     UI_DIR = build/android/obj
+}
+
+release_ios {
+    DESTDIR = build/ios
+    OBJECTS_DIR = build/ios/obj
+    MOC_DIR = build/ios/obj
+    RCC_DIR = build/ios/obj
+    UI_DIR = build/ios/obj
 }
 
 build_mobile {
@@ -144,7 +203,7 @@ build_original {
     res_fw_original.qrc
     DEFINES += VER_ORIGINAL
 } else:build_platinum {
-    RESOURCES += res_platinum.qrc 
+    RESOURCES += res_platinum.qrc
     res_fw.qrc
     DEFINES += VER_PLATINUM
 } else:build_gold {
@@ -183,4 +242,3 @@ ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
 #INSTALLS        = target
 #target.files    = FOCBOX_UI_0.6
 #target.path     = /home/pi
-

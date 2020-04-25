@@ -1,7 +1,7 @@
 /*
     Copyright 2016 - 2017 Benjamin Vedder	benjamin@vedder.se
 
-    
+
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QTimer>
+#ifdef Q_OS_LINUX
 #include <QProcess>
+#endif
 #include <QSettings>
 #include "vescinterface.h"
 #include "widgets/pagelistitem.h"
@@ -167,8 +169,10 @@ private:
     void showPage(const QString &name);
     void reloadPages();
     void checkUdev();
+  #ifdef Q_OS_LINUX
     bool waitProcess(QProcess &process, bool block = true, int timeoutMs = 300000);
     QString runCmd(QString cmd, QStringList args);
+  #endif
 
 };
 
