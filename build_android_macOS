@@ -25,9 +25,11 @@ export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SD
 
 rm -rf build/android/*
 
+# export PATH=$HOME/Qt5.12.7/5.12.7/android_x86/bin/:$PATH
+
 # armv7
 # ANDROID_ARCH=arm
-# export PATH=$HOME/Qt5.12.3/5.12.3/android_armv7/bin/:$PATH
+# export PATH=$HOME/Qt5.12.7/5.12.7/android_armv7/bin/:$PATH
 # export ANDROID_NDK_TOOLCHAIN_PREFIX=arm-linux-androideabi
 # export ANDROID_NDK_TOOLS_PREFIX=arm-linux-androideabi
 

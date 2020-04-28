@@ -230,6 +230,7 @@ namespace _mobile_DetectFocHall_qml {
 namespace {
 struct Registry {
     Registry();
+    ~Registry();
     QHash<QString, const QQmlPrivate::CachedQmlUnit*> resourcePathToCachedUnit;
     static const QQmlPrivate::CachedQmlUnit *lookupCachedUnit(const QUrl &url);
 };
@@ -267,6 +268,11 @@ Registry::Registry() {
     QQmlPrivate::qmlregister(QQmlPrivate::QmlUnitCacheHookRegistration, &registration);
 QT_PREPEND_NAMESPACE(qRegisterResourceData)(/*version*/0x01, qt_resource_tree, qt_resource_names, qt_resource_empty_payout);
 }
+
+Registry::~Registry() {
+    QQmlPrivate::qmlunregister(QQmlPrivate::QmlUnitCacheHookRegistration, quintptr(&lookupCachedUnit));
+}
+
 const QQmlPrivate::CachedQmlUnit *Registry::lookupCachedUnit(const QUrl &url) {
     if (url.scheme() != QLatin1String("qrc"))
         return nullptr;
