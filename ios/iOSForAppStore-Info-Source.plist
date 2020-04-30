@@ -32,8 +32,8 @@
 	<string>Yes</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-    	<key>NSBluetoothPeripheralUsageDescription</key>
-    	<string>VT would like to use bluetooth.</string>    
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>VT would like to use bluetooth.</string>
 	<key>UIRequiresFullScreen</key>
 	<true/>
 	<key>UISupportedInterfaceOrientations</key>
