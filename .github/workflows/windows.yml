@@ -46,7 +46,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
       uses: darwinbeing/upload-release-asset@master
       with:
-        tag_name: ${{ github.event.ref }}
+        tag_name: ${GITHUB_REF#refs/tags/}
         asset_path: .\build\win\vesc_tool_platinum-win.zip
         asset_name: vesc_tool-win.zip
         asset_content_type: application/zip
