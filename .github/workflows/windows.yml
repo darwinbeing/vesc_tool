@@ -25,6 +25,8 @@ jobs:
         version: ${{ matrix.qt }}
         arch: win64_msvc2017_64
     - name: Install jom
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       run: |
         Invoke-WebRequest https://www.dropbox.com/s/dku543gtw7ik7hr/jom.zip?dl=1 -OutFile .\jom.zip
         expand-archive -path "jom.zip" -destinationpath "$HOME\jom"
