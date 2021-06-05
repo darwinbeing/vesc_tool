@@ -28,7 +28,7 @@ vt_test_version: {
 }
 
 CONFIG += c++11
-QMAKE_CXXFLAGS += -Wno-deprecated-copy
+# QMAKE_CXXFLAGS += -Wno-deprecated-copy
 
 # Build mobile GUI
 #CONFIG += build_mobile
