@@ -18,6 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2    
       - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           cd ..
           # WROOT=${GITHUB_WORKSPACE}
@@ -64,6 +66,8 @@ jobs:
           mv gradle-${GRADLE_VERSION} gradle
           
       - name: Setup ENV
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
         run: |
           echo "--- Setup PATH ---"
           PATH=${PATH}:${WORK}/gradle/bin:${WORK}/ndk

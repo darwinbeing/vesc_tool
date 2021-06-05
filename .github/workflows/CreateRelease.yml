@@ -15,6 +15,8 @@ jobs:
       with:
         node-version: 12.x
     - name: Setup
+      env:
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
       id: GetVersion
       run: |
         VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
