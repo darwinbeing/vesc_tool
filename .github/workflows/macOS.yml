@@ -37,7 +37,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
       uses: darwinbeing/upload-release-asset@master
       with:
-        tag_name: ${{ github.event.ref }}
+        tag_name: ${{ github.event.ref#refs/tags/ }}
         asset_path: ./build/macos/vesc_tool_platinum-macOS.dmg
         asset_name: vesc_tool-macOS.dmg
         asset_content_type: application/applefile

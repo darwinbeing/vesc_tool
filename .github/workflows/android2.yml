@@ -113,7 +113,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.VT_CR_TOKEN }}
         uses: darwinbeing/upload-release-asset@master
         with:
-          tag_name: ${{ github.event.ref }}
+          tag_name: $${{ github.event.ref#refs/tags/ }}
           asset_path: build/android/vesc_tool-android.zip
           asset_name: vesc_tool-android2.zip
           asset_content_type: application/zip
