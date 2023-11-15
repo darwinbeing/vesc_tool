@@ -1,0 +1,1035 @@
+From d52cdb8b004d55988016658bd5d54a5f69b44a51 Mon Sep 17 00:00:00 2001
+From: LI Tao <litroncn@gmail.com>
+Date: Mon, 21 Aug 2023 13:11:09 -0700
+Subject: [PATCH] Add release 3.01 support
+
+---
+ android/AndroidManifest.xml                   |   4 +-
+ android/build.gradle                          |   4 +-
+ .../gradle/wrapper/gradle-wrapper.properties  |   2 +-
+ build_android_macOS                           |  80 +++++++
+ build_ios.sh                                  |  82 +++++++
+ build_lin                                     | 200 +++++++++++-------
+ build_macos                                   |  88 +++-----
+ build_win4CI.ps1                              | 197 +++++++++++++++++
+ ios/APPStoreExportOptions.plist               | 108 ++++++++++
+ ios/src/setIosParameters.h                    |   7 +-
+ ios/vesc_tool_appstore.xcconfig               |  33 +++
+ pages/pageloganalysis.cpp                     |   1 +
+ vesc_tool.pro                                 |  21 +-
+ widgets/mtextedit.cpp                         |   2 +-
+ 14 files changed, 678 insertions(+), 151 deletions(-)
+ create mode 100755 build_android_macOS
+ create mode 100755 build_ios.sh
+ create mode 100644 build_win4CI.ps1
+ create mode 100644 ios/APPStoreExportOptions.plist
+ create mode 100644 ios/vesc_tool_appstore.xcconfig
+
+diff --git a/android/AndroidManifest.xml b/android/AndroidManifest.xml
+index 2cb0a75..d1d38d6 100644
+--- a/android/AndroidManifest.xml
++++ b/android/AndroidManifest.xml
+@@ -1,5 +1,5 @@
+ <?xml version="1.0"?>
+-<manifest package="vedder.vesctool" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="3.01" android:versionCode="95" android:installLocation="auto">
++<manifest package="vedder.vesctool" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="3.01" android:versionCode="109" android:installLocation="auto">
+     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="VESC Tool" android:icon="@drawable/icon" android:requestLegacyExternalStorage="true">
+         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|layoutDirection|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.qtproject.qt5.android.bindings.QtActivity" android:label="VESC Tool" android:screenOrientation="unspecified" android:launchMode="singleTop">
+             <intent-filter>
+@@ -71,7 +71,7 @@
+ 
+     </application>
+ 
+-    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="29"/>
++    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="30"/>
+     <supports-screens android:largeScreens="true" android:normalScreens="true" android:anyDensity="true" android:smallScreens="true"/>
+ 
+     <!-- The following comment will be replaced upon deployment with default permissions based on the dependencies of the application.
+diff --git a/android/build.gradle b/android/build.gradle
+index d35d2a9..b1cc61e 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -5,7 +5,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:3.2.0'
++        classpath 'com.android.tools.build:gradle:7.2.2'
+     }
+ }
+ 
+@@ -17,7 +17,7 @@ repositories {
+ apply plugin: 'com.android.application'
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+ }
+ 
+ android {
+diff --git a/android/gradle/wrapper/gradle-wrapper.properties b/android/gradle/wrapper/gradle-wrapper.properties
+index bf3de21..92f06b5 100644
+--- a/android/gradle/wrapper/gradle-wrapper.properties
++++ b/android/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-bin.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.4.2-all.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/build_android_macOS b/build_android_macOS
+new file mode 100755
+index 0000000..0e1fcd2
+--- /dev/null
++++ b/build_android_macOS
+@@ -0,0 +1,80 @@
++#!/bin/bash
++
++set -e
++
++export OS=$(uname | tr '[:upper:]' '[:lower:]')
++export ARCH=$(uname -m)
++
++export NDK_VERSION=23.1.7779620
++export ANDROID_HOME=$HOME/Library/Android/sdk
++# export ANDROID_NDK_HOST=darwin-x86_64
++export ANDROID_NDK_HOST=${OS}-${ARCH}
++# export ANDROID_NDK_PLATFORM=android-30
++# export ANDROID_NDK_TOOLCHAIN_VERSION=4.9
++# export ANDROID_API_VERSION=android-31
++export ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION
++export ANDROID_SDK_ROOT=$ANDROID_HOME
++
++# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home
++export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.12.jdk/Contents/Home
++export PATH=$JAVA_HOME/bin:$PATH
++
++ANDROID_BUILD_TOOLS_VERSION=31.0.0
++export PATH=$ANDROID_SDK_ROOT/emulator:$PATH
++export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/tools/proguard/bin:$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS_VERSION:$ANDROID_NDK_ROOT:$PATH
++
++
++rm -rf build/android/*
++
++# armv7
++# ANDROID_ARCH=arm
++# export PATH=$HOME/Qt5.12.3/5.12.3/android_armv7/bin/:$PATH
++# export ANDROID_NDK_TOOLCHAIN_PREFIX=arm-linux-androideabi
++# export ANDROID_NDK_TOOLS_PREFIX=arm-linux-androideabi
++
++# armv8
++ANDROID_ARCH=arm64
++# export PATH=$HOME/Qt5.14.2/5.14.2/android_arm64_v8a/bin/:$PATH
++export PATH=$HOME/Qt5.14.2/5.14.2/android/bin/:$PATH
++export PATH=$QT_ROOT/bin:$PATH
++export LD_LIBRARY_PATH=$HOME/Qt5.14.2/5.14.2/android/lib:$LD_LIBRARY_PATH
++export PKG_CONFIG_PATH=$HOME/Qt5.14.2/5.14.2/android/lib/pkgconfig:$PKG_CONFIG_PATH
++export QML_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML2_IMPORT_PATH
++export QT_PLUGIN_PATH=$HOME/Qt5.14.2/5.14.2/android/plugins/:$QT_PLUGIN_PATH
++# export ANDROID_NDK_TOOLCHAIN_PREFIX=aarch64-linux-android
++# export ANDROID_NDK_TOOLS_PREFIX=aarch64-linux-android
++
++export QML_IMPORT_PATH=mobile/:$QML_IMPORT_PATH
++
++# Mobile
++qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android build_mobile" -spec android-clang ANDROID_ABIS='arm64-v8a'
++make clean
++make -j8
++make install INSTALL_ROOT=build/android/build
++ls build/android/build/libs/arm64-v8a/
++androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
++mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_mobile.apk
++rm -rf build/android/build
++rm -rf build/android/obj
++rm -f build/android/libvesc_tool.so
++
++# Full
++qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android" -spec android-clang ANDROID_ABIS='arm64-v8a'
++make clean
++make -j8
++make install INSTALL_ROOT=build/android/build
++
++androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
++mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_full.apk
++rm -rf build/android/build
++rm -rf build/android/obj
++rm -f build/android/libvesc_tool.so
++
++# Zip APKs
++cd build/android
++# zip vesc_tool_android-$ANDROID_ARCH.zip vesc_tool_mobile.apk vesc_tool_full.apk
++zip vesc_tool-android.zip vesc_tool_mobile.apk vesc_tool_full.apk
++rm -f vesc_tool_mobile.apk
++rm -f vesc_tool_full.apk
++cd ../..
+diff --git a/build_ios.sh b/build_ios.sh
+new file mode 100755
+index 0000000..bd943d5
+--- /dev/null
++++ b/build_ios.sh
+@@ -0,0 +1,82 @@
++#!/bin/bash
++
++# hdiutil attach -nomount ram://4096000
++# diskutil erasevolume HFS+ "RAMDisk" /dev/disk2
++
++PROJECT_NAME=vesc_tool
++SCHEME_NAME=vesc_tool
++DEV_PROFILE_NAME="anyapp"
++
++# if [ ! -d /Volumes/RAMDisk ] ; then
++#     echo 'RAM Disk not found'
++#     echo 'Only used for App Store builds. It will not work on your computer.'
++#     exit 1
++# fi
++#-- Set to my local installation
++QMAKE=$HOME/Qt5.15.2/5.15.2/ios/bin/qmake
++export PATH=$HOME/Qt5.15.2/5.15.2/ios/bin:$PATH
++export LD_LIBRARY_PATH=$HOME/Qt5.15.2/5.15.2/ios/lib:$LD_LIBRARY_PATH
++export PKG_CONFIG_PATH=$HOME/Qt5.15.2/5.15.2/ios/lib/pkgconfig:$PKG_CONFIG_PATH
++export QML_IMPORT_PATH=$HOME/Qt5.15.2/5.15.2/ios/qml/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=$HOME/Qt5.15.2/5.15.2/ios/qml/:$QML2_IMPORT_PATH
++export QT_PLUGIN_PATH=$HOME/Qt5.15.2/5.15.2/ios/plugins/:$QT_PLUGIN_PATH
++
++#-- Using Travis variables as this will eventually live there
++# SHADOW_BUILD_DIR=/Volumes/RAMDisk/build-vesc_tool-iOS-Release
++# SHADOW_BUILD_DIR=build-vesc_tool-iOS-Release
++TRAVIS_BUILD_DIR=$HOME/Developer/vesc_tool
++SHADOW_BUILD_DIR=${TRAVIS_BUILD_DIR}/build-vesc_tool-iOS-Release
++
++export QML_IMPORT_PATH=${TRAVIS_BUILD_DIR}/mobile/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=${TRAVIS_BUILD_DIR}/mobile/:$QML2_IMPORT_PATH
++
++#-- Build it
++
++rm -rf ${SHADOW_BUILD_DIR}/*
++mkdir -p ${TRAVIS_BUILD_DIR}/build/ios
++rm -rf ${TRAVIS_BUILD_DIR}/build/ios/*
++
++mkdir -p ${SHADOW_BUILD_DIR} &&
++cd ${SHADOW_BUILD_DIR} &&
++#-- Create project only (build using Xcode)
++${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro "CONFIG += iphoneos device release release_ios build_mobile" -spec macx-ios-clang
++sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/${PROJECT_NAME}.xcodeproj/project.pbxproj
++make -f vesc_tool.xcodeproj/qt_preprocess.mak
++xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/"${PROJECT_NAME}"_appstore.xcconfig -allowProvisioningUpdates
++xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
++                   	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
++                   	-scheme ${SCHEME_NAME} \
++                   	-destination generic/platform=iOS \
++                   	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
++			-allowProvisioningUpdates
++
++xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
++                          -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
++			  -exportOptionsPlist ${TRAVIS_BUILD_DIR}/ios/APPStoreExportOptions.plist \
++			  -allowProvisioningUpdates
++
++# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_mobile.app
++# rm -rf ${SHADOW_BUILD_DIR}/*
++# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
++
++# ${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios"
++# sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
++# xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig -allowProvisioningUpdates
++# xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
++#                    	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
++#                    	-scheme ${SCHEME_NAME} \
++#                    	-destination generic/platform=iOS \
++#                    	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive
++
++# xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
++#                           -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
++#                           -exportProvisioningProfile ${DEV_PROFILE_NAME}
++
++# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_full.app
++# rm -rf ${SHADOW_BUILD_DIR}/*
++# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
++
++# cd ${TRAVIS_BUILD_DIR}/build/ios
++# zip -r vesc_tool-iOS.zip vesc_tool_mobile.app vesc_tool_full.app
++# rm -rf vesc_tool_mobile.app
++# rm -rf vesc_tool_full.app
+diff --git a/build_lin b/build_lin
+index afa632f..804f7f4 100755
+--- a/build_lin
++++ b/build_lin
+@@ -18,20 +18,6 @@
+ # sudo make install
+ # sudo ldconfig
+ 
+-# Qt 5.9:
+-# cd /opt
+-# sudo mkdir qt5
+-# sudo chown $USER qt5
+-# git clone https://code.qt.io/qt/qt5.git
+-# cd qt5
+-# git checkout 5.9
+-# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+-# mkdir build
+-# cd build
+-# ../configure -prefix /opt/Qt/5.9-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-xinput2 -no-glib -qt-xkbcommon-x11 -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-xkbcommon-evdev -no-evdev -no-libproxy -no-icu -skip imageformats -no-xinput2 -qt-freetype -opengl es2
+-# make -j9
+-# sudo make install
+-
+ # Qt 5.12:
+ # cd /opt
+ # sudo mkdir qt5
+@@ -62,68 +48,132 @@
+ 
+ # Note: -no-dbus and -skip qtconnectivity can also be added, but then bluetooth and window titlebar menus don't work.
+ 
++# set -e
++
++# export PATH=/opt/Qt/5.12-static/bin:$PATH
++# rm -rf build/lin/*
++
++# # Original
++# qmake -config release "CONFIG += release_lin build_original"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Platinum
++# qmake -config release "CONFIG += release_lin build_platinum"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Gold
++# qmake -config release "CONFIG += release_lin build_gold"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Silver
++# qmake -config release "CONFIG += release_lin build_silver"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Bronze
++# qmake -config release "CONFIG += release_lin build_bronze"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Free of charge
++# qmake -config release "CONFIG += release_lin build_free"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
+ set -e
+ 
+-export PATH=/opt/Qt/5.12-static/bin:$PATH
+-rm -rf build/lin/*
++sudo apt-get install -y libxkbcommon-x11-0
+ 
+-# Original
+-qmake -config release "CONFIG += release_lin build_original"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_lin build_platinum"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Gold
+-qmake -config release "CONFIG += release_lin build_gold"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_lin build_silver"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_lin build_bronze"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Free of charge
+-qmake -config release "CONFIG += release_lin build_free"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
++
++rm -rf build/lin/*
+ 
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++
++for type in ${BuildType[@]}; do
++    qmake -config release "CONFIG += release_lin build_${type}"
++    make clean
++    make
++
++    mkdir -p appdir/usr/bin
++    cp -v build/lin/vesc_tool_${VT_VERSION} appdir/usr/bin/vesc_tool
++    # make INSTALL_ROOT=appdir install
++
++    # rm -rf build/lin/obj
++    # pushd build/lin
++
++    cp res/version/platinum_v.svg appdir/vesc-tool.svg
++    cat > "appdir/vesc-tool.desktop" <<EOF
++#!/usr/bin/env xdg-open
++[Desktop Entry]
++Name=VESC Tool
++Comment=VESC ESC configuration tool
++Exec=/usr/bin/vesc_tool
++Terminal=false
++Type=Application
++Icon=vesc-tool
++Categories=Education;Development;
++EOF
++    find appdir/
++
++    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
++    chmod a+x linuxdeployqt-continuous-x86_64.AppImage
++
++    export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
++    # export VERSION="$VT_VERSION"
++    # ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
++    # -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    ./linuxdeployqt-continuous-x86_64.AppImage appdir/vesc-tool.desktop -bundle-non-qt-libs -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    mv VESC_Tool-$(git rev-parse --short HEAD)-x86_64.AppImage VESC_Tool-x86_64.AppImage
++    find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
++
++    mv appdir vesc_tool_${type}-lin
++    zip -rv vesc_tool_${type}-lin.zip vesc_tool_${type}-lin
++
++    find vesc_tool*.zip
++    find VESC_Tool*.AppImage
++    chmod +x VESC_Tool-x86_64.AppImage
++
++    # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
++    # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
++    # chmod a+x linuxdeployqt
++    # ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage -unsupported-bundle-everything -bundle-non-qt-libs -unsupported-allow-new-glibc
++    # rm -rf vesc_tool_${VT_VERSION}
++    # mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
++
++    # popd
++done
+diff --git a/build_macos b/build_macos
+index 2c3b490..d62371b 100755
+--- a/build_macos
++++ b/build_macos
+@@ -2,65 +2,33 @@
+ 
+ set -e
+ 
+-export PATH=/opt/Qt/5.9-static/bin:$PATH
+-rm -rf build/macos/*
+-
+-# Original
+-qmake -config release "CONFIG += release_macos build_original"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_original_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_macos build_platinum"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_platinum_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+ 
+-# Gold
+-qmake -config release "CONFIG += release_macos build_gold"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_gold_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_macos build_silver"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_silver_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_macos build_bronze"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_bronze_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++export PATH=$HOME/Qt5.14.2/5.14.2/clang_64/bin:$PATH
++rm -rf build/macos/*
+ 
+-# Free of charge
+-qmake -config release "CONFIG += release_macos build_free"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_free_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+\ No newline at end of file
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++TARGET="VESC Tool"
++
++for type in ${BuildType[@]}; do
++    qmake -config release "CONFIG += release_macos build_${type}"
++    make clean
++    make -j8
++    rm -rf build/macos/obj
++    pushd build/macos
++
++    mkdir -p "${TARGET}-release"
++    ln -s  /Applications "${TARGET}-release/Applications"
++    mv "${TARGET}.app" "${TARGET}-release"
++    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
++    rm -f "${TARGET}-release/${TARGET}.dmg"
++    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS.dmg
++
++    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
++    # rm -rf "${TARGET}".app
++    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
++    popd
++done
+diff --git a/build_win4CI.ps1 b/build_win4CI.ps1
+new file mode 100644
+index 0000000..e0cde6f
+--- /dev/null
++++ b/build_win4CI.ps1
+@@ -0,0 +1,197 @@
++#-----------------------------------------------------------------------------
++#
++#  Copyright (c) 2019, LI Tao
++#  All rights reserved.
++#
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions are met:
++#
++#  1. Redistributions of source code must retain the above copyright notice,
++#     this list of conditions and the following disclaimer.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++#  THE POSSIBILITY OF SUCH DAMAGE.
++#
++#-----------------------------------------------------------------------------
++
++<#
++ .SYNOPSIS
++
++  Build a static version of Qt for Windows.
++
++ .DESCRIPTION
++
++  This scripts compiles and installs vesc tool. It assumes that a prebuilt
++  Qt / MSVC environment is already installed, typically in C:\Qt. This prebuilt
++  environment uses shared libraries.
++
++  This script is typically run from the Windows Explorer.
++
++  Requirements:
++  - Windows 10
++  - Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
++  - vs2019 C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional
++  - Qt C:\Qt\Qt5.12.3
++  - 7-zip.
++  - Open PowerShell Run "powershell.exe .\MSVC-build-vesc_tool-release.ps1"
++ .PARAMETER NumJobs
++
++  The number of jobs to run jom.exe with. Use your # CPU cores or higher. Default 8.
++
++ .PARAMETER MSVC
++
++  Imports command prompt environment for this MSVC.  Default 2017
++
++ .PARAMETER Arch
++
++  Set to amd64/x64 to compile with MSVC 64-bit.  Default: x64
++
++ .PARAMETER NoPause
++
++  Do not wait for the user to press <enter> at end of execution. By default,
++  execute a "pause" instruction at the end of execution, which is useful
++  when the script was run from Windows Explorer.
++#>
++
++[CmdletBinding()]
++param(
++    $NumJobs = 8,
++    $MSVC = 2019,
++    $Arch = "x64",
++    [switch]$NoPause = $true
++)
++
++# PowerShell execution policy.
++Set-StrictMode -Version 3
++
++#Import-Module Pscx
++
++#-----------------------------------------------------------------------------
++# Main code
++#-----------------------------------------------------------------------------
++
++function Main
++{
++    # Initialize Visual Studio environment
++
++    $VTVer = Select-String -Path vesc_tool.pro -Pattern 'VT_VERSION\s=\s(.*)' | %{$_.Matches.Groups[1].value}
++
++    # Set-VsVars $MSVC $Arch
++
++    $VTInstallDir = "build\win"
++    Write-Output "Install Location       : $VTInstallDir"
++    Write-Output "VESC Tool Version      : $VTVer"
++
++    Remove-Item -Force -Recurse $VTInstallDir\* -ErrorAction Ignore
++
++    # Build-VESCTool original
++    Build-VESCTool platinum
++    # Build-VESCTool gold
++    # Build-VESCTool silver
++    # Build-VESCTool bronze
++    # Build-VESCTool free
++
++    Exit-Script
++}
++
++#-----------------------------------------------------------------------------
++# A function to exit this script. The Message parameter is used on error.
++#-----------------------------------------------------------------------------
++
++function Exit-Script ([string]$Message = "")
++{
++    $Code = 0
++    if ($Message -ne "") {
++        Write-Output "ERROR: $Message"
++        $Code = 1
++    }
++    if (-not $NoPause) {
++        pause
++    }
++    exit $Code
++}
++
++#-----------------------------------------------------------------------------
++# Silently create a directory.
++#-----------------------------------------------------------------------------
++
++function Create-Directory ([string]$Directory)
++{
++    [void] (New-Item -Path $Directory -ItemType "directory" -Force)
++}
++
++function Get-Batchfile ($file, $params)
++{
++    $cmd = "`"$file`" $params & set"
++    cmd /c $cmd | Foreach-Object {
++        $p, $v = $_.split('=')
++        Set-Item -path env:$p -value $v
++    }
++}
++
++
++function Set-VsVars($vsYear, $arch)
++{
++    $vstools = ""
++
++    switch ($vsYear)
++    {
++        2017 { $vstools = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" }
++        2019 { $vstools = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" }
++    }
++
++    #$batchFile = [System.IO.Path]::Combine($vstools, "vsvars32.bat")
++
++    if (-not (Test-Path $vstools)) {
++        Exit-Script "Visual Studio environment could not be found."
++    }
++
++    Get-Batchfile -file $vstools -params $arch
++
++
++    Write-Host -ForegroundColor 'Yellow' "VsVars has been loaded from: $vstools ($arch)"
++}
++
++function Build-VESCTool ([string]$type)
++{
++    # qmake -config release -tp vc "CONFIG+=release_win build_$type" -o $VTInstallDir\vesc_tool.vcxproj
++
++    qmake -config release "CONFIG+= release_win build_$type"
++    jom clean
++    jom -j $NumJobs
++
++    # msbuild $VTInstallDir\vesc_tool.vcxproj /Zm:1000 /t:Build /p:Configuration=Release
++    Remove-Item -Path $VTInstallDir\obj -Force -Recurse -ErrorAction Ignore
++
++    Push-Location $VTInstallDir
++    $DeployDir="vesc_tool_" + $type + "-win"
++    $ZipFile=$DeployDir + ".zip"
++    # Create-Directory $DeployDir
++
++    $VTApp = "vesc_tool_" + ${VTVer} + ".exe"
++    windeployqt $VTApp -qmldir=. --dir $DeployDir
++    Move-Item $VTApp $DeployDir
++    Compress-Archive $DeployDir -DestinationPath $ZipFile
++
++    Remove-Item * -Exclude *.zip -Recurse -ErrorAction Ignore
++    # Remove-Item * -Include *.exe, *.dll -Exclude *.zip -Recurse -ErrorAction Ignore
++    Pop-Location
++}
++
++#-----------------------------------------------------------------------------
++# Execute main code.
++#-----------------------------------------------------------------------------
++
++. Main
+diff --git a/ios/APPStoreExportOptions.plist b/ios/APPStoreExportOptions.plist
+new file mode 100644
+index 0000000..b04f1fa
+--- /dev/null
++++ b/ios/APPStoreExportOptions.plist
+@@ -0,0 +1,108 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<plist version="1.0">
++<dict>
++	<key>CFBundleDisplayName</key>
++	<string>$(PACKAGE_NAME)</string>
++	<key>CFBundleExecutable</key>
++	<string>${EXECUTABLE_NAME}</string>
++	<key>CFBundleGetInfoString</key>
++	<string>Created by Qt/QMake</string>
++	<key>CFBundleIdentifier</key>
++	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
++	<key>CFBundleInfoDictionaryVersion</key>
++	<string>6.0</string>
++	<key>CFBundleName</key>
++	<string>$(PRODUCT_NAME)</string>
++	<key>CFBundlePackageType</key>
++	<string>APPL</string>
++	<key>CFBundleShortVersionString</key>
++	<string>6.0</string>
++	<key>CFBundleSignature</key>
++	<string>????</string>
++	<key>CFBundleVersion</key>
++	<string>6.0</string>
++	<key>ITSAppUsesNonExemptEncryption</key>
++	<false/>
++	<key>LSApplicationCategoryType</key>
++	<string></string>
++	<key>LSFileQuarantineEnabled</key>
++	<true/>
++	<key>LSRequiresIPhoneOS</key>
++	<true/>
++	<key>LSSupportsOpeningDocumentsInPlace</key>
++	<true/>
++	<key>NOTE</key>
++	<string>This file was generated by Qt/QMake.</string>
++	<key>NSBluetoothAlwaysUsageDescription</key>
++	<string>Need access to connect to VESC</string>
++	<key>NSBluetoothPeripheralUsageDescription</key>
++	<string>VESC Tool searches Bluetooth LE Devices (WaiterLock, Barcode Scanner, eGK)</string>
++	<key>NSDocumentsFolderUsageDescription</key>
++	<string>Saves log files here</string>
++	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
++	<string>Used for Ride Tracking</string>
++	<key>NSLocationAlwaysUsageDescription</key>
++	<string>Used for Ride Tracking</string>
++	<key>NSLocationWhenInUseUsageDescription</key>
++	<string>Used for Ride Tracking</string>
++	<key>NSPhotoLibraryUsageDescription</key>
++	<string>VESC Tool uses photos</string>
++	<key>NSSupportsAutomaticGraphicsSwitching</key>
++	<true/>
++	<key>UIBackgroundModes</key>
++	<array>
++		<string>bluetooth-central</string>
++		<string>location</string>
++	</array>
++	<key>UIFileSharingEnabled</key>
++	<true/>
++	<key>UILaunchImages</key>
++	<array>
++		<dict>
++			<key>UILaunchImageMinimumOSVersion</key>
++			<string>7.0</string>
++			<key>UILaunchImageName</key>
++			<string>LaunchImage</string>
++			<key>UILaunchImageOrientation</key>
++			<string>Portrait</string>
++			<key>UILaunchImageSize</key>
++			<string>{375, 667}</string>
++		</dict>
++		<dict>
++			<key>UILaunchImageMinimumOSVersion</key>
++			<string>7.0</string>
++			<key>UILaunchImageName</key>
++			<string>LaunchImage</string>
++			<key>UILaunchImageOrientation</key>
++			<string>Portrait</string>
++			<key>UILaunchImageSize</key>
++			<string>{320, 568}</string>
++		</dict>
++		<dict>
++			<key>UILaunchImageMinimumOSVersion</key>
++			<string>7.0</string>
++			<key>UILaunchImageName</key>
++			<string>LaunchImage</string>
++			<key>UILaunchImageOrientation</key>
++			<string>Portrait</string>
++			<key>UILaunchImageSize</key>
++			<string>{360, 640}</string>
++		</dict>
++	</array>
++	<key>UILaunchStoryboardName</key>
++	<string>MyLaunchScreen</string>
++	<key>UIRequiresFullScreen</key>
++	<true/>
++	<key>UISupportedInterfaceOrientations</key>
++	<array>
++		<string>UIInterfaceOrientationPortrait</string>
++		<string>UIInterfaceOrientationLandscapeLeft</string>
++		<string>UIInterfaceOrientationLandscapeRight</string>
++	</array>
++	<key>UISupportsDocumentBrowser</key>
++	<true/>
++	<key>UIViewEdgeAntialiasing</key>
++	<true/>
++</dict>
++</plist>
+diff --git a/ios/src/setIosParameters.h b/ios/src/setIosParameters.h
+index ba077f5..cc7c40c 100644
+--- a/ios/src/setIosParameters.h
++++ b/ios/src/setIosParameters.h
+@@ -1,10 +1,9 @@
+ #ifndef SETIOSPARAMETERS_H
+ #define SETIOSPARAMETERS_H
+-#include <QObject>
+-#include <QApplication>
++#include <QtGlobal>
++
+ #ifdef Q_OS_IOS
+-class SetIosParams : public QObject{
+-  Q_OBJECT
++class SetIosParams {
+ public:
+   SetIosParams();
+   void NoSleep();
+diff --git a/ios/vesc_tool_appstore.xcconfig b/ios/vesc_tool_appstore.xcconfig
+new file mode 100644
+index 0000000..67f429f
+--- /dev/null
++++ b/ios/vesc_tool_appstore.xcconfig
+@@ -0,0 +1,33 @@
++// PRODUCT_BUNDLE_IDENTIFIER = com.mycompany.myapp
++// DEBUG_CODE_SIGN_IDENTITY = iPhone Developer: Your Name (XXXXXXXXXX)
++// DEBUG_PROVISIONING_PROFILE = XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
++// RELEASE_CODE_SIGN_IDENTITY = iPhone Distribution: Your Company Name (XXXXXXXXXX)
++// RELEASE_PROVISIONING_PROFILE = YYYYYYYY-YYYY-YYYY-YYYY-YYYYYYYYYYYY
++
++// CODE_SIGN_IDENTITY = ""
++// CODE_SIGNING_REQUIRED = NO
++
++DISABLE_MANUAL_TARGET_ORDER_BUILD_WARNING = YES
++ALWAYS_SEARCH_USER_PATHS = NO
++ALWAYS_USE_SEPARATE_HEADERMAPS = NO
++CLANG_ENABLE_MODULES = YES
++CLANG_MODULES_AUTOLINK = NO
++CLANG_ENABLE_OBJC_ARC = YES
++CLANG_WARN__DUPLICATE_METHOD_MATCH = YES
++ENABLE_BITCODE = NO
++ENABLE_TESTABILITY = YES;
++ENABLE_STRICT_OBJC_MSGSEND = YES;
++GCC_DYNAMIC_NO_PIC = NO;
++INCLUDE_SETTINGS_BUNDLE = NO
++IPHONEOS_DEPLOYMENT_TARGET = 14.0
++PRODUCT_NAME = $(TARGET_NAME)
++SDKROOT = iphoneos
++TARGETED_DEVICE_FAMILY = 1,2
++DYLIB_COMPATIBILITY_VERSION = 1;
++DYLIB_CURRENT_VERSION = 1;
++DYLIB_INSTALL_NAME_BASE = @rpath
++
++COPY_PHASE_STRIP = YES
++ENABLE_NS_ASSERTIONS = NO
++ONLY_ACTIVE_ARCH = NO
++VALIDATE_PRODUCT = YES
+diff --git a/pages/pageloganalysis.cpp b/pages/pageloganalysis.cpp
+index 58278f7..f8bc312 100644
+--- a/pages/pageloganalysis.cpp
++++ b/pages/pageloganalysis.cpp
+@@ -24,6 +24,7 @@
+ #include <QFileDialog>
+ #include <cmath>
+ #include <QStandardPaths>
++#include <QScrollBar>
+ 
+ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
+     QWidget(parent),
+diff --git a/vesc_tool.pro b/vesc_tool.pro
+index 88e25ad..c1b69a5 100644
+--- a/vesc_tool.pro
++++ b/vesc_tool.pro
+@@ -68,12 +68,15 @@ ios: {
+ # Positioning
+ DEFINES += HAS_POS
+ 
++CONFIG  += sdk_no_version_check
++
+ !ios: {
+     QT       += printsupport
++    DEFINES += HAS_SERIALPORT
+ !android: {
+     # Serial port available
+-    DEFINES += HAS_SERIALPORT
+     DEFINES += HAS_GAMEPAD
++    DEFINES += HAS_CANBUS
+ }
+ }
+ 
+@@ -119,11 +122,12 @@ contains(DEFINES, HAS_GAMEPAD) {
+ }
+ 
+ android: QT += androidextras
++android: QT += 3dquickscene2d
+ 
+-ios | macx: {
++macx: {
+     TARGET = "VESC Tool"
+ }else: {
+-    android:{
++    android | ios:{
+         TARGET = "vesc_tool"
+     }else:{
+ 
+@@ -162,9 +166,6 @@ release_win {
+ }
+ 
+ release_lin {
+-    # http://micro.nicholaswilson.me.uk/post/31855915892/rules-of-static-linking-libstdc-libc-libgcc
+-    # http://insanecoding.blogspot.se/2012/07/creating-portable-linux-binaries.html
+-    QMAKE_LFLAGS += -static-libstdc++ -static-libgcc
+     DESTDIR = build/lin
+     OBJECTS_DIR = build/lin/obj
+     MOC_DIR = build/lin/obj
+@@ -189,6 +190,14 @@ release_android {
+     UI_DIR = build/android/obj
+ }
+ 
++release_ios {
++    DESTDIR = build/ios
++    OBJECTS_DIR = build/ios/obj
++    MOC_DIR = build/ios/obj
++    RCC_DIR = build/ios/obj
++    UI_DIR = build/ios/obj
++}
++
+ build_mobile {
+     DEFINES += USE_MOBILE
+ }
+diff --git a/widgets/mtextedit.cpp b/widgets/mtextedit.cpp
+index b30be1d..b921b00 100644
+--- a/widgets/mtextedit.cpp
++++ b/widgets/mtextedit.cpp
+@@ -22,7 +22,7 @@
+ #include <QTextCursor>
+ #include <QImage>
+ #include <QByteArray>
+-#include <QBuffer>
++#include <QtCore/QBuffer>
+ #include <stdlib.h>
+ #include <QInputDialog>
+ 
+-- 
+2.41.0
+
