@@ -106,6 +106,8 @@ static void showHelp()
     qDebug() << "--writeFileToSdCard [fileLocal:pathSdcard] : Write file to SD-card.";
     qDebug() << "--packFirmware [fileIn:fileOut] : Pack firmware-file for compatibility with the bootloader. ";
     qDebug() << "--packLisp [fileIn:fileOut] : Pack lisp-file and the included imports.";
+    qDebug() << "--bridgeAppData : Send app data (such as data from send-data in lisp) to stdout.";
+    qDebug() << "--offscreen : Use offscreen QPA so that X is not required for the CLI-mode.";
 }
 
 #ifdef Q_OS_LINUX
@@ -308,6 +310,8 @@ int main(int argc, char *argv[])
     QString fileForSdOut = "";
     QString lispPackIn = "";
     QString lispPackOut = "";
+    bool bridgeAppData = false;
+    bool offscreen = false;
 
     // Arguments can be hard-coded in a build like this:
 //    qmlWindowSize = QSize(400, 800);
@@ -663,6 +667,16 @@ int main(int argc, char *argv[])
             }
         }
 
+        if (str == "--bridgeAppData") {
+            bridgeAppData = true;
+            found = true;
+        }
+
+        if (str == "--offscreen") {
+            offscreen = true;
+            found = true;
+        }
+
         if (!found) {
             if (dash) {
                 qCritical() << "At least one of the flags is invalid:" << str;
@@ -961,12 +975,21 @@ int main(int argc, char *argv[])
 
     if (isMcConf || isAppConf || isCustomConf || !lispPath.isEmpty() ||
             eraseLisp || !firmwarePath.isEmpty() || uploadBootloaderBuiltin ||
-            !fileForSdIn.isEmpty()) {
-        qputenv("QT_QPA_PLATFORM", "offscreen");
+            !fileForSdIn.isEmpty() || bridgeAppData) {
+        if (offscreen) {
+            qputenv("QT_QPA_PLATFORM", "offscreen");
+        }
         app = new QCoreApplication(argc, argv);
         vesc = new VescInterface;
         vesc->fwConfig()->loadParamsXml("://res/config/fw.xml");
         Utility::configLoadLatest(vesc);
+
+        if (bridgeAppData) {
+            QObject::connect(vesc->commands(), &Commands::customAppDataReceived, [] (QByteArray data) {
+                fprintf(stdout, "%s", data.constData());
+                fflush(stdout);
+            });
+        }
 
         QObject::connect(vesc, &VescInterface::statusMessage, [firmwarePath]
                          (const QString &msg, bool isGood) {
@@ -1309,10 +1332,14 @@ int main(int argc, char *argv[])
                 exitCode = -1;
             }
 
-            qApp->exit(exitCode);
+            if (!bridgeAppData) {
+                qApp->exit(exitCode);
+            }
         });
     } else if (useTcp) {
-        qputenv("QT_QPA_PLATFORM", "offscreen");
+        if (offscreen) {
+            qputenv("QT_QPA_PLATFORM", "offscreen");
+        }
         app = new QCoreApplication(argc, argv);
         vesc = new VescInterface;
         vesc->fwConfig()->loadParamsXml("://res/config/fw.xml");
@@ -1335,7 +1362,9 @@ int main(int argc, char *argv[])
             }
         });
     } else if (isTcpHub) {
-        qputenv("QT_QPA_PLATFORM", "offscreen");
+        if (offscreen) {
+            qputenv("QT_QPA_PLATFORM", "offscreen");
+        }
         app = new QCoreApplication(argc, argv);
         tcpHub = new TcpHub;
         if (tcpHub->start(tcpPort)) {
