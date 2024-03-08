@@ -276,6 +276,7 @@
 <name>setup-current</name>
 <name>setup-current-in</name>
 <name>setup-num-vescs</name>
+<name>can-msg-age</name>
 <name>canset-current</name>
 <name>canset-current-rel</name>
 <name>canset-duty</name>
@@ -303,6 +304,9 @@
 <name>can-recv-sid</name>
 <name>can-recv-eid</name>
 <name>can-cmd</name>
+<name>can-start</name>
+<name>can-stop</name>
+<name>can-use-vesc</name>
 <name>sin</name>
 <name>cos</name>
 <name>tan</name>
@@ -330,6 +334,7 @@
 <name>raw-mod-beta-measured</name>
 <name>raw-hall</name>
 <name>uart-start</name>
+<name>uart-stop</name>
 <name>uart-write</name>
 <name>uart-read</name>
 <name>i2c-start</name>
@@ -433,6 +438,7 @@
 <name>gnss-hdop</name>
 <name>gnss-date-time</name>
 <name>gnss-age</name>
+<name>ublox-init</name>
 <name>crc16</name>
 <name>crc32</name>
 <name>main-init-done</name>
