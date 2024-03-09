@@ -37,6 +37,7 @@
 <name>move-to-flash</name>
 <name>unflatten</name>
 <name>flatten</name>
+<name>rest-args</name>
 <name>@const-start</name>
 <name>@const-end</name>
 <name>@const-symbol-strings</name>
@@ -444,6 +445,7 @@
 <name>main-init-done</name>
 <name>esp-now-start</name>
 <name>esp-now-add-peer</name>
+<name>esp-now-del-peer</name>
 <name>esp-now-send</name>
 <name>esp-now-recv</name>
 <name>get-mac-addr</name>
