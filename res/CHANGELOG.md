@@ -17,6 +17,8 @@
 * Use all 3 measured currents in sampled data instead of calculating one.
 * Added support for loading sampled data CSV files.
 * Always remove trailing whitespaces on save in CodeEditor.
+* Comment block fix on windows and general improvements.
+* Added custom config and QML cache for faster connecting and CAN device switching.
 
 ---
 
