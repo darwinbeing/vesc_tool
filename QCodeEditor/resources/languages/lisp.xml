@@ -422,6 +422,7 @@
 <name>zipwith</name>
 <name>sleep</name>
 <name>filter</name>
+<name>rotate</name>
 <name>str-len</name>
 <name>sort</name>
 <name>str-cmp-asc</name>
@@ -487,5 +488,11 @@
 <name>qml-write</name>
 <name>shutdown-hold</name>
 <name>reboot</name>
+<name>color-make</name>
+<name>color-split</name>
+<name>color-mix</name>
+<name>color-add</name>
+<name>color-sub</name>
+<name>color-scale</name>
 </section>
 </root>
