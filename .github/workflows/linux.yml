@@ -47,7 +47,7 @@ jobs:
           fi
         shell: bash
       - name: Clone Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.VT_REF }}
       - name: Setup
@@ -75,7 +75,7 @@ jobs:
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
         shell: bash
       - name: Download FW Artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3
         with:
           name: firmware-${{ inputs.fw_ver }}
           path: ${{ env.FW_TMP_DIR }}

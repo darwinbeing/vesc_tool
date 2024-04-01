@@ -37,7 +37,7 @@ jobs:
           else
             echo "VT_REF=${{ inputs.vt_ver }}" >> $GITHUB_ENV
           fi
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ env.VT_REF }}
       - name: Setup
@@ -78,7 +78,7 @@ jobs:
       #     prerelease: true
       #     commitish: ${{ env.VT_REF }}
       - name: Download FW Artifact
-        uses: dawidd6/action-download-artifact@v2
+        uses: dawidd6/action-download-artifact@v3
         with:
           name: firmware-${{ inputs.fw_ver }}
           path: ${{ env.FW_TMP_DIR }}
