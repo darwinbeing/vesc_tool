@@ -59,7 +59,7 @@ jobs:
         shell: bash
       - name: Delete existing release and tag
         id: delete-tag-release
-        uses: dev-drprasad/delete-tag-and-release@v1.0.1
+        uses: dev-drprasad/delete-tag-and-release@v1.1
         with:
           tag_name: ${{ steps.GetVersion.outputs.VERSION }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
