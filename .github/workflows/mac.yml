@@ -63,11 +63,16 @@ jobs:
           else
             echo "RELEASE_NOTES=**VESC Tool Release Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
           fi
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '14.3.1'
+      - name: check Xcode version
+        run: /usr/bin/xcodebuild -version
       - name: Install Qt (macOS)
         uses: jurplel/install-qt-action@v3
         with:
           version: ${{ matrix.qt }}
-          setup-python: false
+          setup-python: 'true'
           cache: 'true'
           cache-key-prefix: 'install-qt-action'
       - name: Create TMP Dir
