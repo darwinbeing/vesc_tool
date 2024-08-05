@@ -265,6 +265,9 @@ public:
     bool ignoreCustomConfigs() const;
     void setIgnoreCustomConfigs(bool newIgnoreCustomConfigs);
 
+    Q_INVOKABLE bool reconnectLastCan();
+    Q_INVOKABLE void setReconnectLastCan(bool set);
+
 signals:
     void statusMessage(const QString &msg, bool isGood);
     void messageDialog(const QString &title, const QString &msg, bool isGood, bool richText);
@@ -368,6 +371,7 @@ private:
     QPair<int, int> mFwPair;
     QString mHwTxt;
     QString mUuidStr;
+    QString mUuidStrLocal;
     bool mIsUploadingFw;
     bool mIsLastFwBootloader;
     bool mFwSupportsConfiguration;
@@ -453,6 +457,8 @@ private:
     QVector<int> mCanDevsLast;
 
     FW_RX_PARAMS mLastFwParams;
+    QMap<QString, QPair<QString, int> > mLastFwUuids;
+    bool mFwSwapDone;
 
     // Other settings
     bool mUseImperialUnits;

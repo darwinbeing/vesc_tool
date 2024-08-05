@@ -107,6 +107,8 @@ VescInterface::VescInterface(QObject *parent) : QObject(parent)
 
     mIgnoreCustomConfigs = false;
 
+    mFwSwapDone = false;
+
 #ifdef Q_OS_ANDROID
     QAndroidJniObject activity = QAndroidJniObject::callStaticObjectMethod(
                 "org/qtproject/qt5/android/QtNative", "activity", "()Landroid/app/Activity;");
@@ -298,6 +300,21 @@ VescInterface::VescInterface(QObject *parent) : QObject(parent)
             cfg.customconf_xml_compressed = mSettings.value("customconf").toString();
             cfg.name = mSettings.value("name", QString("")).toString();
             mConfigurationBackups.insert(uuid, cfg);
+        }
+        mSettings.endArray();
+    }
+
+    {
+        int size = mSettings.beginReadArray("lastFwUuids");
+        for (int i = 0; i < size; ++i) {
+            mSettings.setArrayIndex(i);
+            QString uuidLocal = mSettings.value("uuidLocal", "").toString().toUpper();
+            QString uuidCan = mSettings.value("uuidCan", "").toString().toUpper();
+            int canId = mSettings.value("canId", -1).toInt();
+
+            if (!uuidLocal.isEmpty() && !uuidCan.isEmpty() && canId >= 0) {
+                mLastFwUuids[uuidLocal] = qMakePair(uuidCan, canId);
+            }
         }
         mSettings.endArray();
     }
@@ -733,6 +750,21 @@ void VescInterface::storeSettings()
             mSettings.setValue("customconf", i.value().customconf_xml_compressed);
             mSettings.setValue("name", i.value().name);
             ind++;
+        }
+        mSettings.endArray();
+    }
+
+    mSettings.remove("lastFwUuids");
+    {
+        mSettings.beginWriteArray("lastFwUuids");
+        QMapIterator<QString, QPair<QString, int> > i(mLastFwUuids);
+        int ind = 0;
+        while (i.hasNext()) {
+            i.next();
+            mSettings.setArrayIndex(ind++);
+            mSettings.setValue("uuidLocal", i.key());
+            mSettings.setValue("uuidCan", i.value().first);
+            mSettings.setValue("canId", i.value().second);
         }
         mSettings.endArray();
     }
@@ -3253,6 +3285,7 @@ void VescInterface::timerSlot()
 
             mDeserialFailedMessageShown = false;
             mPacket->resetState();
+            mFwSwapDone = false;
         }
 
         emit portConnectedChanged();
@@ -3411,6 +3444,36 @@ void VescInterface::fwVersionReceived(FW_RX_PARAMS params)
     mUuidStr = uuidStr.toUpper();
     mUuidStr.replace(" ", "");
     mFwSupportsConfiguration = false;
+
+    if (!mCommands->getSendCan()) {
+        mUuidStrLocal = mUuidStr;
+    }
+
+    if (mSettings.value("reconnectLastCan", true).toBool() &&
+            !mUuidStrLocal.isEmpty() && mLastFwUuids.contains(mUuidStrLocal)) {
+
+        auto pair = mLastFwUuids[mUuidStrLocal];
+
+        if (pair.second >= 0 && pair.first != mUuidStr && !mFwSwapDone) {
+            FW_RX_PARAMS pRx;
+            bool ok = Utility::getFwVersionBlockingCan(this, &pRx, pair.second, 1500);
+            if (ok && Utility::uuid2Str(pRx.uuid, false) == pair.first) {
+                mCommands->setSendCan(true, pair.second);
+                return;
+            }
+        }
+    }
+
+    if (!mUuidStrLocal.isEmpty()) {
+        int canId = -1;
+        if (mCommands->getSendCan()) {
+            canId = mCommands->getCanSendId();
+        }
+
+        mLastFwUuids[mUuidStrLocal] = qMakePair(mUuidStr, canId);
+    }
+
+    mFwSwapDone = true;
 
 #ifdef HAS_BLUETOOTH
     if (mBleUart->isConnected()) {
@@ -4125,6 +4188,16 @@ bool VescInterface::ignoreCustomConfigs() const
 void VescInterface::setIgnoreCustomConfigs(bool newIgnoreCustomConfigs)
 {
     mIgnoreCustomConfigs = newIgnoreCustomConfigs;
+}
+
+bool VescInterface::reconnectLastCan()
+{
+    return mSettings.value("reconnectLastCan", true).toBool();
+}
+
+void VescInterface::setReconnectLastCan(bool set)
+{
+    mSettings.setValue("reconnectLastCan", set);
 }
 
 int VescInterface::getLastTcpHubPort() const
