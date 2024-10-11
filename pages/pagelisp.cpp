@@ -628,7 +628,7 @@ void PageLisp::on_stopButton_clicked()
 
 void PageLisp::on_uploadButton_clicked()
 {
-    QProgressDialog dialog(tr("Uploading..."), QString(), 0, 0, this);
+    QProgressDialog dialog(tr("Erasing..."), tr("Cancel"), 0, 0, this);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.show();
 
@@ -656,11 +656,33 @@ void PageLisp::on_uploadButton_clicked()
         return;
     }
 
+    QTimer closeStopTimer;
+    closeStopTimer.start(100);
+    auto conn1 = connect(&closeStopTimer, &QTimer::timeout, [&dialog, this]() {
+        if (!dialog.isVisible() && dialog.value() > 0) {
+            dialog.show();
+        }
+
+        if (dialog.wasCanceled()) {
+            mLoader.abortDownloadUpload();
+        }
+    });
+
     if (!eraseCode(vb.size() + 100)) {
+        disconnect(conn1);
         return;
     }
 
+    auto conn2 = connect(&mLoader, &CodeLoader::lispUploadProgress, [&dialog](qint64 bytes, qint64 bytesTotal) {
+        dialog.setMaximum(bytesTotal);
+        dialog.setValue(bytes);
+    });
+
+    dialog.setLabelText("Uploading");
     bool ok = mLoader.lispUpload(vb);
+
+    disconnect(conn1);
+    disconnect(conn2);
 
     if (ok && ui->autoRunBox->isChecked()) {
         on_runButton_clicked();
@@ -669,9 +691,26 @@ void PageLisp::on_uploadButton_clicked()
 
 void PageLisp::on_readExistingButton_clicked()
 {
-    QProgressDialog dialog(tr("Reading Code..."), QString(), 0, 0, this);
+    QProgressDialog dialog(tr("Reading Code..."), tr("Cancel"), 0, 0, this);
     dialog.setWindowModality(Qt::WindowModal);
     dialog.show();
+
+    QTimer closeStopTimer;
+    closeStopTimer.start(100);
+    auto conn1 = connect(&closeStopTimer, &QTimer::timeout, [&dialog, this]() {
+        if (!dialog.isVisible() && dialog.value() > 0) {
+            dialog.show();
+        }
+
+        if (dialog.wasCanceled()) {
+            mLoader.abortDownloadUpload();
+        }
+    });
+
+    auto conn2 = connect(&mLoader, &CodeLoader::lispUploadProgress, [&dialog](qint64 bytes, qint64 bytesTotal) {
+        dialog.setMaximum(bytesTotal);
+        dialog.setValue(bytes);
+    });
 
     QString lispPath = "From VESC";
     auto code = mLoader.lispRead(this, lispPath);
@@ -679,6 +718,9 @@ void PageLisp::on_readExistingButton_clicked()
     if (!code.isEmpty()) {
         createEditorTab(lispPath, code);
     }
+
+    disconnect(conn1);
+    disconnect(conn2);
 }
 
 void PageLisp::on_eraseButton_clicked()

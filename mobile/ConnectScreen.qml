@@ -402,7 +402,7 @@ Item {
                                             VescIf.connectSerial(bleAddr, 115200)
                                         }
                                     } else if (isSerial === 2) {
-                                        VescIf.connectTcp(bleAddr, 65102)
+                                        VescIf.connectTcp(bleAddr, tcpPort)
                                     } else if (isSerial === 3) {
                                         VescIf.connectTcpHubUuid(hubUuid)
                                     } else {
@@ -489,7 +489,7 @@ Item {
                     vescsUdp[vescsUdp.length] = {
                         "name" : tokens[0],
                         "ip" : tokens[1],
-                        "port" : tokens[2],
+                        "port" : parseInt(tokens[2]),
                         "updateTime" : new Date().getTime()
                     }
                     mBle.emitScanDone()
@@ -570,6 +570,7 @@ Item {
                                             "setName": setNameShort,
                                             "preferred": preferred,
                                             "bleAddr": addr,
+                                            "tcpPort": 0,
                                             "hubUuid": "",
                                             "isSerial": 0})
                     } else {
@@ -577,6 +578,7 @@ Item {
                                             "setName": setNameShort,
                                             "preferred": preferred,
                                             "bleAddr": addr,
+                                            "tcpPort": 0,
                                             "hubUuid": "",
                                             "isSerial": 0})
                     }
@@ -594,10 +596,12 @@ Item {
                 }
 
                 if (addToList) {
-                    bleModel.insert(0, {"name": vescsUdp[k].name + " (TCP)\n" + vescsUdp[k].ip,
+                    bleModel.insert(0, {"name": vescsUdp[k].name + " (TCP)\n" +
+                                        vescsUdp[k].ip + ":" + vescsUdp[k].port,
                                         "setName": "",
                                         "preferred": true,
                                         "bleAddr": vescsUdp[k].ip,
+                                        "tcpPort": vescsUdp[k].port,
                                         "hubUuid": "",
                                         "isSerial": 2})
                 }
@@ -620,6 +624,7 @@ Item {
                                                 "setName": "",
                                                 "preferred": true,
                                                 "bleAddr": ports[j].systemPath,
+                                                "tcpPort": 0,
                                                 "hubUuid": "",
                                                 "isSerial": 1})
                         }
@@ -639,6 +644,7 @@ Item {
                                                 "setName": "",
                                                 "preferred": true,
                                                 "bleAddr": ports[j].systemPath,
+                                                "tcpPort": 0,
                                                 "hubUuid": "",
                                                 "isSerial": 1})
                         }
@@ -678,6 +684,7 @@ Item {
                                             "setName": "",
                                             "preferred": true,
                                             "bleAddr": "",
+                                            "tcpPort": 0,
                                             "hubUuid": hubDevs[j].uuid(),
                                             "isSerial": 3})
                     }
