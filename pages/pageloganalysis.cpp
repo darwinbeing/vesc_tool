@@ -474,7 +474,7 @@ void PageLogAnalysis::loadVescLog(QVector<LOG_DATA> log)
         mVesc->emitMessageDialog("Load Log", "No data", false);
         return;
     }
-
+    ui->currentLog->setText("Realtime");
     storeSelection();
 
     resetInds();
@@ -682,7 +682,7 @@ void PageLogAnalysis::on_openCsvButton_clicked()
 
             QFile inFile(fileName);
             if (inFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                openLog(inFile.readAll());
+                openLog("Local: " + fileName, inFile.readAll());
             }
         }
     }
@@ -1177,11 +1177,31 @@ void PageLogAnalysis::logListRefresh()
 {
     ui->logTable->setRowCount(0);
     QSettings set;
-    if (set.contains("pageloganalysis/lastdir")) {
+    if (set.contains("pageloganalysis/lastdir")) {    
         QString dirPath = set.value("pageloganalysis/lastdir").toString();
+
+        while (dirPath.startsWith("/..")) {
+            dirPath.remove(0, 3);
+        }
+        set.setValue("pageloganalysis/lastdir", dirPath);
+
+        ui->pathLabel->setText(dirPath);
+
         QDir dir(dirPath);
         if (dir.exists()) {
-            for (QFileInfo f: dir.entryInfoList(QStringList() << "*.csv" << "*.Csv" << "*.CSV",
+            foreach (QFileInfo d, dir.entryInfoList(QDir::Dirs | QDir::NoDot, QDir::Name)) {
+                if (d.fileName() == ".." && dirPath == "/") {
+                    continue;
+                }
+
+                QTableWidgetItem *itName = new QTableWidgetItem(d.fileName());
+                itName->setData(Qt::UserRole, d.absoluteFilePath());
+                ui->logTable->setRowCount(ui->logTable->rowCount() + 1);
+                ui->logTable->setItem(ui->logTable->rowCount() - 1, 0, itName);
+                ui->logTable->setItem(ui->logTable->rowCount() - 1, 1,
+                                      new QTableWidgetItem("Folder"));
+            }
+            foreach (QFileInfo f, dir.entryInfoList(QStringList() << "*.csv" << "*.Csv" << "*.CSV",
                                                 QDir::Files, QDir::Name)) {
                 QTableWidgetItem *itName = new QTableWidgetItem(f.fileName());
                 itName->setData(Qt::UserRole, f.absoluteFilePath());
@@ -1197,6 +1217,18 @@ void PageLogAnalysis::logListRefresh()
     }
 }
 
+void PageLogAnalysis::on_logListUpButton_clicked()
+{
+    QSettings set;
+    if (set.contains("pageloganalysis/lastdir")) {
+        QString dirPath = set.value("pageloganalysis/lastdir").toString();
+        QDir dir(dirPath);
+        dir.cdUp();
+        set.setValue("pageloganalysis/lastdir", dir.absolutePath());
+        logListRefresh();
+    }
+}
+
 void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep, double scaleMax)
 {
     ui->dataTable->setRowCount(ui->dataTable->rowCount() + 1);
@@ -1204,7 +1236,6 @@ void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep,
     
     auto nameItem = new QTableWidgetItem(name);
     ui->dataTable->setItem(currentRow, dataTableColName, nameItem);
-
     ui->dataTable->setItem(currentRow, dataTableColValue, new QTableWidgetItem(""));
 
     if (hasScale) {
@@ -1236,10 +1267,11 @@ void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep,
     }
 }
 
-void PageLogAnalysis::openLog(QByteArray data)
+void PageLogAnalysis::openLog(QString name, QByteArray data)
 {
     storeSelection();
-
+    // get label for current open file
+    ui->currentLog->setText(name);
     QTextStream in(&data);
     auto tokensLine1 = in.readLine().split(";");
     if (tokensLine1.size() < 1) {
@@ -1601,11 +1633,18 @@ void PageLogAnalysis::on_logListOpenButton_clicked()
     if (items.size() > 0) {
         QString fileName = items.
                 first()->data(Qt::UserRole).toString();
+        
+        if (QDir(fileName).exists()) {
+            QSettings set;
+            set.setValue("pageloganalysis/lastdir", fileName);
+            logListRefresh();
+            return;
+        }
 
         QFile inFile(fileName);
         if (inFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            openLog(inFile.readAll());
-        }
+            openLog("Local: " + fileName, inFile.readAll());
+        } 
     } else {
         mVesc->emitMessageDialog("Open Log", "No Log Selected", false);
     }
@@ -1696,7 +1735,7 @@ void PageLogAnalysis::on_vescLogListOpenButton_clicked()
             auto data = mVesc->commands()->fileBlockRead(mVescLastPath + "/" + fe.name);
             setFileButtonsEnabled(true);
             if (!data.isEmpty()) {
-                openLog(data);
+                openLog("Device: " + fe.name, data);
             }
         }
     }
