@@ -63,7 +63,7 @@ jobs:
           fi
       - uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '16.1.x'
       - name: check Xcode version
         run: /usr/bin/xcodebuild -version
       - name: Install Qt
