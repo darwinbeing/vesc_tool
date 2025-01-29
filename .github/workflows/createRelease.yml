@@ -1,0 +1,138 @@
+name: CreateRelease
+
+on:
+  repository_dispatch:
+    types: ["ForkSync"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool Version"
+        required: true
+        default: "master"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: macos-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Version2Ref
+        run: |
+          if [[ "${{ inputs.vt_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "VT_REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> $GITHUB_ENV
+          elif [[ "${{ inputs.vt_ver }}" == "master" ]]; then
+            echo "VT_REF=master" >> $GITHUB_ENV
+          else
+            echo "VT_REF=${{ inputs.vt_ver }}" >> $GITHUB_ENV
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VT_REF }}
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        id: GetVersion
+        run: |
+          VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            echo "RELEASE_NOTES=**VESC Tool Nightly Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_NOTES=**VESC Tool Release Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          fi
+      - name: Create TMP Dir
+        id: mktemp
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+        shell: bash
+      - name: Delete existing release and tag
+        id: delete-tag-release
+        uses: dev-drprasad/delete-tag-and-release@v1.1
+        with:
+          tag_name: ${{ steps.GetVersion.outputs.VERSION }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          delete_release: true
+        continue-on-error: true
+      # - name: CreateRelease
+      #   id: create_release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   uses: actions/create-release@v1
+      #   with:
+      #     tag_name: ${{ steps.GetVersion.outputs.VERSION }}
+      #     release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+      #     body: ${{ github.event.head_commit.message }}
+      #     draft: false
+      #     prerelease: true
+      #     commitish: ${{ env.VT_REF }}
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+          skip_unpack: true
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
+          file: ${{ env.FW_TMP_DIR }}/firmware-${{ inputs.fw_ver }}.zip
+          asset_name: firmware-${{ inputs.fw_ver }}.zip
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}
+          target_commit: ${{ env.VT_REF }}
+      - name: Invoke workflow Windows
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Windows
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      - name: Invoke workflow Linux
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Linux
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      - name: Invoke workflow macOS
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: macOS
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      - name: Invoke workflow Android
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Android
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      # - name: Invoke workflow Android2
+      #   uses: benc-uk/workflow-dispatch@v1
+      #   with:
+      #     workflow: Android2
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      - name: Invoke workflow iOS
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: iOS
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'

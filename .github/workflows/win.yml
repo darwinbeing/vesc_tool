@@ -1,0 +1,154 @@
+name: Windows
+
+on:
+  # workflow_run:
+  #   workflows: ["CreateRelease"]
+  #   types:
+  #     - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool Version"
+        required: true
+        default: "master"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  notify:
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        qt: [5.15.2]
+        os: [windows-2019]
+    steps:
+      - name: Version2Ref
+        run: |
+          if [[ "${{ inputs.vt_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "VT_REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> $GITHUB_ENV
+          elif [[ "${{ inputs.vt_ver }}" == "master" ]]; then
+            echo "VT_REF=master" >> $GITHUB_ENV
+          else
+            echo "VT_REF=${{ inputs.vt_ver }}" >> $GITHUB_ENV
+          fi
+        shell: bash
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VT_REF }}
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        id: GetVersion
+        run: |
+          VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            echo "RELEASE_NOTES=**VESC Tool Nightly Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_NOTES=**VESC Tool Release Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt }}
+          arch: win64_msvc2019_64
+          setup-python: false
+          cache: 'true'
+          cache-key-prefix: 'install-qt-action'
+      - name: Install jom
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        run: |
+          Invoke-WebRequest http://download.qt.io/official_releases/jom/jom.zip -OutFile .\jom.zip
+          expand-archive -path "jom.zip" -destinationpath "$HOME\jom"
+          # echo "::add-path::$HOME\jom"
+          # $env:PATH = "$HOME\jom;$env:PATH"
+          echo "$HOME\jom" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+      # - name: Setup Visual Studio shell
+      #   uses: egor-tensin/vs-shell@v2
+      #   with:
+      #     arch: x64
+      - name: Create TMP Dir
+        id: mktemp
+        run: |
+          $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().Guid)
+          New-Item -ItemType Directory -Path $TempDir
+          # echo "FW_TMP_DIR=$TempDir" >> $GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -value "FW_TMP_DIR=$TempDir"
+          # echo "FW_TMP_DIR=$TempDir" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        shell: powershell
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+      # - name: 'Setup MSBuild'
+      #   uses: microsoft/setup-msbuild@v1
+      # - name: Configure build for amd64
+      #   uses: ilammy/msvc-dev-cmd@v1
+      #   with:
+      #     arch: amd64
+      - name: Set up Visual Studio shell
+        uses: egor-tensin/vs-shell@v2
+        with:
+          arch: x64
+      - name: Apply Patch
+        run: |
+          if ("${{ inputs.vt_ver }}" -match '(\d+)\.(\d+)') {
+              $PATCH_VERSION = "${{ inputs.vt_ver }}"
+          } elseif ("${{ inputs.vt_ver }}" -eq "master") {
+              $PATCH_VERSION = "master"
+          } else {
+              $PATCH_VERSION = $env:PACKAGE_VERSION
+          }
+          $URL = "https://raw.githubusercontent.com/darwinbeing/vesc_tool/ci/patches/$PATCH_VERSION/vesc_tool.patch"
+          Write-Host $URL
+          Invoke-WebRequest -Uri $URL -OutFile "$env:FW_TMP_DIR\vesc_tool.patch"
+          git apply "$env:FW_TMP_DIR\vesc_tool.patch"
+
+        shell: powershell
+      - name: Configure And Compile
+        run: |
+          New-Item -Path "res\firmwares" -ItemType Directory -Force
+          Copy-Item -Path "${{ env.FW_TMP_DIR }}\*" -Destination "res\firmwares\" -Recurse -Force
+          .\build_win4CI.ps1
+        shell: powershell
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: VESC_Tool-win.zip
+      #     path: .\build\win\vesc_tool_platinum-win.zip
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
+          file: .\build\win\vesc_tool_platinum-win.zip
+          asset_name: VESC_Tool-win.zip
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}
+          target_commit: ${{ env.VT_REF }}
