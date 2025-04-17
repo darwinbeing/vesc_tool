@@ -34,7 +34,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     strategy:
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         qt_ver: [5.15.2]
         qt_target: [android]
         qt_arch: [android]
