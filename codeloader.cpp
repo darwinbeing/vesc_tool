@@ -851,7 +851,7 @@ VescPackage CodeLoader::unpackVescPackage(QByteArray data)
     // That does not matter in practice and changing that now breaks
     // compatibility.
     if (vb.vbPopFrontString() != "VESC Packet") {
-        qWarning() << "Invalid VESC Packet";
+        qWarning() << "Invalid VESC Package";
         return pkg;
     }
 
@@ -908,6 +908,36 @@ VescPackage CodeLoader::unpackVescPackage(QByteArray data)
             // Unknown identifier, skip
             auto len = vb.vbPopFrontInt32();
             vb.remove(0, len);
+        }
+    }
+
+    return pkg;
+}
+
+VescPackage CodeLoader::unpackVescPackageFromPath(QString path)
+{
+    if (path.startsWith("file:/")) {
+        path.remove(0, 6);
+    }
+
+    QFile f(path);
+    if (!f.open(QIODevice::ReadOnly)) {
+        if (mVesc) {
+            mVesc->emitMessageDialog(tr("Unpack VESC Package"),
+                                     tr("Could not open package file for reading."),
+                                     false, false);
+        }
+
+        return VescPackage();
+    }
+
+    auto pkg = unpackVescPackage(f.readAll());
+
+    if (!pkg.loadOk) {
+        if (mVesc) {
+            mVesc->emitMessageDialog(tr("Unpack VESC Package"),
+                                     tr("Invalid package file."),
+                                     false, false);
         }
     }
 
