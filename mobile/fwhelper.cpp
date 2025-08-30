@@ -77,6 +77,10 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
         hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/Duet");
     } else if (params.hw == "VL Link") {
         hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VL Link");
+    } else if (params.hw == "VDisp 900") {
+        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VDisp 900");
+    } else if (params.hw == "Nanolog") {
+        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/Nanolog");
     }
 
     return hws;
@@ -197,7 +201,7 @@ bool FwHelper::uploadFirmwareV2(QString filename, VescInterface *vesc, bool isBo
         return false;
     }
 
-    if (file.size() > 1500000) {
+    if (file.size() > 1600000) {
         vesc->emitMessageDialog(tr("Upload Error"),
                                 tr("The selected file is too large to be a firmware."),
                                 false);

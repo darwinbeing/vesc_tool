@@ -266,6 +266,10 @@ void PageFirmware::updateHwList(FW_RX_PARAMS params)
         extraPath = "://res/firmwares_esp/ESP32-C3/Duet";
     } else if (params.hw == "VL Link") {
         extraPath = "://res/firmwares_esp/ESP32-C3/VL Link";
+    } else if (params.hw == "VDisp 900") {
+        extraPath = "://res/firmwares_esp/ESP32-C3/VDisp 900";
+    } else if (params.hw == "Nanolog") {
+        extraPath = "://res/firmwares_esp/ESP32-C3/Nanolog";
     }
 
     if (!extraPath.isEmpty()) {
@@ -612,7 +616,7 @@ void PageFirmware::uploadFw(bool allOverCan)
             }
         }
 
-        if (file.size() > 1500000 && !(file.fileName().toLower().endsWith(".hex"))) {
+        if (file.size() > 1600000 && !(file.fileName().toLower().endsWith(".hex"))) {
             QMessageBox::critical(this,
                                   tr("Upload Error"),
                                   tr("The selected file is too large to be a firmware."));

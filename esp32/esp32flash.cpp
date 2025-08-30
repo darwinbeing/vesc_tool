@@ -25,17 +25,17 @@
 #ifdef HAS_SERIALPORT
 static QSerialPort *sPort = nullptr;
 #endif
-static int64_t sTimeEnd;
+static int64_t sTimeEnd = 0;
+static int sPortCnt = 0;
 
 Esp32Flash::Esp32Flash(QObject *parent) : QObject(parent)
 {
 #ifdef HAS_SERIALPORT
-    if (sPort) {
-        sPort->deleteLater();
-        sPort = nullptr;
+    if (!sPort) {
+        sPort = new QSerialPort();
     }
 
-    sPort = new QSerialPort();
+    sPortCnt++;
 
     connect(sPort, SIGNAL(error(QSerialPort::SerialPortError)),
             this, SLOT(serialPortError(QSerialPort::SerialPortError)));
@@ -45,7 +45,9 @@ Esp32Flash::Esp32Flash(QObject *parent) : QObject(parent)
 Esp32Flash::~Esp32Flash()
 {
 #ifdef HAS_SERIALPORT
-    if (sPort) {
+    sPortCnt--;
+
+    if (sPort && sPortCnt == 0) {
         sPort->deleteLater();
         sPort = nullptr;
     }
@@ -274,21 +276,17 @@ esp_loader_error_t loader_port_serial_write(const uint8_t *data, uint16_t size, 
         return ESP_LOADER_ERROR_FAIL;
     }
 
-    sPort->write((char*)data, size);
-
+    auto tStart = QTime::currentTime().msecsSinceStartOfDay();
     qint64 written = 0;
-    auto conn = QObject::connect(sPort, &QSerialPort::bytesWritten, [&written](qint64 bytes) {
-        written += bytes;
-    });
 
-    bool ok = true;
-    while (written < size && ok) {
-        ok = Utility::waitSignal(sPort, SIGNAL(bytesWritten(qint64)), timeout);
+    while ((QTime::currentTime().msecsSinceStartOfDay() - tStart) < timeout) {
+        written += sPort->write((char*)data + written, size - written);
+        if (written >= size) {
+            break;
+        }
     }
 
-    QObject::disconnect(conn);
-
-    return ok ? ESP_LOADER_SUCCESS : ESP_LOADER_ERROR_TIMEOUT;
+    return written == size ? ESP_LOADER_SUCCESS : ESP_LOADER_ERROR_TIMEOUT;
 #else
     (void)data;(void)size;(void)timeout;
     return ESP_LOADER_ERROR_FAIL;
