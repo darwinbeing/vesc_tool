@@ -361,7 +361,7 @@ index 0d61474..0cc7bbd 100755
  set -e
  
 -export PATH=/opt/Qt/5.15-static/bin:$PATH
-+sudo apt-get install -y libxkbcommon-x11-0
++sudo apt-get install -y libxkbcommon-x11-0 fuse libfuse2
 +
 +VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
 +
