@@ -451,7 +451,7 @@ index 0d61474..0cc7bbd 100755
 +Terminal=false
 +Type=Application
 +Icon=vesc-tool
-+Categories=Education;Development;
++Categories=Development;Utility;
 +EOF
 +    find appdir/
 +
