@@ -1,6 +1,6 @@
-From bf46bd845e9735df5fad25c5bb81dfa500bd5271 Mon Sep 17 00:00:00 2001
+From 32bbd539cfe091d25b1c0cf6899efb1f54e20268 Mon Sep 17 00:00:00 2001
 From: LI Tao <litroncn@gmail.com>
-Date: Sat, 30 Aug 2025 12:48:20 -0700
+Date: Sun, 31 Aug 2025 13:08:07 -0700
 Subject: [PATCH] Publish Builds With Firmware
 
 ---
@@ -13,17 +13,14 @@ Subject: [PATCH] Publish Builds With Firmware
  build_win4CI.ps1                              | 197 ++++++++++++++++
  esp32/esp_loader.h                            |   5 +-
  esp32/serial_comm.c                           |   2 +
- esp32/serial_comm_prv.h                       |  42 ++--
- ios/src/setIosParameters.h                    |   7 +-
+ esp32/serial_comm_prv.h                       |  39 ++--
  ios/vesc_tool_appstore.xcconfig               |  33 +++
- mainwindow.cpp                                |   3 +
- mainwindow.h                                  |   2 -
+ pages/pagecananalyzer.h                       |   1 +
  vesc_tool.pro                                 |  21 +-
- widgets/aspectimglabel.cpp                    |   8 +-
  widgets/mtextedit.cpp                         |   2 +-
- 17 files changed, 632 insertions(+), 162 deletions(-)
+ 14 files changed, 617 insertions(+), 155 deletions(-)
  create mode 100644 build_android_macOS
- create mode 100644 build_ios.sh
+ create mode 100755 build_ios.sh
  create mode 100644 build_win4CI.ps1
  create mode 100644 ios/vesc_tool_appstore.xcconfig
 
@@ -147,7 +144,7 @@ index 0000000..0e1fcd2
 +rm -f vesc_tool_full.apk
 +cd ../..
 diff --git a/build_ios.sh b/build_ios.sh
-new file mode 100644
+new file mode 100755
 index 0000000..639734b
 --- /dev/null
 +++ b/build_ios.sh
@@ -235,7 +232,7 @@ index 0000000..639734b
 +# rm -rf vesc_tool_mobile.app
 +# rm -rf vesc_tool_full.app
 diff --git a/build_lin b/build_lin
-index 0d61474..0cc7bbd 100755
+index 0d61474..845a90f 100755
 --- a/build_lin
 +++ b/build_lin
 @@ -18,6 +18,20 @@
@@ -361,7 +358,7 @@ index 0d61474..0cc7bbd 100755
  set -e
  
 -export PATH=/opt/Qt/5.15-static/bin:$PATH
-+sudo apt-get install -y libxkbcommon-x11-0 fuse libfuse2
++sudo apt-get install -y libxkbcommon-x11-0 libfuse2
 +
 +VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
 +
@@ -815,21 +812,20 @@ index 6643400..ef4a1c4 100644
  }
 +#endif
 diff --git a/esp32/serial_comm_prv.h b/esp32/serial_comm_prv.h
-index 4d21fcd..89a6cc7 100644
+index 4d21fcd..603db59 100644
 --- a/esp32/serial_comm_prv.h
 +++ b/esp32/serial_comm_prv.h
-@@ -30,7 +30,9 @@ extern "C" {
+@@ -30,7 +30,8 @@ extern "C" {
  
  #define MD5_SIZE 32
  
 -typedef enum __attribute__((packed))
 +#pragma pack(push, 1)
-+
 +typedef enum
  {
      FLASH_BEGIN = 0x02,
      FLASH_DATA  = 0x03,
-@@ -51,7 +53,7 @@ typedef enum __attribute__((packed))
+@@ -51,7 +52,7 @@ typedef enum __attribute__((packed))
      SPI_FLASH_MD5    = 0x13,
  } command_t;
  
@@ -838,7 +834,7 @@ index 4d21fcd..89a6cc7 100644
  {
      RESPONSE_OK     = 0x00,
      INVALID_COMMAND = 0x05, // parameters or length field is invalid
-@@ -63,7 +65,7 @@ typedef enum __attribute__((packed))
+@@ -63,7 +64,7 @@ typedef enum __attribute__((packed))
      DEFLATE_ERROR   = 0x0b, // ESP32 compressed uploads only
  } error_code_t;
  
@@ -847,7 +843,7 @@ index 4d21fcd..89a6cc7 100644
  {
      uint8_t direction;
      uint8_t command;    // One of command_t
-@@ -71,7 +73,7 @@ typedef struct __attribute__((packed))
+@@ -71,7 +72,7 @@ typedef struct __attribute__((packed))
      uint32_t checksum;
  } command_common_t;
  
@@ -856,7 +852,7 @@ index 4d21fcd..89a6cc7 100644
  {
      command_common_t common;
      uint32_t erase_size;
-@@ -81,7 +83,7 @@ typedef struct __attribute__((packed))
+@@ -81,7 +82,7 @@ typedef struct __attribute__((packed))
      uint32_t encrypted;
  } begin_command_t;
  
@@ -865,7 +861,7 @@ index 4d21fcd..89a6cc7 100644
  {
      command_common_t common;
      uint32_t data_size;
-@@ -90,26 +92,26 @@ typedef struct __attribute__((packed))
+@@ -90,26 +91,26 @@ typedef struct __attribute__((packed))
      uint32_t zero_1;
  } data_command_t;
  
@@ -896,7 +892,7 @@ index 4d21fcd..89a6cc7 100644
  {
      command_common_t common;
      uint32_t address;
-@@ -118,27 +120,27 @@ typedef struct __attribute__((packed))
+@@ -118,27 +119,27 @@ typedef struct __attribute__((packed))
      uint32_t delay_us;
  } write_reg_command_t;
  
@@ -928,7 +924,7 @@ index 4d21fcd..89a6cc7 100644
  {
      command_common_t common;
      uint32_t address;
-@@ -147,7 +149,7 @@ typedef struct __attribute__((packed))
+@@ -147,7 +148,7 @@ typedef struct __attribute__((packed))
      uint32_t reserved_1;
  } spi_flash_md5_command_t;
  
@@ -937,7 +933,7 @@ index 4d21fcd..89a6cc7 100644
  {
      uint8_t direction;
      uint8_t command;    // One of command_t
-@@ -155,26 +157,26 @@ typedef struct __attribute__((packed))
+@@ -155,26 +156,26 @@ typedef struct __attribute__((packed))
      uint32_t value;
  } common_response_t;
  
@@ -968,36 +964,15 @@ index 4d21fcd..89a6cc7 100644
  {
      command_common_t common;
      uint32_t id;
-@@ -185,7 +187,9 @@ typedef struct __attribute__((packed))
+@@ -184,7 +185,7 @@ typedef struct __attribute__((packed))
+     uint32_t page_size;
      uint32_t status_mask;
  } write_spi_command_t;
- 
+-
 +#pragma pack(pop)
-+
  
  #ifdef __cplusplus
  }
--#endif
-\ No newline at end of file
-+#endif
-diff --git a/ios/src/setIosParameters.h b/ios/src/setIosParameters.h
-index ba077f5..cc7c40c 100644
---- a/ios/src/setIosParameters.h
-+++ b/ios/src/setIosParameters.h
-@@ -1,10 +1,9 @@
- #ifndef SETIOSPARAMETERS_H
- #define SETIOSPARAMETERS_H
--#include <QObject>
--#include <QApplication>
-+#include <QtGlobal>
-+
- #ifdef Q_OS_IOS
--class SetIosParams : public QObject{
--  Q_OBJECT
-+class SetIosParams {
- public:
-   SetIosParams();
-   void NoSleep();
 diff --git a/ios/vesc_tool_appstore.xcconfig b/ios/vesc_tool_appstore.xcconfig
 new file mode 100644
 index 0000000..67f429f
@@ -1037,37 +1012,20 @@ index 0000000..67f429f
 +ENABLE_NS_ASSERTIONS = NO
 +ONLY_ACTIVE_ARCH = NO
 +VALIDATE_PRODUCT = YES
-diff --git a/mainwindow.cpp b/mainwindow.cpp
-index 9926be6..b53c455 100755
---- a/mainwindow.cpp
-+++ b/mainwindow.cpp
-@@ -1238,6 +1238,9 @@ void MainWindow::on_actionLaunchMobileTool_triggered()
-     qApp->quit();
-     QProcess::startDetached(program, params);
- }
-+#else
-+void MainWindow::on_actionLaunchBoardConfigurator_triggered() {}
-+void MainWindow::on_actionLaunchMobileTool_triggered() {}
- #endif
+diff --git a/pages/pagecananalyzer.h b/pages/pagecananalyzer.h
+index be5d9a5..75d2001 100644
+--- a/pages/pagecananalyzer.h
++++ b/pages/pagecananalyzer.h
+@@ -21,6 +21,7 @@
+ #define PAGECANANALYZER_H
  
- void MainWindow::on_actionAbout_triggered()
-diff --git a/mainwindow.h b/mainwindow.h
-index e1cab18..a7b7815 100644
---- a/mainwindow.h
-+++ b/mainwindow.h
-@@ -113,10 +113,8 @@ private slots:
-     void on_actionSaveAppconfXml_triggered();
-     void on_actionLoadAppconfXml_triggered();
-     void on_actionExit_triggered();
--    #ifndef Q_OS_IOS
-     void on_actionLaunchBoardConfigurator_triggered();
-     void on_actionLaunchMobileTool_triggered();
--    #endif
-     void on_actionAbout_triggered();
-     void on_actionLibrariesUsed_triggered();
-     void on_dutyButton_clicked();
+ #include <QWidget>
++#include <QMessageBox>
+ #include "vescinterface.h"
+ #include "widgets/paramtable.h"
+ 
 diff --git a/vesc_tool.pro b/vesc_tool.pro
-index 27b87b3..72e74c5 100644
+index c26e203..47972a6 100644
 --- a/vesc_tool.pro
 +++ b/vesc_tool.pro
 @@ -73,12 +73,15 @@ DEFINES += HAS_BLUETOOTH
@@ -1127,25 +1085,6 @@ index 27b87b3..72e74c5 100644
  build_mobile {
      DEFINES += USE_MOBILE
  }
-diff --git a/widgets/aspectimglabel.cpp b/widgets/aspectimglabel.cpp
-index 56493f4..21f791e 100644
---- a/widgets/aspectimglabel.cpp
-+++ b/widgets/aspectimglabel.cpp
-@@ -29,7 +29,13 @@ void AspectImgLabel::resizeEvent(QResizeEvent *event)
- {
-     QLabel::resizeEvent(event);
- 
--    const QPixmap &pix = pixmap(Qt::ReturnByValue);
-+#if QT_VERSION >= QT_VERSION_CHECK(6,6,0)
-+    const QPixmap &pix = pixmap();
-+#elif QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-+     const QPixmap &pix = pixmap(Qt::ReturnByValue);
-+#else
-+    const QPixmap &pix = *pixmap();
-+#endif
- 
-     if (!pix.isNull()) {
-         int wLabel = width();
 diff --git a/widgets/mtextedit.cpp b/widgets/mtextedit.cpp
 index b30be1d..b921b00 100644
 --- a/widgets/mtextedit.cpp
