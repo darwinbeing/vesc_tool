@@ -141,7 +141,7 @@ jobs:
           cp -rv ${{ env.FW_TMP_DIR }}/* res/firmwares/
           qmake CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += iphoneos device release_ios build_mobile" -spec macx-ios-clang
           make -f "${PROJECT_NAME}".xcodeproj/qt_preprocess.mak
-          xcodebuild build CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+          xcodebuild build -project "${PROJECT_NAME}.xcodeproj" -scheme "$SCHEME_NAME" -configuration Release -sdk iphoneos CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
           # sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${PROJECT_NAME}.xcodeproj/project.pbxproj
           # xcodebuild -configuration Release -xcconfig ios/"${PROJECT_NAME}"_appstore.xcconfig -allowProvisioningUpdates
           # xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
