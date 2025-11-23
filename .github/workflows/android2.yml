@@ -1,0 +1,169 @@
+name: Android2
+
+on:
+  # workflow_run:
+  #   workflows: ["CreateRelease"]
+  #   types:
+  #     - completed
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool Version"
+        required: true
+        default: "master"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+env:
+  NDK_VERSION: "r23b"
+
+jobs:
+  notify:
+    runs-on: ${{ matrix.os }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      matrix:
+        os: [macos-latest]
+        qt_ver: [5.15.2]
+        qt_target: [android]
+        qt_arch: [android]
+    steps:
+      - name: Version2Ref
+        run: |
+          if [[ "${{ inputs.vt_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "VT_REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> $GITHUB_ENV
+          elif [[ "${{ inputs.vt_ver }}" == "master" ]]; then
+            echo "VT_REF=master" >> $GITHUB_ENV
+          else
+            echo "VT_REF=${{ inputs.vt_ver }}" >> $GITHUB_ENV
+          fi
+        shell: bash
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VT_REF }}
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+        id: GetVersion
+        run: |
+          VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            echo "RELEASE_NOTES=**VESC Tool Nightly Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          else
+            echo "RELEASE_NOTES=**VESC Tool Release Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          fi
+      - name: Setup JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: 'gradle'
+      - name: Install Qt
+        # if: steps.cacheqt.outputs.cache-hit != 'true'
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: ${{ matrix.qt_ver }}
+          host: 'mac'
+          target: ${{ matrix.qt_target }}
+          arch: ${{ matrix.qt_arch }}
+          setup-python: false
+          cache: 'true'
+          cache-key-prefix: 'install-qt-action'
+      - name: Create TMP Dir
+        id: mktemp
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+        shell: bash
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: ${{ env.NDK_VERSION }}
+          add-to-path: false
+      - name: Apply Patch
+        run: |
+          if [[ "${{ inputs.vt_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+              PATCH_VERSION="${{ inputs.vt_ver }}"
+          elif [[ "${{ inputs.vt_ver }}" == "master" ]]; then
+              PATCH_VERSION="master"
+          else
+              PATCH_VERSION=${{ env.PACKAGE_VERSION }}
+          fi
+          URL=https://raw.githubusercontent.com/darwinbeing/vesc_tool/ci/patches/"${PATCH_VERSION}"/vesc_tool.patch
+          curl "$URL" -o ${{ env.FW_TMP_DIR }}/vesc_tool.patch
+          git apply "${{ env.FW_TMP_DIR }}/vesc_tool.patch"
+        shell: bash
+      - name: Compile APP
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          mkdir -p res/firmwares
+          cp -rv ${{ env.FW_TMP_DIR }}/* res/firmwares/
+          # Mobile
+          qmake -config release "CONFIG += release_android build_mobile" ANDROID_ABIS="arm64-v8a" -spec android-clang
+          make clean
+          make -j8
+          make install INSTALL_ROOT=build/android/build
+          androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-33
+          mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_mobile.apk
+          rm -rf build/android/build
+          rm -rf build/android/obj
+          rm -f build/android/libvesc_tool*
+
+          # Full
+          qmake -config release "CONFIG += release_android" ANDROID_ABIS="arm64-v8a" -spec android-clang
+          make clean
+          make -j8
+          make install INSTALL_ROOT=build/android/build
+          androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-33
+          mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_full.apk
+          rm -rf build/android/build
+          rm -rf build/android/obj
+          rm -f build/android/libvesc_tool*
+
+          # Zip APKs
+          cd build/android
+          zip vesc_tool-android.zip vesc_tool_mobile.apk vesc_tool_full.apk
+          rm -f vesc_tool_mobile.apk
+          rm -f vesc_tool_full.apk
+          cd ../..
+      # - name: Upload Artifacts
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: VESC_Tool-android2.zip
+      #     path: build/android/vesc_tool-android.zip
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
+          file: build/android/vesc_tool-android.zip
+          asset_name: VESC_Tool-android2.zip
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}
+          target_commit: ${{ env.VT_REF }}
