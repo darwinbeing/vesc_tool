@@ -644,7 +644,18 @@ Item {
                 }
                 enableDialog()
             }
-            devices.sort((a, b) => (a.connectionType - b.connectionType) || a.name.localeCompare(b.name));
+
+            devices.sort((a, b) => {
+                             if (a.preferred === b.preferred) {
+                                 if (a.connectionType === b.connectionType) {
+                                     return a.name.localeCompare(b.name)
+                                 }
+
+                                 return a.connectionType - b.connectionType
+                             } else {
+                                return a.preferred ? -1 : 1
+                             }
+                         })
             
            if (isModelUpdated(devices, bleModel)){
                bleModel.clear()
