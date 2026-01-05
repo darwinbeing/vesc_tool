@@ -812,8 +812,10 @@ void MainWindow::timerSlot()
 
     if (ui->scanCanButton->isEnabled()) {
         ui->canList->setEnabled(mVesc->fwRx() && mVesc->customConfigRxDone());
+        ui->actionCanFwd->setEnabled(ui->canList->isEnabled());
     } else {
         ui->canList->setEnabled(false);
+        ui->actionCanFwd->setEnabled(ui->canList->isEnabled());
     }
 
     if (!mVesc->isIgnoringCanChanges()) {
@@ -2138,6 +2140,7 @@ void MainWindow::pingCanRx(QVector<int> devs, bool isTimeout)
 
     ui->scanCanButton->setEnabled(false);
     ui->canList->setEnabled(false);
+    ui->actionCanFwd->setEnabled(ui->canList->isEnabled());
 
     ui->canList->clear();
     FW_RX_PARAMS params;
@@ -2167,6 +2170,7 @@ void MainWindow::pingCanRx(QVector<int> devs, bool isTimeout)
     ui->canList->setGridSize(QSize(0.85*width , 1.25*height));
 
     ui->canList->setEnabled(true);
+    ui->actionCanFwd->setEnabled(ui->canList->isEnabled());
     ui->scanCanButton->setEnabled(true);
 }
 
@@ -2177,6 +2181,7 @@ void MainWindow::on_canList_currentRowChanged(int currentRow)
     }
 
     ui->canList->setEnabled(false);
+    ui->actionCanFwd->setEnabled(ui->canList->isEnabled());
 
     if (currentRow >= 0) {
         if (currentRow == 0) {

@@ -46,7 +46,7 @@ PageFirmware::PageFirmware(QWidget *parent) :
     ui->readVersionButton->setIcon(Utility::getIcon("icons/Upload-96.png"));
     ui->dlArchiveButton->setIcon(Utility::getIcon("icons/Download-96.png"));
 
-    reloadLatest();
+    reloadLatest(false);
 
     mTimer = new QTimer(this);
     mTimer->start(500);
@@ -67,7 +67,7 @@ PageFirmware::PageFirmware(QWidget *parent) :
     ui->fw3Edit->setText(set.value("pagefirmware/lastcustomfile3", "").toString());
     ui->fw4Edit->setText(set.value("pagefirmware/lastcustomfile4", "").toString());
 
-    reloadArchive();
+    reloadArchive(false);
 }
 
 PageFirmware::~PageFirmware()
@@ -725,12 +725,17 @@ void PageFirmware::uploadFw(bool allOverCan)
     }
 }
 
-void PageFirmware::reloadArchive()
+void PageFirmware::reloadArchive(bool download)
 {
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw.rcc";
     QFile file(path);
     if (file.exists()) {
         QResource::unregisterResource(path);
+
+        if (mVesc && download) {
+            mVesc->downloadFwArchive();
+        }
+
         QResource::registerResource(path);
 
         QString fwDir = "://fw_archive";
@@ -749,7 +754,7 @@ void PageFirmware::reloadArchive()
     }
 }
 
-void PageFirmware::reloadLatest()
+void PageFirmware::reloadLatest(bool download)
 {
     QString fwStr = QString::number(VT_VERSION, 'f', 2);
 
@@ -757,6 +762,9 @@ void PageFirmware::reloadLatest()
     QFile file(path);
     if (file.exists()) {
         QResource::unregisterResource(path);
+        if (mVesc && download) {
+            mVesc->downloadFwLatest();
+        }
         QResource::registerResource(path);
 
         if (mVesc && mVesc->isPortConnected()) {
@@ -774,13 +782,7 @@ void PageFirmware::on_dlArchiveButton_clicked()
 {
     ui->dlArchiveButton->setEnabled(false);
     ui->displayDl->setText("Preparing download...");
-
-    if (mVesc) {
-        if (mVesc->downloadFwArchive()) {
-            reloadArchive();
-        }
-    }
-
+    reloadArchive(true);
     ui->dlArchiveButton->setEnabled(true);
 }
 
@@ -790,9 +792,7 @@ void PageFirmware::on_dlFwButton_clicked()
     ui->displayDlFw->setText("Preparing download...");
 
     if (mVesc) {
-        if (mVesc->downloadFwLatest()) {
-            reloadLatest();
-        }
+        reloadLatest(true);
 
         if (mVesc->downloadConfigs()) {
             auto fwPair = mVesc->getSupportedFirmwarePairs().first();

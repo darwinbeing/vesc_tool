@@ -22,6 +22,7 @@
 
 #include <QObject>
 #include <QDir>
+#include "qqmlengine.h"
 #include "vescinterface.h"
 #include "datatypes.h"
 
@@ -58,6 +59,7 @@ public:
     Q_INVOKABLE bool installVescPackage(QByteArray data);
     Q_INVOKABLE bool installVescPackageFromPath(QString path);
 
+    Q_INVOKABLE static bool loadPackageArchiveResource();
     Q_INVOKABLE QVariantList reloadPackageArchive();
     Q_INVOKABLE bool downloadPackageArchive();
 
@@ -65,6 +67,7 @@ public:
 
     bool createPackageFromDescription(QString path, VescPackage *pkgRes = nullptr, bool reduceLisp = false);
     Q_INVOKABLE bool shouldShowPackage(VescPackage pkg);
+    Q_INVOKABLE bool shouldShowPackageFromRxpReuseEngine(VescPackage pkg, FW_RX_PARAMS rxp, bool *runOk = nullptr);
     Q_INVOKABLE static bool shouldShowPackageFromRxp(VescPackage pkg, FW_RX_PARAMS rxp, bool *runOk = nullptr);
 
 signals:
@@ -75,6 +78,7 @@ private:
     VescInterface *mVesc;
     bool mAbortDownloadUpload;
     bool getImportFromLine(QString line, QString &path, QString &tag, bool &isInvalid);
+    QQmlEngine *mQmlEngine;
 
 };
 

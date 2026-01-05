@@ -69,8 +69,8 @@ private:
     QTimer *mTimer;
 
     void uploadFw(bool allOverCan);
-    void reloadArchive();
-    void reloadLatest();
+    void reloadArchive(bool download);
+    void reloadLatest(bool download);
 
 };
 

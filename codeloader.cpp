@@ -18,6 +18,7 @@
     */
 
 #include "codeloader.h"
+#include "qqmlcontext.h"
 #include "utility.h"
 #include <QEventLoop>
 #include <QFileDialog>
@@ -35,7 +36,18 @@ CodeLoader::CodeLoader(QObject *parent) : QObject(parent)
 {
     mVesc = nullptr;
     mAbortDownloadUpload = false;
-    reloadPackageArchive();
+    mQmlEngine = nullptr;
+
+    static bool resourceLoaded = false;
+    if (!resourceLoaded) {
+        if (loadPackageArchiveResource()) {
+            qDebug() << "Loaded package archive resource";
+        } else {
+            qWarning() << "Could not load package archive resource. Please update the archive in order to use VESC packages.";
+        }
+
+        resourceLoaded = true;
+    }
 }
 
 VescInterface *CodeLoader::vesc() const
@@ -1013,21 +1025,32 @@ bool CodeLoader::installVescPackageFromPath(QString path)
     return installVescPackage(f.readAll());
 }
 
-QVariantList CodeLoader::reloadPackageArchive()
+bool CodeLoader::loadPackageArchiveResource()
 {
-    QVariantList res;
+    bool res = false;
+
     QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString path = appDataLoc + "/vesc_pkg_all.rcc";
+
     if(!QDir(appDataLoc).exists()) {
             QDir().mkpath(appDataLoc);
     }
-    QString path = appDataLoc + "/vesc_pkg_all.rcc";
+
     QFile file(path);
     if (file.exists()) {
         QResource::unregisterResource(path);
-        QResource::registerResource(path);
+        res = QResource::registerResource(path);
+    }
 
-        QString pkgDir = "://vesc_packages";
+    return res;
+}
 
+QVariantList CodeLoader::reloadPackageArchive()
+{
+    QVariantList res;
+    QString pkgDir = "://vesc_packages";
+
+    if (QDir(pkgDir).exists()) {
         QDirIterator it(pkgDir);
         while (it.hasNext()) {
             QFileInfo fi(it.next());
@@ -1057,40 +1080,47 @@ bool CodeLoader::downloadPackageArchive()
 {
     bool res = false;
 
-    QUrl url("http://home.vedder.se/vesc_pkg/vesc_pkg_all.rcc");
-    QNetworkAccessManager manager;
-    QNetworkRequest request(url);
-    QNetworkReply *reply = manager.get(request);
-
-    connect(reply, &QNetworkReply::downloadProgress, [this](qint64 bytesReceived, qint64 bytesTotal) {
-        emit downloadProgress(bytesReceived, bytesTotal);
-    });
-
-    QEventLoop loop;
-    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-    loop.exec();
-
-    if (reply->error() == QNetworkReply::NoError) {
-        QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-        if(!QDir(appDataLoc).exists()) {
-                QDir().mkpath(appDataLoc);
-        }
-        QString path = appDataLoc + "/vesc_pkg_all.rcc";
-        QResource::unregisterResource(path);
-        QFile file(path);
-        if (file.open(QIODevice::WriteOnly)) {
-            file.write(reply->readAll());
-            file.close();
-            res = true;
-        }
-
-        // Remove image cache
-        QString cacheLoc = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-        QDir(cacheLoc + "/img/").removeRecursively();
+    QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    if(!QDir(appDataLoc).exists()) {
+        QDir().mkpath(appDataLoc);
     }
+    QString path = appDataLoc + "/vesc_pkg_all.rcc";
+    QResource::unregisterResource(path);
+    QFile file(path);
 
-    reply->abort();
-    reply->deleteLater();
+    if (file.open(QIODevice::WriteOnly)) {
+        QUrl url("http://home.vedder.se/vesc_pkg/vesc_pkg_all.rcc");
+        QNetworkAccessManager manager;
+        QNetworkRequest request(url);
+        QNetworkReply *reply = manager.get(request);
+
+        connect(reply, &QNetworkReply::downloadProgress, [&file, reply, this](qint64 bytesReceived, qint64 bytesTotal) {
+            emit downloadProgress(bytesReceived, bytesTotal);
+            file.write(reply->read(reply->size()));
+        });
+
+        QEventLoop loop;
+        connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+        loop.exec();
+
+        if (reply->error() == QNetworkReply::NoError) {
+            file.write(reply->readAll());
+            res = true;
+
+            // Remove image cache
+            // QString cacheLoc = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+            // QDir(cacheLoc + "/img/").removeRecursively();
+        }
+
+        reply->abort();
+        reply->deleteLater();
+
+        file.close();
+
+        if (res) {
+            QResource::registerResource(path);
+        }
+    }
 
     return res;
 }
@@ -1243,7 +1273,46 @@ bool CodeLoader::shouldShowPackage(VescPackage pkg)
         return true;
     }
 
-    return shouldShowPackageFromRxp(pkg, mVesc->getLastFwRxParams());
+    return shouldShowPackageFromRxpReuseEngine(pkg, mVesc->getLastFwRxParams());
+}
+
+bool CodeLoader::shouldShowPackageFromRxpReuseEngine(VescPackage pkg, FW_RX_PARAMS rxp, bool *runOk)
+{
+    bool res = true;
+    if (!pkg.pkgDescQml.isEmpty()) {
+        if (mQmlEngine == nullptr) {
+            mQmlEngine = new QQmlEngine(this);
+        }
+
+        QQmlComponent component(mQmlEngine);
+        component.setData(pkg.pkgDescQml.toUtf8(), QUrl());
+        QQuickItem *qmlItem = qobject_cast<QQuickItem*>(component.create());
+
+        if (qmlItem == nullptr) {
+            qWarning() << "Failed to run isCompatible because qmlItem could not be created";
+            return res;
+        }
+
+        QVariant returnedValue;
+        QMetaObject::invokeMethod(qmlItem,
+                                  "isCompatible",
+                                  Q_RETURN_ARG(QVariant, returnedValue),
+                                  Q_ARG(QVariant, QVariant::fromValue(rxp)));
+
+        qmlItem->deleteLater();
+
+        if (runOk != nullptr) {
+            *runOk = returnedValue.isValid();
+        }
+
+        if (returnedValue.isValid()) {
+            res = returnedValue.toBool();
+        } else {
+            qWarning() << "Failed to run isCompatible from package" << pkg.name;
+        }
+    }
+
+    return res;
 }
 
 bool CodeLoader::shouldShowPackageFromRxp(VescPackage pkg, FW_RX_PARAMS rxp, bool *runOk)
@@ -1255,12 +1324,18 @@ bool CodeLoader::shouldShowPackageFromRxp(VescPackage pkg, FW_RX_PARAMS rxp, boo
         component.setData(pkg.pkgDescQml.toUtf8(), QUrl());
         QQuickItem *qmlItem = qobject_cast<QQuickItem*>(component.create());
 
+        if (qmlItem == nullptr) {
+            qWarning() << "Failed to run isCompatible because qmlItem could not be created";
+            return res;
+        }
+
         QVariant returnedValue;
         QMetaObject::invokeMethod(qmlItem,
                                   "isCompatible",
                                   Q_RETURN_ARG(QVariant, returnedValue),
                                   Q_ARG(QVariant, QVariant::fromValue(rxp)));
 
+        qmlItem->deleteLater();
         engine->deleteLater();
 
         if (runOk != nullptr) {

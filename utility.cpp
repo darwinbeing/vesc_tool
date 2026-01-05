@@ -396,6 +396,8 @@ void Utility::allowScreenRotation(bool enabled)
 
 bool Utility::waitSignal(QObject *sender, QString signal, int timeoutMs)
 {
+    // qDebug() << "LoopLevel" << QThread::currentThread()->loopLevel();
+
     QEventLoop loop;
     QTimer timeoutTimer;
     timeoutTimer.setSingleShot(true);
@@ -2513,11 +2515,23 @@ QByteArray Utility::removeFirmwareHeader(QByteArray in)
 
 QString Utility::configPath(QString subPath)
 {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_config.rcc";
-    QFile file(path);
-    if (file.exists()) {
-        QResource::unregisterResource(path);
-        QResource::registerResource(path);
+    // Only load the resource file on the first call. Reloading the resource
+    // seems to sometimes freeze or crash on windows.
+    static bool resourceLoaded = false;
+    if (!resourceLoaded) {
+        QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_config.rcc";
+        QFile file(path);
+
+        if (file.exists()) {
+            QResource::unregisterResource(path);
+            QResource::registerResource(path);
+            qDebug() << "Loaded config resource";
+        }
+
+        resourceLoaded = true;
+    }
+
+    if (QDir("://res/config_download/").exists()) {
         return QString("://res/config_download/") + subPath;
     } else {
         return QString("://res/config/") + subPath;

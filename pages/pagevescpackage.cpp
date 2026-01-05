@@ -449,14 +449,17 @@ void PageVescPackage::reloadArchive()
 
     foreach (auto p, pList) {
         auto pVal = p.value<VescPackage>();
-        QListWidgetItem *item = new QListWidgetItem;
-        item->setText(pVal.name);
-        item->setData(Qt::UserRole, p);
 
         if (pVal.isLibrary) {
+            QListWidgetItem *item = new QListWidgetItem;
+            item->setText(pVal.name);
+            item->setData(Qt::UserRole, p);
             ui->libraryList->insertItem(ui->libraryList->count(), item);
         } else {
             if (mLoader.shouldShowPackage(pVal)) {
+                QListWidgetItem *item = new QListWidgetItem;
+                item->setText(pVal.name);
+                item->setData(Qt::UserRole, p);
                 ui->applicationList->insertItem(ui->applicationList->count(), item);
             }
         }

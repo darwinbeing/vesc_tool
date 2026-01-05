@@ -4323,7 +4323,7 @@ bool VescInterface::downloadFwArchive()
     QNetworkRequest request(url);
     QNetworkReply *reply = manager.get(request);
     QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if(!QDir(appDataLoc).exists()) {
+    if (!QDir(appDataLoc).exists()) {
         QDir().mkpath(appDataLoc);
     }
     QString path = appDataLoc + "/res_fw.rcc";
@@ -4371,7 +4371,7 @@ bool VescInterface::downloadFwLatest()
     QNetworkRequest request(url);
     QNetworkReply *reply = manager.get(request);
     QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    if(!QDir(appDataLoc).exists()) {
+    if (!QDir(appDataLoc).exists()) {
         QDir().mkpath(appDataLoc);
     }
     QString path = appDataLoc + "/res_fw_" + fwStr + ".rcc";
@@ -4423,6 +4423,7 @@ bool VescInterface::downloadConfigs()
     QString path = appDataLoc + "/res_config.rcc";
     QFile file(path);
     QResource::unregisterResource(path);
+
     if (file.open(QIODevice::WriteOnly)) {
         auto conn = connect(reply, &QNetworkReply::downloadProgress, [&file, reply, this]
                             (qint64 bytesReceived, qint64 bytesTotal) {
@@ -4438,12 +4439,18 @@ bool VescInterface::downloadConfigs()
         if (reply->error() == QNetworkReply::NoError) {
             file.write(reply->readAll());
             emit fwArchiveDlProgress("Download Done", 1.0);
+            file.close();
+            res = QResource::registerResource(path);
+
+            if (res) {
+                qDebug() << "Reloaded config resource successfully";
+            } else {
+                qWarning() << "Could not reload config resource";
+            }
         } else {
             emit fwArchiveDlProgress("Download Failed", 0.0);
+            file.close();
         }
-
-        file.close();
-        res = true;
     } else {
         emit fwArchiveDlProgress("Could not open local file", 0.0);
     }
