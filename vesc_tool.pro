@@ -75,10 +75,12 @@ DEFINES += HAS_BLUETOOTH
 #DEFINES += HAS_CANBUS
 
 # Positioning
-DEFINES += HAS_POS
+!win32: {
+    DEFINES += HAS_POS
+}
 
 !ios: {
-    QT       += printsupport
+    QT      += printsupport
 !android: {
     # Serial port available
     DEFINES += HAS_SERIALPORT
