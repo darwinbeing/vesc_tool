@@ -1847,7 +1847,6 @@ bool VescInterface::openRtLogFile(QString outDirectory)
 
         mPosSource = QGeoPositionInfoSource::createDefaultSource(this);
 
-
         if (mPosSource) {
             connect(mPosSource, &QGeoPositionInfoSource::positionUpdated,
                     [this](QGeoPositionInfo info) {
@@ -1856,7 +1855,7 @@ bool VescInterface::openRtLogFile(QString outDirectory)
             });
             mPosSource->setUpdateInterval(5);
             mPosSource->startUpdates();
-        }else{
+        } else {
             emitMessageDialog("Postioning",
                               "Could not get Positioning Working.",
                               false, false);

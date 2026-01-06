@@ -67,6 +67,10 @@ private slots:
     void on_vescSaveAsButton_clicked();
     void on_vescLogDeleteButton_clicked();
     void on_saveCsvButton_clicked();
+    void on_logLocalOpenButton_clicked();
+    void on_logLocalRefreshButton_clicked();
+    void on_logLocalTable_cellDoubleClicked(int row, int column);
+    void on_logLocalDeleteButton_clicked();
 
 private:
     Ui::PageLogAnalysis *ui;
@@ -178,6 +182,7 @@ private:
     void addDataItem(QString name, bool hasScale = true,
                      double scaleStep = 0.1, double scaleMax = 99.99);
     void openLog(QString name, QByteArray data);
+    void saveCsv(QString fileName);
     void generateMissingEntries();
 
     void storeSelection();

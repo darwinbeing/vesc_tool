@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>988</width>
-    <height>493</height>
+    <height>548</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -345,17 +345,24 @@
       <layout class="QVBoxLayout" name="verticalLayout_3" stretch="0,1">
        <item>
         <layout class="QGridLayout" name="gridLayout_4">
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="pathRtLogEdit">
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="pathScriptOutputEdit">
            <property name="text">
             <string/>
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_7">
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="pathScriptInputEdit">
            <property name="text">
-            <string>Script Input Files</string>
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="pathRtLogEdit">
+           <property name="text">
+            <string/>
            </property>
           </widget>
          </item>
@@ -370,6 +377,34 @@
            <property name="icon">
             <iconset resource="res.qrc">
              <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_7">
+           <property name="text">
+            <string>Script Input Files</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="2">
+          <widget class="QPushButton" name="pathScriptOutputChooseButton">
+           <property name="toolTip">
+            <string>Choose output directory</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="res.qrc">
+             <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_8">
+           <property name="text">
+            <string>Script Output Files</string>
            </property>
           </widget>
          </item>
@@ -394,32 +429,18 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="pathScriptInputEdit">
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_15">
            <property name="text">
-            <string/>
+            <string>Local Logs</string>
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="label_8">
-           <property name="text">
-            <string>Script Output Files</string>
-           </property>
-          </widget>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="pathLocalLogEdit"/>
          </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="pathScriptOutputEdit">
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="2">
-          <widget class="QPushButton" name="pathScriptOutputChooseButton">
-           <property name="toolTip">
-            <string>Choose output directory</string>
-           </property>
+         <item row="3" column="2">
+          <widget class="QPushButton" name="pathLocalLogChooseButton">
            <property name="text">
             <string/>
            </property>

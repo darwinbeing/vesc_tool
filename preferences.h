@@ -90,6 +90,8 @@ private slots:
     void on_useImperialBox_toggled(bool checked);
     void on_showFwUpdateBox_toggled(bool checked);
     void on_estopTimeBox_valueChanged(int arg1);
+    void on_pathLocalLogChooseButton_clicked();
+    void on_pathLocalLogEdit_textChanged(const QString &arg1);
 
 private:
     Ui::Preferences *ui;

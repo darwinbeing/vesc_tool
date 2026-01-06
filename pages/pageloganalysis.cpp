@@ -272,6 +272,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
 
     on_gridBox_toggled(ui->gridBox->isChecked());
     logListRefresh();
+    on_logLocalRefreshButton_clicked();
 
     QSettings set;
     mLastSaveCsvPath = set.value("pageloganalysis/lastSaveCsvPath", true).toString();
@@ -371,6 +372,18 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
         connect(mVesc->commands(), &Commands::logStop, [this, updatePlots] () {
             mLogRtTimer->stop();
             updatePlots();
+
+            if (mLogRt.size() >= 5) {
+                auto localLogPath = QSettings().value("path_local_log").toString();
+                QDir logDir(localLogPath);
+
+                if (logDir.exists()) {
+                    auto dateStr = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+                    auto path = logDir.canonicalPath() + "/log_" + dateStr + ".csv";
+                    saveCsv(path);
+                    on_logLocalRefreshButton_clicked();
+                }
+            }
         });
 
         connect(mVesc->commands(), &Commands::logConfigField, [this](int fieldInd, LOG_HEADER h) {
@@ -1357,6 +1370,55 @@ void PageLogAnalysis::openLog(QString name, QByteArray data)
     }
 }
 
+void PageLogAnalysis::saveCsv(QString fileName)
+{
+    if (!fileName.toLower().endsWith(".csv")) {
+        fileName += ".csv";
+    }
+
+    QFile file(fileName);
+
+    if (!file.open(QIODevice::WriteOnly)) {
+        mVesc->emitMessageDialog("Save File", "Cannot open destination", false);
+        return;
+    }
+
+    mLastSaveCsvPath = fileName;
+
+    QTextStream os(&file);
+
+    for (int i = 0;i < mLogHeader.size();i++) {
+        auto h = mLogHeader.at(i);
+        os << h.key << ":"
+           << h.name << ":"
+           << h.unit << ":"
+           << h.precision << ":"
+           << h.isRelativeToFirst << ":"
+           << h.isTimeStamp;
+
+        if (i < (mLogHeader.size() - 1)) {
+            os << ";";
+        }
+    }
+
+    os << "\n";
+
+    for (int i = 0;i < mLog.size();i++) {
+        for (int j = 0;j < mLog.at(i).size();j++) {
+            os << Qt::fixed
+               << qSetRealNumberPrecision(mLogHeader.at(j).precision)
+               << mLog.at(i).at(j);
+
+            if (j < (mLog.at(i).size() - 1)) {
+                os << ";";
+            }
+        }
+        os << "\n";
+    }
+
+    file.close();
+}
+
 void PageLogAnalysis::generateMissingEntries()
 {
     // Create sample array if t_day is missing
@@ -1923,50 +1985,86 @@ void PageLogAnalysis::on_saveCsvButton_clicked()
                                                     tr("CSV files (*.csv)"));
 
     if (!fileName.isEmpty()) {
-        if (!fileName.toLower().endsWith(".csv")) {
-            fileName += ".csv";
+        saveCsv(fileName);
+    }
+}
+
+void PageLogAnalysis::on_logLocalOpenButton_clicked()
+{
+    auto items = ui->logLocalTable->selectedItems();
+
+    if (items.size() > 0) {
+        QString fileName = items.
+                           first()->data(Qt::UserRole).toString();
+
+        QFile inFile(fileName);
+        if (inFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            openLog("Local: " + fileName, inFile.readAll());
+        }
+    } else {
+        mVesc->emitMessageDialog("Open Log", "No Log Selected", false);
+    }
+}
+
+void PageLogAnalysis::on_logLocalRefreshButton_clicked()
+{
+    ui->logLocalTable->setRowCount(0);
+    QSettings set;
+    if (set.contains("path_local_log")) {
+        QString dirPath = set.value("path_local_log").toString();
+
+        while (dirPath.startsWith("/..")) {
+            dirPath.remove(0, 3);
         }
 
-        QFile file(fileName);
-
-        if (!file.open(QIODevice::WriteOnly)) {
-            mVesc->emitMessageDialog("Save File", "Cannot open destination", false);
-            return;
-        }
-
-        mLastSaveCsvPath = fileName;
-
-        QTextStream os(&file);
-
-        for (int i = 0;i < mLogHeader.size();i++) {
-            auto h = mLogHeader.at(i);
-            os << h.key << ":"
-               << h.name << ":"
-               << h.unit << ":"
-               << h.precision << ":"
-               << h.isRelativeToFirst << ":"
-               << h.isTimeStamp;
-
-            if (i < (mLogHeader.size() - 1)) {
-                os << ";";
+        QDir dir(dirPath);
+        if (dir.exists()) {
+            foreach (QFileInfo f, dir.entryInfoList(QStringList() << "*.csv" << "*.Csv" << "*.CSV",
+                                                    QDir::Files, QDir::Name)) {
+                QTableWidgetItem *itName = new QTableWidgetItem(f.fileName());
+                itName->setData(Qt::UserRole, f.absoluteFilePath());
+                ui->logLocalTable->setRowCount(ui->logLocalTable->rowCount() + 1);
+                ui->logLocalTable->setItem(ui->logLocalTable->rowCount() - 1, 0, itName);
+                ui->logLocalTable->setItem(ui->logLocalTable->rowCount() - 1, 1,
+                                           new QTableWidgetItem(QString("%1 MB").
+                                                                arg(double(f.size())
+                                                                        / 1024.0 / 1024.0,
+                                                                    0, 'f', 2)));
             }
         }
+    }
+}
 
-        os << "\n";
+void PageLogAnalysis::on_logLocalTable_cellDoubleClicked(int row, int column)
+{
+    (void)row; (void)column;
+    on_logLocalOpenButton_clicked();
+}
 
-        for (int i = 0;i < mLog.size();i++) {
-            for (int j = 0;j < mLog.at(i).size();j++) {
-                os << Qt::fixed
-                   << qSetRealNumberPrecision(mLogHeader.at(j).precision)
-                   << mLog.at(i).at(j);
+void PageLogAnalysis::on_logLocalDeleteButton_clicked()
+{
+    auto items = ui->logLocalTable->selectedItems();
 
-                if (j < (mLog.at(i).size() - 1)) {
-                    os << ";";
+    int ret = QMessageBox::Cancel;
+    if (items.size() > 0) {
+        ret = QMessageBox::warning(this,
+                                   tr("Delete File(s)"),
+                                   tr("This is going to delete the selected file(s) permanently. Are you sure?"),
+                                   QMessageBox::Yes | QMessageBox::Cancel);
+
+        if (ret == QMessageBox::Yes) {
+            foreach (auto file, items) {
+                QString fileName = file->data(Qt::UserRole).toString();
+
+                QFile fileNow(fileName);
+                if (fileNow.exists()) {
+                    fileNow.remove();
                 }
             }
-            os << "\n";
-        }
 
-        file.close();
+            on_logLocalRefreshButton_clicked();
+        }
+    } else {
+        mVesc->emitMessageDialog("Delete File(s)", "No file(s) selected", false);
     }
 }
