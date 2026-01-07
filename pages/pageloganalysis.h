@@ -116,7 +116,7 @@ private:
     int mInd_roll;
     int mInd_pitch;
     int mInd_yaw;
-    int mInd_fault;
+    QVector<int> mInd_fault;
 
     struct SelectoData {
         QStringList dataLabels;
@@ -144,11 +144,12 @@ private:
         mInd_roll = -1;
         mInd_pitch = -1;
         mInd_yaw = -1;
-        mInd_fault = -1;
+        mInd_fault.clear();
     }
 
     void updateInds() {
         if (!mLogHeader.isEmpty()) {
+            resetInds();
             for (int i = 0;i < mLogHeader.size();i++) {
                 auto e = mLogHeader.at(i);
                 if (e.key == "t_day") mInd_t_day = i;
@@ -167,7 +168,7 @@ private:
                 else if (e.key == "roll") mInd_roll = i;
                 else if (e.key == "pitch") mInd_pitch = i;
                 else if (e.key == "yaw") mInd_yaw = i;
-                else if (e.key == "fault") mInd_fault = i;
+                else if (e.key == "fault") mInd_fault.append(i);
             }
         }
     }

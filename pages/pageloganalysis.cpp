@@ -1078,7 +1078,7 @@ void PageLogAnalysis::updateDataAndPlot(double time)
             }
         }
 
-        if (ind != mInd_fault) {
+        if (!mInd_fault.contains(ind)) {
             if (header.isTimeStamp) {
                 QTime t(0, 0, 0, 0);
                 t = t.addMSecs(value * 1000);
