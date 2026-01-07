@@ -1,0 +1,87 @@
+name: 'Scheduled Jobs: Upstream Sync'
+
+on:
+  schedule:
+    - cron: 0 4 * * *
+
+  workflow_dispatch:  # click the button on Github repo!
+    inputs:
+      vt_ver:
+        description: "VESC Tool Version"
+        required: true
+        default: "master"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+env:
+  # Version: master or 3.01/6.00/6.02/X.XX
+  DEFAULT_VT_VER: ${{ github.event.inputs.vt_ver || 'master' }}
+  DEFAULT_FW_VER: ${{ github.event.inputs.fw_ver || 'master' }}
+  DEFAULT_PRERELEASE: ${{ github.event.inputs.prerelease || 'true' }}
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from upstream repo
+    steps:
+      - name: Version2Ref
+        run: |
+          if [[ "${{ env.DEFAULT_VT_VER }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "VT_REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> $GITHUB_ENV
+          elif [[ "${{ env.DEFAULT_VT_VER }}" == "master" ]]; then
+            echo "VT_REF=master" >> $GITHUB_ENV
+          else
+            echo "VT_REF=${{ env.DEFAULT_VT_VER }}" >> $GITHUB_ENV
+          fi
+        shell: bash
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.VT_REF }}
+      - name: Sync upstream changes
+        id: sync
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
+        with:
+          target_sync_branch: ${{ env.VT_REF }}
+          # REQUIRED 'target_repo_token' exactly like this!
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_branch: ${{ env.VT_REF }}
+          upstream_sync_repo: vedderb/vesc_tool
+          # upstream_repo_access_token: ${{ secrets.UPSTREAM_REPO_SECRET }}
+          upstream_repo_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+          # Set test_mode true to run tests instead of the true action!!
+          test_mode: false
+
+      - name: New commits found
+        if: steps.sync.outputs.has_new_commits == 'true'
+        run: echo "New commits were found to sync."
+
+      - name: No new commits
+        if: steps.sync.outputs.has_new_commits == 'false'
+        run: echo "There were no new commits."
+
+      - name: Show value of 'has_new_commits'
+        run: echo ${{ steps.sync.outputs.has_new_commits }}
+
+      # - name: Dispatch repository ForkSync event
+      #   if: steps.sync.outputs.has_new_commits == 'true'
+      #   uses: peter-evans/repository-dispatch@v2
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+      #     event-type: ForkSync
+      - name: Invoke workflow
+        if: steps.sync.outputs.has_new_commits == 'true'
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: CreateRelease
+          token: ${{ secrets.VT_CR_TOKEN }}
+          inputs: '{ "vt_ver": "${{ env.DEFAULT_VT_VER }}", "fw_ver": "${{ env.DEFAULT_FW_VER  }}", "prerelease": "${{ env.DEFAULT_PRERELEASE }}" }'

@@ -1,0 +1,1198 @@
+From b5853c071131b1d5c87ae7283875e98797584e70 Mon Sep 17 00:00:00 2001
+From: LI Tao <litroncn@gmail.com>
+Date: Tue, 6 Jan 2026 22:30:39 -0800
+Subject: [PATCH] Publish Builds With Firmware
+
+---
+ android/build.gradle                          |   4 +-
+ .../gradle/wrapper/gradle-wrapper.properties  |   2 +-
+ build_android_macOS                           |  80 +++++++
+ build_ios.sh                                  |  87 +++++++
+ build_lin                                     | 216 +++++++++++++-----
+ build_macos                                   |  88 +++----
+ build_macos_arm64                             |  34 +++
+ build_macos_universal                         |  34 +++
+ build_win4CI.ps1                              | 197 ++++++++++++++++
+ esp32/esp_loader.h                            |   5 +-
+ esp32/serial_comm.c                           |   2 +
+ esp32/serial_comm_prv.h                       |  39 ++--
+ ios/src/setIosParameters.h                    |   6 +-
+ mainwindow.cpp                                |   4 +-
+ mainwindow.h                                  |   4 +-
+ pages/pagecananalyzer.h                       |   1 +
+ vesc_tool.pro                                 |  10 +-
+ widgets/mtextedit.cpp                         |   2 +-
+ 18 files changed, 652 insertions(+), 163 deletions(-)
+ create mode 100644 build_android_macOS
+ create mode 100644 build_ios.sh
+ create mode 100644 build_macos_arm64
+ create mode 100644 build_macos_universal
+ create mode 100644 build_win4CI.ps1
+
+diff --git a/android/build.gradle b/android/build.gradle
+index d35d2a9..b1cc61e 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -5,7 +5,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:3.2.0'
++        classpath 'com.android.tools.build:gradle:7.2.2'
+     }
+ }
+ 
+@@ -17,7 +17,7 @@ repositories {
+ apply plugin: 'com.android.application'
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+ }
+ 
+ android {
+diff --git a/android/gradle/wrapper/gradle-wrapper.properties b/android/gradle/wrapper/gradle-wrapper.properties
+index bf3de21..92f06b5 100644
+--- a/android/gradle/wrapper/gradle-wrapper.properties
++++ b/android/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-bin.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.4.2-all.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/build_android_macOS b/build_android_macOS
+new file mode 100644
+index 0000000..0e1fcd2
+--- /dev/null
++++ b/build_android_macOS
+@@ -0,0 +1,80 @@
++#!/bin/bash
++
++set -e
++
++export OS=$(uname | tr '[:upper:]' '[:lower:]')
++export ARCH=$(uname -m)
++
++export NDK_VERSION=23.1.7779620
++export ANDROID_HOME=$HOME/Library/Android/sdk
++# export ANDROID_NDK_HOST=darwin-x86_64
++export ANDROID_NDK_HOST=${OS}-${ARCH}
++# export ANDROID_NDK_PLATFORM=android-30
++# export ANDROID_NDK_TOOLCHAIN_VERSION=4.9
++# export ANDROID_API_VERSION=android-31
++export ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION
++export ANDROID_SDK_ROOT=$ANDROID_HOME
++
++# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home
++export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.12.jdk/Contents/Home
++export PATH=$JAVA_HOME/bin:$PATH
++
++ANDROID_BUILD_TOOLS_VERSION=31.0.0
++export PATH=$ANDROID_SDK_ROOT/emulator:$PATH
++export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/tools/proguard/bin:$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS_VERSION:$ANDROID_NDK_ROOT:$PATH
++
++
++rm -rf build/android/*
++
++# armv7
++# ANDROID_ARCH=arm
++# export PATH=$HOME/Qt5.12.3/5.12.3/android_armv7/bin/:$PATH
++# export ANDROID_NDK_TOOLCHAIN_PREFIX=arm-linux-androideabi
++# export ANDROID_NDK_TOOLS_PREFIX=arm-linux-androideabi
++
++# armv8
++ANDROID_ARCH=arm64
++# export PATH=$HOME/Qt5.14.2/5.14.2/android_arm64_v8a/bin/:$PATH
++export PATH=$HOME/Qt5.14.2/5.14.2/android/bin/:$PATH
++export PATH=$QT_ROOT/bin:$PATH
++export LD_LIBRARY_PATH=$HOME/Qt5.14.2/5.14.2/android/lib:$LD_LIBRARY_PATH
++export PKG_CONFIG_PATH=$HOME/Qt5.14.2/5.14.2/android/lib/pkgconfig:$PKG_CONFIG_PATH
++export QML_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML2_IMPORT_PATH
++export QT_PLUGIN_PATH=$HOME/Qt5.14.2/5.14.2/android/plugins/:$QT_PLUGIN_PATH
++# export ANDROID_NDK_TOOLCHAIN_PREFIX=aarch64-linux-android
++# export ANDROID_NDK_TOOLS_PREFIX=aarch64-linux-android
++
++export QML_IMPORT_PATH=mobile/:$QML_IMPORT_PATH
++
++# Mobile
++qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android build_mobile" -spec android-clang ANDROID_ABIS='arm64-v8a'
++make clean
++make -j8
++make install INSTALL_ROOT=build/android/build
++ls build/android/build/libs/arm64-v8a/
++androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
++mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_mobile.apk
++rm -rf build/android/build
++rm -rf build/android/obj
++rm -f build/android/libvesc_tool.so
++
++# Full
++qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android" -spec android-clang ANDROID_ABIS='arm64-v8a'
++make clean
++make -j8
++make install INSTALL_ROOT=build/android/build
++
++androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
++mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_full.apk
++rm -rf build/android/build
++rm -rf build/android/obj
++rm -f build/android/libvesc_tool.so
++
++# Zip APKs
++cd build/android
++# zip vesc_tool_android-$ANDROID_ARCH.zip vesc_tool_mobile.apk vesc_tool_full.apk
++zip vesc_tool-android.zip vesc_tool_mobile.apk vesc_tool_full.apk
++rm -f vesc_tool_mobile.apk
++rm -f vesc_tool_full.apk
++cd ../..
+diff --git a/build_ios.sh b/build_ios.sh
+new file mode 100644
+index 0000000..0e3ac4c
+--- /dev/null
++++ b/build_ios.sh
+@@ -0,0 +1,87 @@
++#!/bin/bash
++
++# hdiutil attach -nomount ram://4096000
++# diskutil erasevolume HFS+ "RAMDisk" /dev/disk2
++
++PROJECT_NAME="VESC Tool"
++SCHEME_NAME="VESC Tool"
++TARGET="VESC Tool"
++DEV_PROFILE_NAME="anyapp"
++
++# if [ ! -d /Volumes/RAMDisk ] ; then
++#     echo 'RAM Disk not found'
++#     echo 'Only used for App Store builds. It will not work on your computer.'
++#     exit 1
++# fi
++#-- Set to my local installation
++QMAKE=$HOME/Qt5.15.2/5.15.2/ios/bin/qmake
++export PATH=$HOME/Qt5.15.2/5.15.2/ios/bin:$PATH
++export LD_LIBRARY_PATH=$HOME/Qt5.15.2/5.15.2/ios/lib:$LD_LIBRARY_PATH
++export PKG_CONFIG_PATH=$HOME/Qt5.15.2/5.15.2/ios/lib/pkgconfig:$PKG_CONFIG_PATH
++export QML_IMPORT_PATH=$HOME/Qt5.15.2/5.15.2/ios/qml/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=$HOME/Qt5.15.2/5.15.2/ios/qml/:$QML2_IMPORT_PATH
++export QT_PLUGIN_PATH=$HOME/Qt5.15.2/5.15.2/ios/plugins/:$QT_PLUGIN_PATH
++
++#-- Using Travis variables as this will eventually live there
++# SHADOW_BUILD_DIR=/Volumes/RAMDisk/build-vesc_tool-iOS-Release
++# SHADOW_BUILD_DIR=build-vesc_tool-iOS-Release
++TRAVIS_BUILD_DIR=$HOME/Developer/vesc_tool
++SHADOW_BUILD_DIR=${TRAVIS_BUILD_DIR}/build-vesc_tool-iOS-Release
++
++export QML_IMPORT_PATH=${TRAVIS_BUILD_DIR}/mobile/:$QML_IMPORT_PATH
++export QML2_IMPORT_PATH=${TRAVIS_BUILD_DIR}/mobile/:$QML2_IMPORT_PATH
++
++#-- Build it
++
++rm -rf ${SHADOW_BUILD_DIR}/*
++mkdir -p ${TRAVIS_BUILD_DIR}/build/ios
++rm -rf ${TRAVIS_BUILD_DIR}/build/ios/*
++
++mkdir -p ${SHADOW_BUILD_DIR} &&
++cd ${SHADOW_BUILD_DIR} &&
++#-- Create project only (build using Xcode)
++${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro "CONFIG += iphoneos device release release_ios build_mobile" -spec macx-ios-clang
++sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' "${SHADOW_BUILD_DIR}/${PROJECT_NAME}.xcodeproj/project.pbxproj"
++
++# make -f vesc_tool.xcodeproj/qt_preprocess.mak
++xcodebuild -configuration Release -target "Qt Preprocess" -sdk iphoneos -arch arm64 CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
++xcodebuild -configuration Release -target "${TARGET}" install -sdk iphoneos -arch arm64 CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
++
++# xcodebuild -configuration Release -xcconfig "${TRAVIS_BUILD_DIR}/ios/${PROJECT_NAME}_appstore.xcconfig" -allowProvisioningUpdates
++# xcodebuild archive 	-project "${PROJECT_NAME}.xcodeproj" \
++#                    	-xcconfig "${TRAVIS_BUILD_DIR}/ios/${PROJECT_NAME}_appstore.xcconfig" \
++#                    	-scheme "${SCHEME_NAME}" \
++#                    	-destination generic/platform=iOS \
++#                    	-archivePath "${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive" \
++# 			-allowProvisioningUpdates
++
++# xcodebuild -exportArchive -archivePath "${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive" \
++#                           -exportPath "${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa" \
++# 			  -exportOptionsPlist "${TRAVIS_BUILD_DIR}/ios/Info.plist" \
++# 			  -allowProvisioningUpdates
++
++# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_mobile.app
++# rm -rf ${SHADOW_BUILD_DIR}/*
++# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
++
++# ${QMAKE} -r ${TRAVIS_BUILD_DIR}/vesc_tool.pro CONFIG+=WarningsAsErrorsOn CONFIG-=debug_and_release CONFIG+=release CONFIG+=ForAppStore "CONFIG += release_ios"
++# sed -i .bak 's/com.yourcompany.${PRODUCT_NAME:rfc1034identifier}/com.vedder.vesc/' ${SHADOW_BUILD_DIR}/vesc_tool.xcodeproj/project.pbxproj
++# xcodebuild -configuration Release -xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig -allowProvisioningUpdates
++# xcodebuild archive 	-project ${PROJECT_NAME}.xcodeproj \
++#                    	-xcconfig ${TRAVIS_BUILD_DIR}/ios/vesc_tool_appstore.xcconfig \
++#                    	-scheme ${SCHEME_NAME} \
++#                    	-destination generic/platform=iOS \
++#                    	-archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive
++
++# xcodebuild -exportArchive -archivePath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.xcarchive \
++#                           -exportPath ${TRAVIS_BUILD_DIR}/build/ios/${PROJECT_NAME}.ipa \
++#                           -exportProvisioningProfile ${DEV_PROFILE_NAME}
++
++# mv ${SHADOW_BUILD_DIR}/Release-iphoneos/vesc_tool.app ${TRAVIS_BUILD_DIR}/build/ios/vesc_tool_full.app
++# rm -rf ${SHADOW_BUILD_DIR}/*
++# rm -rf ${TRAVIS_BUILD_DIR}/build/ios/obj
++
++# cd ${TRAVIS_BUILD_DIR}/build/ios
++# zip -r vesc_tool-iOS.zip vesc_tool_mobile.app vesc_tool_full.app
++# rm -rf vesc_tool_mobile.app
++# rm -rf vesc_tool_full.app
+diff --git a/build_lin b/build_lin
+index 0d61474..845a90f 100755
+--- a/build_lin
++++ b/build_lin
+@@ -18,6 +18,20 @@
+ # sudo make install
+ # sudo ldconfig
+ 
++# Qt 5.9:
++# cd /opt
++# sudo mkdir qt5
++# sudo chown $USER qt5
++# git clone https://code.qt.io/qt/qt5.git
++# cd qt5
++# git checkout 5.9
++# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
++# mkdir build
++# cd build
++# ../configure -prefix /opt/Qt/5.9-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-xinput2 -no-glib -qt-xkbcommon-x11 -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-xkbcommon-evdev -no-evdev -no-libproxy -no-icu -skip imageformats -no-xinput2 -qt-freetype -opengl es2
++# make -j9
++# sudo make install
++
+ # Qt 5.12:
+ # cd /opt
+ # sudo mkdir qt5
+@@ -28,7 +42,21 @@
+ # perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+ # mkdir build
+ # cd build
+-# ../configure -prefix /opt/Qt/5.12-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsensors -skip multimedia -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# ../configure -prefix /opt/Qt/5.12-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# make -j9
++# sudo make install
++
++# Qt 5.13:
++# cd /opt
++# sudo mkdir qt5
++# sudo chown $USER qt5
++# git clone https://code.qt.io/qt/qt5.git
++# cd qt5
++# git checkout 5.13
++# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
++# mkdir build
++# cd build
++# ../configure -prefix /opt/Qt/5.13-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
+ # make -j9
+ # sudo make install
+ 
+@@ -42,74 +70,138 @@
+ # perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+ # mkdir build
+ # cd build
+-# ../configure -prefix /opt/Qt/5.15-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsensors -skip multimedia -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# ../configure -prefix /opt/Qt/5.15-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -no-accessibility -qt-freetype -skip qtimageformats -opengl es2
+ # make -j9
+ # sudo make install
+ 
+ # Note: -no-dbus and -skip qtconnectivity can also be added, but then bluetooth and window titlebar menus don't work.
+ 
++# set -e
++
++# export PATH=/opt/Qt/5.12-static/bin:$PATH
++# rm -rf build/lin/*
++
++# # Original
++# qmake -config release "CONFIG += release_lin build_original"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Platinum
++# qmake -config release "CONFIG += release_lin build_platinum"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Gold
++# qmake -config release "CONFIG += release_lin build_gold"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Silver
++# qmake -config release "CONFIG += release_lin build_silver"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Bronze
++# qmake -config release "CONFIG += release_lin build_bronze"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Free of charge
++# qmake -config release "CONFIG += release_lin build_free"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
+ set -e
+ 
+-export PATH=/opt/Qt/5.15-static/bin:$PATH
++sudo apt-get install -y libxkbcommon-x11-0 libfuse2
++
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
++
+ rm -rf build/lin/*
+ 
+-# Original
+-qmake -config release "CONFIG += release_lin build_original"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_lin build_platinum"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Gold
+-qmake -config release "CONFIG += release_lin build_gold"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_lin build_silver"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_lin build_bronze"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Free of charge
+-qmake -config release "CONFIG += release_lin build_free"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++
++for type in ${BuildType[@]}; do
++    qmake -config release "CONFIG += release_lin build_${type}"
++    make clean
++    make
++
++    mkdir -p appdir/usr/bin
++    cp -v build/lin/vesc_tool_${VT_VERSION} appdir/usr/bin/vesc_tool
++    # make INSTALL_ROOT=appdir install
++
++    # rm -rf build/lin/obj
++    # pushd build/lin
++
++    cp res/version/platinum_v.svg appdir/vesc-tool.svg
++    cat > "appdir/vesc-tool.desktop" <<EOF
++#!/usr/bin/env xdg-open
++[Desktop Entry]
++Name=VESC Tool
++Comment=VESC ESC configuration tool
++Exec=/usr/bin/vesc_tool
++Terminal=false
++Type=Application
++Icon=vesc-tool
++Categories=Development;Utility;
++EOF
++    find appdir/
++
++    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
++    chmod a+x linuxdeployqt-continuous-x86_64.AppImage
++
++    export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
++    # export VERSION="$VT_VERSION"
++    # ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
++    # -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    ./linuxdeployqt-continuous-x86_64.AppImage appdir/vesc-tool.desktop -bundle-non-qt-libs -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    mv VESC_Tool-$(git rev-parse --short HEAD)-x86_64.AppImage VESC_Tool-x86_64.AppImage
++    find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
++
++    mv appdir vesc_tool_${type}-lin
++    zip -rv vesc_tool_${type}-lin.zip vesc_tool_${type}-lin
++
++    find vesc_tool*.zip
++    find VESC_Tool*.AppImage
++    chmod +x VESC_Tool-x86_64.AppImage
++
++    # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
++    # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
++    # chmod a+x linuxdeployqt
++    # ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage -unsupported-bundle-everything -bundle-non-qt-libs -unsupported-allow-new-glibc
++    # rm -rf vesc_tool_${VT_VERSION}
++    # mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
+ 
++    # popd
++done
+diff --git a/build_macos b/build_macos
+index 2c3b490..e883d72 100755
+--- a/build_macos
++++ b/build_macos
+@@ -2,65 +2,33 @@
+ 
+ set -e
+ 
+-export PATH=/opt/Qt/5.9-static/bin:$PATH
+-rm -rf build/macos/*
+-
+-# Original
+-qmake -config release "CONFIG += release_macos build_original"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_original_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_macos build_platinum"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_platinum_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+ 
+-# Gold
+-qmake -config release "CONFIG += release_macos build_gold"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_gold_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_macos build_silver"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_silver_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_macos build_bronze"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_bronze_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++export PATH=$HOME/Qt5.15.2/5.15.2/clang_64/bin:$PATH
++rm -rf build/macos/*
+ 
+-# Free of charge
+-qmake -config release "CONFIG += release_macos build_free"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_free_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+\ No newline at end of file
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++TARGET="VESC Tool"
++
++for type in ${BuildType[@]}; do
++    qmake -config release QMAKE_APPLE_DEVICE_ARCHS="x86_64" "CONFIG += release_macos build_${type}"
++    make clean
++    make -j8
++    rm -rf build/macos/obj
++    pushd build/macos
++
++    mkdir -p "${TARGET}-release"
++    ln -s  /Applications "${TARGET}-release/Applications"
++    mv "${TARGET}.app" "${TARGET}-release"
++    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
++    rm -f "${TARGET}-release/${TARGET}.dmg"
++    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS-x86_64.dmg
++
++    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
++    # rm -rf "${TARGET}".app
++    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
++    popd
++done
+diff --git a/build_macos_arm64 b/build_macos_arm64
+new file mode 100644
+index 0000000..5c07773
+--- /dev/null
++++ b/build_macos_arm64
+@@ -0,0 +1,34 @@
++#!/bin/bash
++
++set -e
++
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
++
++export PATH=$HOME/Qt5.15.18/5.15.18/clang_64/bin:$PATH
++rm -rf build/macos/*
++
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++TARGET="VESC Tool"
++
++for type in ${BuildType[@]}; do
++    qmake -config release QMAKE_APPLE_DEVICE_ARCHS="arm64" "CONFIG += release_macos build_${type}"
++    make clean
++    make -j8
++    rm -rf build/macos/obj
++    pushd build/macos
++
++    mkdir -p "${TARGET}-release"
++    ln -s  /Applications "${TARGET}-release/Applications"
++    mv "${TARGET}.app" "${TARGET}-release"
++    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
++    rm -f "${TARGET}-release/${TARGET}.dmg"
++    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS-arm64.dmg
++
++    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
++    # rm -rf "${TARGET}".app
++    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
++    popd
++done
+diff --git a/build_macos_universal b/build_macos_universal
+new file mode 100644
+index 0000000..5a5efbb
+--- /dev/null
++++ b/build_macos_universal
+@@ -0,0 +1,34 @@
++#!/bin/bash
++
++set -e
++
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
++
++export PATH=$HOME/Qt5.15.18/5.15.18/clang_64/bin:$PATH
++rm -rf build/macos/*
++
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++TARGET="VESC Tool"
++
++for type in ${BuildType[@]}; do
++    qmake -config release QMAKE_APPLE_DEVICE_ARCHS="x86_64 arm64" "CONFIG += release_macos build_${type}"
++    make clean
++    make -j8
++    rm -rf build/macos/obj
++    pushd build/macos
++
++    mkdir -p "${TARGET}-release"
++    ln -s  /Applications "${TARGET}-release/Applications"
++    mv "${TARGET}.app" "${TARGET}-release"
++    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
++    rm -f "${TARGET}-release/${TARGET}.dmg"
++    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS-Universal.dmg
++
++    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
++    # rm -rf "${TARGET}".app
++    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
++    popd
++done
+diff --git a/build_win4CI.ps1 b/build_win4CI.ps1
+new file mode 100644
+index 0000000..e0cde6f
+--- /dev/null
++++ b/build_win4CI.ps1
+@@ -0,0 +1,197 @@
++#-----------------------------------------------------------------------------
++#
++#  Copyright (c) 2019, LI Tao
++#  All rights reserved.
++#
++#  Redistribution and use in source and binary forms, with or without
++#  modification, are permitted provided that the following conditions are met:
++#
++#  1. Redistributions of source code must retain the above copyright notice,
++#     this list of conditions and the following disclaimer.
++#  2. Redistributions in binary form must reproduce the above copyright
++#     notice, this list of conditions and the following disclaimer in the
++#     documentation and/or other materials provided with the distribution.
++#
++#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
++#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
++#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
++#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
++#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
++#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
++#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
++#  THE POSSIBILITY OF SUCH DAMAGE.
++#
++#-----------------------------------------------------------------------------
++
++<#
++ .SYNOPSIS
++
++  Build a static version of Qt for Windows.
++
++ .DESCRIPTION
++
++  This scripts compiles and installs vesc tool. It assumes that a prebuilt
++  Qt / MSVC environment is already installed, typically in C:\Qt. This prebuilt
++  environment uses shared libraries.
++
++  This script is typically run from the Windows Explorer.
++
++  Requirements:
++  - Windows 10
++  - Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
++  - vs2019 C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional
++  - Qt C:\Qt\Qt5.12.3
++  - 7-zip.
++  - Open PowerShell Run "powershell.exe .\MSVC-build-vesc_tool-release.ps1"
++ .PARAMETER NumJobs
++
++  The number of jobs to run jom.exe with. Use your # CPU cores or higher. Default 8.
++
++ .PARAMETER MSVC
++
++  Imports command prompt environment for this MSVC.  Default 2017
++
++ .PARAMETER Arch
++
++  Set to amd64/x64 to compile with MSVC 64-bit.  Default: x64
++
++ .PARAMETER NoPause
++
++  Do not wait for the user to press <enter> at end of execution. By default,
++  execute a "pause" instruction at the end of execution, which is useful
++  when the script was run from Windows Explorer.
++#>
++
++[CmdletBinding()]
++param(
++    $NumJobs = 8,
++    $MSVC = 2019,
++    $Arch = "x64",
++    [switch]$NoPause = $true
++)
++
++# PowerShell execution policy.
++Set-StrictMode -Version 3
++
++#Import-Module Pscx
++
++#-----------------------------------------------------------------------------
++# Main code
++#-----------------------------------------------------------------------------
++
++function Main
++{
++    # Initialize Visual Studio environment
++
++    $VTVer = Select-String -Path vesc_tool.pro -Pattern 'VT_VERSION\s=\s(.*)' | %{$_.Matches.Groups[1].value}
++
++    # Set-VsVars $MSVC $Arch
++
++    $VTInstallDir = "build\win"
++    Write-Output "Install Location       : $VTInstallDir"
++    Write-Output "VESC Tool Version      : $VTVer"
++
++    Remove-Item -Force -Recurse $VTInstallDir\* -ErrorAction Ignore
++
++    # Build-VESCTool original
++    Build-VESCTool platinum
++    # Build-VESCTool gold
++    # Build-VESCTool silver
++    # Build-VESCTool bronze
++    # Build-VESCTool free
++
++    Exit-Script
++}
++
++#-----------------------------------------------------------------------------
++# A function to exit this script. The Message parameter is used on error.
++#-----------------------------------------------------------------------------
++
++function Exit-Script ([string]$Message = "")
++{
++    $Code = 0
++    if ($Message -ne "") {
++        Write-Output "ERROR: $Message"
++        $Code = 1
++    }
++    if (-not $NoPause) {
++        pause
++    }
++    exit $Code
++}
++
++#-----------------------------------------------------------------------------
++# Silently create a directory.
++#-----------------------------------------------------------------------------
++
++function Create-Directory ([string]$Directory)
++{
++    [void] (New-Item -Path $Directory -ItemType "directory" -Force)
++}
++
++function Get-Batchfile ($file, $params)
++{
++    $cmd = "`"$file`" $params & set"
++    cmd /c $cmd | Foreach-Object {
++        $p, $v = $_.split('=')
++        Set-Item -path env:$p -value $v
++    }
++}
++
++
++function Set-VsVars($vsYear, $arch)
++{
++    $vstools = ""
++
++    switch ($vsYear)
++    {
++        2017 { $vstools = "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" }
++        2019 { $vstools = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvarsall.bat" }
++    }
++
++    #$batchFile = [System.IO.Path]::Combine($vstools, "vsvars32.bat")
++
++    if (-not (Test-Path $vstools)) {
++        Exit-Script "Visual Studio environment could not be found."
++    }
++
++    Get-Batchfile -file $vstools -params $arch
++
++
++    Write-Host -ForegroundColor 'Yellow' "VsVars has been loaded from: $vstools ($arch)"
++}
++
++function Build-VESCTool ([string]$type)
++{
++    # qmake -config release -tp vc "CONFIG+=release_win build_$type" -o $VTInstallDir\vesc_tool.vcxproj
++
++    qmake -config release "CONFIG+= release_win build_$type"
++    jom clean
++    jom -j $NumJobs
++
++    # msbuild $VTInstallDir\vesc_tool.vcxproj /Zm:1000 /t:Build /p:Configuration=Release
++    Remove-Item -Path $VTInstallDir\obj -Force -Recurse -ErrorAction Ignore
++
++    Push-Location $VTInstallDir
++    $DeployDir="vesc_tool_" + $type + "-win"
++    $ZipFile=$DeployDir + ".zip"
++    # Create-Directory $DeployDir
++
++    $VTApp = "vesc_tool_" + ${VTVer} + ".exe"
++    windeployqt $VTApp -qmldir=. --dir $DeployDir
++    Move-Item $VTApp $DeployDir
++    Compress-Archive $DeployDir -DestinationPath $ZipFile
++
++    Remove-Item * -Exclude *.zip -Recurse -ErrorAction Ignore
++    # Remove-Item * -Include *.exe, *.dll -Exclude *.zip -Recurse -ErrorAction Ignore
++    Pop-Location
++}
++
++#-----------------------------------------------------------------------------
++# Execute main code.
++#-----------------------------------------------------------------------------
++
++. Main
+diff --git a/esp32/esp_loader.h b/esp32/esp_loader.h
+index 8e42afd..c690965 100644
+--- a/esp32/esp_loader.h
++++ b/esp32/esp_loader.h
+@@ -88,10 +88,7 @@ typedef struct {
+                                100 millisecond delay is inserted after each try. */
+ } esp_loader_connect_args_t;
+ 
+-#define ESP_LOADER_CONNECT_DEFAULT() { \
+-  .sync_timeout = 100, \
+-  .trials = 10, \
+-}
++#define ESP_LOADER_CONNECT_DEFAULT() {100, 10}
+ 
+ /**
+   * @brief Connects to the target
+diff --git a/esp32/serial_comm.c b/esp32/serial_comm.c
+index 6643400..ef4a1c4 100644
+--- a/esp32/serial_comm.c
++++ b/esp32/serial_comm.c
+@@ -425,7 +425,9 @@ esp_loader_error_t loader_spi_parameters(uint32_t total_size)
+     return send_cmd(&spi_cmd, sizeof(spi_cmd), NULL);
+ }
+ 
++#if defined(__GNUC__) || defined(__clang__)
+ __attribute__ ((weak)) void loader_port_debug_print(const char *str)
+ {
+ 
+ }
++#endif
+diff --git a/esp32/serial_comm_prv.h b/esp32/serial_comm_prv.h
+index 4d21fcd..603db59 100644
+--- a/esp32/serial_comm_prv.h
++++ b/esp32/serial_comm_prv.h
+@@ -30,7 +30,8 @@ extern "C" {
+ 
+ #define MD5_SIZE 32
+ 
+-typedef enum __attribute__((packed))
++#pragma pack(push, 1)
++typedef enum
+ {
+     FLASH_BEGIN = 0x02,
+     FLASH_DATA  = 0x03,
+@@ -51,7 +52,7 @@ typedef enum __attribute__((packed))
+     SPI_FLASH_MD5    = 0x13,
+ } command_t;
+ 
+-typedef enum __attribute__((packed))
++typedef enum
+ {
+     RESPONSE_OK     = 0x00,
+     INVALID_COMMAND = 0x05, // parameters or length field is invalid
+@@ -63,7 +64,7 @@ typedef enum __attribute__((packed))
+     DEFLATE_ERROR   = 0x0b, // ESP32 compressed uploads only
+ } error_code_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -71,7 +72,7 @@ typedef struct __attribute__((packed))
+     uint32_t checksum;
+ } command_common_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t erase_size;
+@@ -81,7 +82,7 @@ typedef struct __attribute__((packed))
+     uint32_t encrypted;
+ } begin_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t data_size;
+@@ -90,26 +91,26 @@ typedef struct __attribute__((packed))
+     uint32_t zero_1;
+ } data_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+ } flash_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+     uint32_t entry_point_address;
+ } mem_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint8_t sync_sequence[36];
+ } sync_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -118,27 +119,27 @@ typedef struct __attribute__((packed))
+     uint32_t delay_us;
+ } write_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+ } read_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t configuration;
+     uint32_t zero; // ESP32 ROM only
+ } spi_attach_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t new_baudrate;
+     uint32_t old_baudrate;
+ } change_baudrate_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -147,7 +148,7 @@ typedef struct __attribute__((packed))
+     uint32_t reserved_1;
+ } spi_flash_md5_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -155,26 +156,26 @@ typedef struct __attribute__((packed))
+     uint32_t value;
+ } common_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t failed;
+     uint8_t error;
+ } response_status_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     response_status_t status;
+ } response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     uint8_t md5[MD5_SIZE];     // ROM only
+     response_status_t status;
+ } rom_md5_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t id;
+@@ -184,7 +185,7 @@ typedef struct __attribute__((packed))
+     uint32_t page_size;
+     uint32_t status_mask;
+ } write_spi_command_t;
+-
++#pragma pack(pop)
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/ios/src/setIosParameters.h b/ios/src/setIosParameters.h
+index ba077f5..4b83dea 100644
+--- a/ios/src/setIosParameters.h
++++ b/ios/src/setIosParameters.h
+@@ -1,10 +1,8 @@
+ #ifndef SETIOSPARAMETERS_H
+ #define SETIOSPARAMETERS_H
+-#include <QObject>
+-#include <QApplication>
++#include <QtGlobal>
+ #ifdef Q_OS_IOS
+-class SetIosParams : public QObject{
+-  Q_OBJECT
++class SetIosParams {
+ public:
+   SetIosParams();
+   void NoSleep();
+diff --git a/mainwindow.cpp b/mainwindow.cpp
+index 9966ab5..a7a07fb 100755
+--- a/mainwindow.cpp
++++ b/mainwindow.cpp
+@@ -1291,6 +1291,9 @@ void MainWindow::on_actionLaunchMobileTool_triggered()
+     qApp->quit();
+     QProcess::startDetached(program, params);
+ }
++#else
++void MainWindow::on_actionLaunchBoardConfigurator_triggered() {}
++void MainWindow::on_actionLaunchMobileTool_triggered() {}
+ #endif
+ 
+ void MainWindow::on_actionAbout_triggered()
+@@ -2226,4 +2229,3 @@ void MainWindow::on_actionRestartLispBM_triggered()
+ {
+     mVesc->commands()->lispSetRunning(1);
+ }
+-
+diff --git a/mainwindow.h b/mainwindow.h
+index aa923ec..42e329f 100644
+--- a/mainwindow.h
++++ b/mainwindow.h
+@@ -117,10 +117,8 @@ private slots:
+     void on_actionSaveAppconfXml_triggered();
+     void on_actionLoadAppconfXml_triggered();
+     void on_actionExit_triggered();
+-    #ifndef Q_OS_IOS
+     void on_actionLaunchBoardConfigurator_triggered();
+     void on_actionLaunchMobileTool_triggered();
+-    #endif
+     void on_actionAbout_triggered();
+     void on_actionLibrariesUsed_triggered();
+     void on_dutyButton_clicked();
+@@ -161,7 +159,7 @@ private slots:
+     void on_actionRestoreConfigurationsCAN_triggered();
+     void on_scanCanButton_clicked();
+     void on_canList_currentRowChanged(int currentRow);
+-    void on_actionGamepadControl_triggered(bool checked);   
++    void on_actionGamepadControl_triggered(bool checked);
+     void on_actionPreferences_triggered();
+     void on_actionRestartLispBM_triggered();
+ 
+diff --git a/pages/pagecananalyzer.h b/pages/pagecananalyzer.h
+index be5d9a5..75d2001 100644
+--- a/pages/pagecananalyzer.h
++++ b/pages/pagecananalyzer.h
+@@ -21,6 +21,7 @@
+ #define PAGECANANALYZER_H
+ 
+ #include <QWidget>
++#include <QMessageBox>
+ #include "vescinterface.h"
+ #include "widgets/paramtable.h"
+ 
+diff --git a/vesc_tool.pro b/vesc_tool.pro
+index d62e1fa..136d7e6 100644
+--- a/vesc_tool.pro
++++ b/vesc_tool.pro
+@@ -81,10 +81,11 @@ DEFINES += HAS_BLUETOOTH
+ 
+ !ios: {
+     QT      += printsupport
++    DEFINES += HAS_SERIALPORT
+ !android: {
+     # Serial port available
+-    DEFINES += HAS_SERIALPORT
+     DEFINES += HAS_GAMEPAD
++    DEFINES += HAS_CANBUS
+ }
+ }
+ 
+@@ -181,9 +182,6 @@ release_win {
+ }
+ 
+ release_lin {
+-    # http://micro.nicholaswilson.me.uk/post/31855915892/rules-of-static-linking-libstdc-libc-libgcc
+-    # http://insanecoding.blogspot.se/2012/07/creating-portable-linux-binaries.html
+-    QMAKE_LFLAGS += -static-libstdc++ -static-libgcc
+     DESTDIR = build/lin
+     OBJECTS_DIR = build/lin/obj
+     MOC_DIR = build/lin/obj
+@@ -337,7 +335,7 @@ DISTFILES += \
+ ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+ 
+ macx-clang:contains(QMAKE_HOST.arch, arm.*): {
+-    QMAKE_APPLE_DEVICE_ARCHS=arm64
++    # QMAKE_APPLE_DEVICE_ARCHS=arm64
+ }
+ 
+ macx {
+@@ -348,7 +346,7 @@ macx {
+     QMAKE_CXXFLAGS_RELEASE = $$QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO
+     QMAKE_OBJECTIVE_CFLAGS_RELEASE = $$QMAKE_OBJECTIVE_CFLAGS_RELEASE_WITH_DEBUGINFO
+     QMAKE_LFLAGS_RELEASE = $$QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO
+-    QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
++    # QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+ }
+ 
+ ios {
+diff --git a/widgets/mtextedit.cpp b/widgets/mtextedit.cpp
+index b30be1d..b921b00 100644
+--- a/widgets/mtextedit.cpp
++++ b/widgets/mtextedit.cpp
+@@ -22,7 +22,7 @@
+ #include <QTextCursor>
+ #include <QImage>
+ #include <QByteArray>
+-#include <QBuffer>
++#include <QtCore/QBuffer>
+ #include <stdlib.h>
+ #include <QInputDialog>
+ 
+-- 
+2.41.0
+
