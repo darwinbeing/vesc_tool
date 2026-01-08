@@ -13,7 +13,10 @@
 (def mt6701-addr 0x06)
 (i2c-start 'rate-100k 'pin-hall1 'pin-hall2)
 
-(if (not (i2c-detect-addr mt6701-addr)) (print "No response from encoder"))
+(if (i2c-detect-addr mt6701-addr)
+    (print "Encoder responded on I2C")
+    (print "No response from encoder")
+)
 
 (defun read-reg (reg) {
         (var buf (bufcreate 1))
@@ -30,6 +33,44 @@
         (i2c-tx-rx mt6701-addr (list 0x0A 0x05))
 })
 
+(defun mt6701-set-uvw-res (poles) {
+        (setq poles (- poles 1))
+        (def p4 (bitwise-and poles 15))
+        (write-reg 0x30 (bits-enc-int (read-reg 0x30) 4 p4 4))
+})
+
+(defun mt6701-set-abz-res (v) {
+        (def v10   (bitwise-and v 1023))
+        (def low8  (bitwise-and v10 255))
+        (def high2 (bitwise-and (shr v10 8) 3))
+
+        (write-reg 0x31 low8)
+        (write-reg 0x30 (bits-enc-int (read-reg 0x30) 0 high2 2))
+})
+
+(defun mt6701-set-hyst (h) {
+        (def h3 (bitwise-and h 7))
+        (def hyst2 (bitwise-and (shr h3 2) 1))
+        (def hyst10 (bitwise-and h3 3))
+
+        (write-reg 0x32 (bits-enc-int (read-reg 0x32) 7 hyst2 1))
+        (write-reg 0x34 (bits-enc-int (read-reg 0x34) 6 hyst10 2))
+})
+
+(defun mt6701-set-z-pulse-width (w) {
+        (def w3 (bitwise-and w 7))
+        (write-reg 0x32 (bits-enc-int (read-reg 0x32) 4 w3 3))
+})
+
+(defun mt6701-set-zero (z) {
+        (def z12 (bitwise-and z 4095))
+        (def low8 (bitwise-and z12 255))
+        (def high4 (bitwise-and (shr z12 8) 15))
+
+        (write-reg 0x33 low8)
+        (write-reg 0x32 (bits-enc-int (read-reg 0x32) 0 high4 4))
+})
+
 ;(loopwhile-thd 100 t {
         ;(var buf (bufcreate 2))
         ;(i2c-tx-rx mt6701-addr '(3) buf)
@@ -37,16 +78,52 @@
         ;(sleep 0.1)
 ;})
 
-(defun conf-pwm-abz () {
-        (write-reg 0x38 (bits-enc-int (read-reg 0x38) 5 3 2)) ; PWM Out, inverted polarity
-        (write-reg 0x31 255)
+(defun conf-basics () {
+        (write-reg 0x38 (bits-enc-int (read-reg 0x38) 5 3 2)) ; PWM out, inverted polarity
+        (write-reg 0x25 (bits-enc-int (read-reg 0x25) 7 0 1)) ; bit 7  0 = UVW, 1= -A-B-Z (differential ABI support)
+        (write-reg 0x29 (bits-enc-int (read-reg 0x29) 6 0 1)) ; bit 6  0 = ABZ, 1= UVW
+        (write-reg 0x29 (bits-enc-int (read-reg 0x29) 1 0 1)) ; bit 1  0 = CCW, 1= CW
         (sleep 1.0)
 })
 
+(conf-basics)
 
-(conf-pwm-abz)
+; 0-1023 allowed, Encoder counts will be (abz-res + 1) * 4
+; Example (255 + 1) * 4 = 1024
+; 255 is a good tradeoff. Good enough resolution and
+; not too high frequency on high RPM.
+(mt6701-set-abz-res 255)
+
+; Pole pairs, 1 - 16
+(mt6701-set-uvw-res 4)
+
+; ABZ Hysteresis Filter
+; 0: 1 LSB
+; 1: 2 LSB
+; 2: 4 LSB
+; 3: 8 LSB
+; 4: 0 LSB
+; 5: 0.25 LSB
+; 6: 0.5 LSB
+; 7: 1 LSB
+(mt6701-set-hyst 0)
+
+; Z Pulse Width
+; 0: 1 LSB
+; 1: 2 LSB
+; 2: 4 LSB
+; 3: 8 LSB
+; 4: 12 LSB
+; 5: 16 LSB
+; 6: 180 Degrees
+; 7: 1 LSB
+(mt6701-set-z-pulse-width 1)
+
+; ABZ Zero Offset
+; 0-4096 maps to 0-360 degrees
+(mt6701-set-zero 0)
+
+; Store configuration to non-volatile memory
 (store-config)
 
-;(read-reg 0x30)
-;(read-reg 0x31)
-;(read-reg 0x32)
+(print "Done!")
