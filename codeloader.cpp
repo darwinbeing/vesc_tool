@@ -1326,6 +1326,7 @@ bool CodeLoader::shouldShowPackageFromRxp(VescPackage pkg, FW_RX_PARAMS rxp, boo
 
         if (qmlItem == nullptr) {
             qWarning() << "Failed to run isCompatible because qmlItem could not be created";
+            engine->deleteLater();
             return res;
         }
 
