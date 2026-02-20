@@ -246,6 +246,24 @@ target_chip_t Esp32Flash::getTarget()
 #endif
 }
 
+QString Esp32Flash::getTargetName()
+{
+#ifdef HAS_SERIALPORT
+    switch (esp_loader_get_target()) {
+        case ESP8266_CHIP:  return "ESP8266";
+        case ESP32_CHIP:    return "ESP32";
+        case ESP32S2_CHIP:  return "ESP32-S2";
+        case ESP32C3_CHIP:  return "ESP32-C3";
+        case ESP32S3_CHIP:  return "ESP32-S3";
+        case ESP32C2_CHIP:  return "ESP32-C2";
+        case ESP32H2_CHIP:  return "ESP32-H2";
+        default:            return "";
+    }
+#else
+    return "";
+#endif
+}
+
 #ifdef HAS_SERIALPORT
 void Esp32Flash::serialPortError(QSerialPort::SerialPortError error)
 {

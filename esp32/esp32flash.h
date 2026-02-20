@@ -43,6 +43,7 @@ public:
     Q_INVOKABLE bool isBuiltinUsb();
     Q_INVOKABLE bool isEspConnected();
     Q_INVOKABLE target_chip_t getTarget();
+    Q_INVOKABLE QString getTargetName();
 
 signals:
     void flashProgress(double prog);
