@@ -148,28 +148,9 @@ void PageEspProg::on_serialDisconnectButton_clicked()
 void PageEspProg::on_serialConnectButton_clicked()
 {
     if (mEspFlash.connectEsp(ui->serialPortBox->currentData().toString())) {
-        switch (mEspFlash.getTarget()) {
-        case ESP32C3_CHIP: {
-            ui->fwList->clear();
-
-            QDir dir("://res/firmwares_esp/ESP32-C3");
-            dir.setSorting(QDir::Name);
-            for (auto fi: dir.entryInfoList()) {
-                QFileInfo fiApp(fi.absoluteFilePath() + "/vesc_express.bin");
-                QFileInfo fiBl(fi.absoluteFilePath() + "/bootloader.bin");
-                QFileInfo fiPart(fi.absoluteFilePath() + "/partition-table.bin");
-
-                if (fiApp.exists() && fiBl.exists() && fiPart.exists()) {
-                    addFwToList(fi.fileName(), fi.canonicalFilePath());
-                }
-            }
-            ui->flashButton->setEnabled(true);
-            ui->eraseLispButton->setEnabled(true);
-            ui->eraseQmlButton->setEnabled(true);
-        } break;
-
-        default:
-            break;
+        QString chipName = mEspFlash.getTargetName();
+        if (!chipName.isEmpty()) {
+            loadFwForChip("://res/firmwares_esp/" + chipName);
         }
     }
 }
@@ -298,6 +279,30 @@ void PageEspProg::on_appChooseButton_clicked()
     }
 }
 
+void PageEspProg::scanChipFw(QString chipDir)
+{
+    QDir dir(chipDir);
+    dir.setSorting(QDir::Name);
+    for (auto fi: dir.entryInfoList()) {
+        QFileInfo fiApp(fi.absoluteFilePath() + "/vesc_express.bin");
+        QFileInfo fiBl(fi.absoluteFilePath() + "/bootloader.bin");
+        QFileInfo fiPart(fi.absoluteFilePath() + "/partition-table.bin");
+
+        if (fiApp.exists() && fiBl.exists() && fiPart.exists()) {
+            addFwToList(fi.fileName(), fi.canonicalFilePath());
+        }
+    }
+}
+
+void PageEspProg::loadFwForChip(QString chipDir)
+{
+    ui->fwList->clear();
+    scanChipFw(chipDir);
+    ui->flashButton->setEnabled(true);
+    ui->eraseLispButton->setEnabled(true);
+    ui->eraseQmlButton->setEnabled(true);
+}
+
 void PageEspProg::addFwToList(QString name, QString path)
 {
     QListWidgetItem *item = new QListWidgetItem;
@@ -350,16 +355,9 @@ void PageEspProg::on_cancelButton_clicked()
 void PageEspProg::listAllFw()
 {
     ui->fwList->clear();
-    QDir dir("://res/firmwares_esp/ESP32-C3");
-    dir.setSorting(QDir::Name);
-    for (auto fi: dir.entryInfoList()) {
-        QFileInfo fiApp(fi.absoluteFilePath() + "/vesc_express.bin");
-        QFileInfo fiBl(fi.absoluteFilePath() + "/bootloader.bin");
-        QFileInfo fiPart(fi.absoluteFilePath() + "/partition-table.bin");
-
-        if (fiApp.exists() && fiBl.exists() && fiPart.exists()) {
-            addFwToList(fi.fileName(), fi.canonicalFilePath());
-        }
+    QDir root("://res/firmwares_esp");
+    for (auto chipDir: root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+        scanChipFw(chipDir.absoluteFilePath());
     }
 }
 
