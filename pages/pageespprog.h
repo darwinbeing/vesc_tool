@@ -64,6 +64,8 @@ private:
 
     void listAllFw();
     void addFwToList(QString name, QString path);
+    void scanChipFw(QString chipDir);
+    void loadFwForChip(QString chipDir);
 };
 
 #endif // PAGEESPPROG_H
