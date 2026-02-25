@@ -729,19 +729,24 @@ void PageFirmware::reloadArchive(bool download)
 {
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw.rcc";
     QFile file(path);
+    bool reload = false;
+
     if (file.exists()) {
         QResource::unregisterResource(path);
-
         if (mVesc && download) {
             mVesc->downloadFwArchive();
         }
-
         QResource::registerResource(path);
+        reload = true;
+    } else if (mVesc && download) {
+        mVesc->downloadFwArchive();
+        QResource::registerResource(path);
+        reload = true;
+    }
 
+    if (reload) {
         QString fwDir = "://fw_archive";
-
         ui->archVersionList->clear();
-
         QDirIterator it(fwDir);
         while (it.hasNext()) {
             QFileInfo fi(it.next());
@@ -760,13 +765,22 @@ void PageFirmware::reloadLatest(bool download)
 
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_" + fwStr + ".rcc";
     QFile file(path);
+    bool reload = false;
+
     if (file.exists()) {
         QResource::unregisterResource(path);
         if (mVesc && download) {
             mVesc->downloadFwLatest();
         }
         QResource::registerResource(path);
+        reload = true;
+    } else if (mVesc && download) {
+        mVesc->downloadFwLatest();
+        QResource::registerResource(path);
+        reload = true;
+    }
 
+    if (reload) {
         if (mVesc && mVesc->isPortConnected()) {
             FW_RX_PARAMS params = mVesc->getLastFwRxParams();
             updateHwList(params);
