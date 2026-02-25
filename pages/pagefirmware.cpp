@@ -221,63 +221,39 @@ void PageFirmware::updateHwList(FW_RX_PARAMS params)
 {
     ui->hwList->clear();
 
-    QString fwDir = "://res/firmwares";
+    if (params.hwType == HW_TYPE_CUSTOM_MODULE) {
+        QString path = "://res/firmwares_esp/esp32c3/" + params.hw;
+        if (!QFileInfo::exists(path)) {
+            path = "://res/firmwares_esp/esp32s3/" + params.hw;
+        }
 
-    if (params.hwType == HW_TYPE_VESC_BMS) {
-        fwDir = "://res/firmwares_bms";
-    }
-
-    foreach (const auto &fi, QDir(fwDir).entryInfoList(QDir::NoFilter, QDir::Name)) {
-        QStringList names = fi.fileName().split("_o_");
-        if (fi.isDir() && (params.hw.isEmpty() || names.contains(params.hw, Qt::CaseInsensitive))) {
+        if (QFileInfo::exists(path)) {
             QListWidgetItem *item = new QListWidgetItem;
-
-            QString name = names.at(0);
-            for(int i = 1;i < names.size();i++) {
-                name += " & " + names.at(i);
-            }
-
-            item->setText(name);
-            item->setData(Qt::UserRole, fi.absoluteFilePath());
+            item->setText(params.hw);
+            item->setData(Qt::UserRole, path);
             ui->hwList->insertItem(ui->hwList->count(), item);
         }
-    }
+    } else {
+        QString fwDir = "://res/firmwares";
+        if (params.hwType == HW_TYPE_VESC_BMS) {
+            fwDir = "://res/firmwares_bms";
+        }
 
-    // Manually added entries. TODO: Come up with a system for them
-    QString extraPath;
-    if (params.hw == "VESC Express T") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VESC Express";
-    } else if (params.hw == "Devkit C3") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/DevKitM-1";
-    } else if (params.hw == "STR-DCDC") {
-        extraPath = "://res/firmwares_custom_module/str-dcdc";
-    } else if (params.hw == "VBMS32") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VBMS32";
-    } else if (params.hw == "STR365 IO") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/STR365";
-    } else if (params.hw == "VDisp") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VDisp";
-    } else if (params.hw == "VL Scope") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VL Scope";
-    } else if (params.hw == "Duet Expr") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/Duet";
-    } else if (params.hw == "VL Link") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VL Link";
-    } else if (params.hw == "VDisp 900") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VDisp 900";
-    } else if (params.hw == "Nanolog") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/Nanolog";
-    } else if (params.hw == "VBMS16") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/VBMS16";
-    } else if (params.hw == "Rmcore") {
-        extraPath = "://res/firmwares_esp/ESP32-C3/Rmcore";
-    }
+        foreach (const auto &fi, QDir(fwDir).entryInfoList(QDir::NoFilter, QDir::Name)) {
+            QStringList names = fi.fileName().split("_o_");
+            if (fi.isDir() && (params.hw.isEmpty() || names.contains(params.hw, Qt::CaseInsensitive))) {
+                QListWidgetItem *item = new QListWidgetItem;
 
-    if (!extraPath.isEmpty()) {
-        QListWidgetItem *item = new QListWidgetItem;
-        item->setText(params.hw);
-        item->setData(Qt::UserRole, extraPath);
-        ui->hwList->insertItem(ui->hwList->count(), item);
+                QString name = names.at(0);
+                for(int i = 1;i < names.size();i++) {
+                    name += " & " + names.at(i);
+                }
+
+                item->setText(name);
+                item->setData(Qt::UserRole, fi.absoluteFilePath());
+                ui->hwList->insertItem(ui->hwList->count(), item);
+            }
+        }
     }
 
     if (ui->hwList->count() > 0) {
@@ -727,68 +703,49 @@ void PageFirmware::uploadFw(bool allOverCan)
 
 void PageFirmware::reloadArchive(bool download)
 {
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw.rcc";
-    QFile file(path);
-    bool reload = false;
-
-    if (file.exists()) {
-        QResource::unregisterResource(path);
-        if (mVesc && download) {
-            mVesc->downloadFwArchive();
-        }
-        QResource::registerResource(path);
-        reload = true;
-    } else if (mVesc && download) {
+    if (mVesc && download) {
         mVesc->downloadFwArchive();
-        QResource::registerResource(path);
-        reload = true;
+    } else {
+        QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw.rcc";
+        if (QFileInfo::exists(path)) {
+            QResource::unregisterResource(path);
+            QResource::registerResource(path);
+        }
     }
 
-    if (reload) {
-        QString fwDir = "://fw_archive";
-        ui->archVersionList->clear();
-        QDirIterator it(fwDir);
-        while (it.hasNext()) {
-            QFileInfo fi(it.next());
-            QListWidgetItem *item = new QListWidgetItem;
+    QString fwDir = "://fw_archive";
+    ui->archVersionList->clear();
+    QDirIterator it(fwDir);
+    while (it.hasNext()) {
+        QFileInfo fi(it.next());
+        QListWidgetItem *item = new QListWidgetItem;
 
-            item->setText(fi.fileName());
-            item->setData(Qt::UserRole, fi.absoluteFilePath());
-            ui->archVersionList->insertItem(ui->archVersionList->count(), item);
-        }
+        item->setText(fi.fileName());
+        item->setData(Qt::UserRole, fi.absoluteFilePath());
+        ui->archVersionList->insertItem(ui->archVersionList->count(), item);
     }
 }
 
 void PageFirmware::reloadLatest(bool download)
 {
-    QString fwStr = QString::number(VT_VERSION, 'f', 2);
-
-    QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_" + fwStr + ".rcc";
-    QFile file(path);
-    bool reload = false;
-
-    if (file.exists()) {
-        QResource::unregisterResource(path);
-        if (mVesc && download) {
-            mVesc->downloadFwLatest();
-        }
-        QResource::registerResource(path);
-        reload = true;
-    } else if (mVesc && download) {
+    if (mVesc && download) {
         mVesc->downloadFwLatest();
-        QResource::registerResource(path);
-        reload = true;
+    } else {
+        QString fwStr = QString::number(VT_VERSION, 'f', 2);
+        QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_" + fwStr + ".rcc";
+        if (QFileInfo::exists(path)) {
+            QResource::unregisterResource(path);
+            QResource::registerResource(path);
+        }
     }
 
-    if (reload) {
-        if (mVesc && mVesc->isPortConnected()) {
-            FW_RX_PARAMS params = mVesc->getLastFwRxParams();
-            updateHwList(params);
-            updateBlList(params);
-        } else {
-            updateHwList(FW_RX_PARAMS());
-            updateBlList(FW_RX_PARAMS());
-        }
+    if (mVesc && mVesc->isPortConnected()) {
+        FW_RX_PARAMS params = mVesc->getLastFwRxParams();
+        updateHwList(params);
+        updateBlList(params);
+    } else {
+        updateHwList(FW_RX_PARAMS());
+        updateBlList(FW_RX_PARAMS());
     }
 }
 

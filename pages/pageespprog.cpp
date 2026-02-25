@@ -150,7 +150,7 @@ void PageEspProg::on_serialConnectButton_clicked()
     if (mEspFlash.connectEsp(ui->serialPortBox->currentData().toString())) {
         QString chipName = mEspFlash.getTargetName();
         if (!chipName.isEmpty()) {
-            loadFwForChip("://res/firmwares_esp/" + chipName);
+            loadFwForChip("://res/firmwares_esp/" + chipName.toLower().replace("-", ""));
         }
     }
 }
@@ -283,7 +283,7 @@ void PageEspProg::scanChipFw(QString chipDir)
 {
     QDir dir(chipDir);
     dir.setSorting(QDir::Name);
-    for (auto fi: dir.entryInfoList()) {
+    foreach (auto fi, dir.entryInfoList()) {
         QFileInfo fiApp(fi.absoluteFilePath() + "/vesc_express.bin");
         QFileInfo fiBl(fi.absoluteFilePath() + "/bootloader.bin");
         QFileInfo fiPart(fi.absoluteFilePath() + "/partition-table.bin");
@@ -296,11 +296,26 @@ void PageEspProg::scanChipFw(QString chipDir)
 
 void PageEspProg::loadFwForChip(QString chipDir)
 {
+    reloadLatest(false);
     ui->fwList->clear();
     scanChipFw(chipDir);
     ui->flashButton->setEnabled(true);
     ui->eraseLispButton->setEnabled(true);
     ui->eraseQmlButton->setEnabled(true);
+}
+
+void PageEspProg::reloadLatest(bool download)
+{
+    if (mVesc && download) {
+        mVesc->downloadFwLatest();
+    } else {
+        QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_esp32.rcc";
+        QFile file(path);
+        if (file.exists()) {
+            QResource::unregisterResource(path);
+            QResource::registerResource(path);
+        }
+    }
 }
 
 void PageEspProg::addFwToList(QString name, QString path)
@@ -343,7 +358,6 @@ void PageEspProg::on_flashBlButton_clicked()
     fApp.close();
 
     mVesc->fwUpload(fwData, false, false, false);
-
     ui->flashButton->setEnabled(true);
 }
 
@@ -354,9 +368,10 @@ void PageEspProg::on_cancelButton_clicked()
 
 void PageEspProg::listAllFw()
 {
+    reloadLatest(false);
     ui->fwList->clear();
     QDir root("://res/firmwares_esp");
-    for (auto chipDir: root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+    foreach (auto chipDir, root.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot)) {
         scanChipFw(chipDir.absoluteFilePath());
     }
 }

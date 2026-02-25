@@ -24,3 +24,9 @@
 })
 
 (profile)
+
+; Notes
+; 40k - No changes
+; 41.6k - Remove fmodf from norm angle
+; 43.0k -
+

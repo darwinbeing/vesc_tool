@@ -4331,7 +4331,7 @@ bool VescInterface::downloadFwArchive()
     if (file.open(QIODevice::WriteOnly)) {
         auto conn = connect(reply, &QNetworkReply::downloadProgress, [&file, reply, this]
                             (qint64 bytesReceived, qint64 bytesTotal) {
-            emit fwArchiveDlProgress("Downloading...", (double)bytesReceived / (double)bytesTotal);
+            emit fwArchiveDlProgress("Downloading " + QFileInfo(file).fileName(), (double)bytesReceived / (double)bytesTotal);
             file.write(reply->read(reply->size()));
         });
 
@@ -4349,6 +4349,7 @@ bool VescInterface::downloadFwArchive()
 
         file.close();
         res = true;
+        QResource::registerResource(path);
     } else {
         emit fwArchiveDlProgress("Could not open local file", 0.0);
     }
@@ -4361,50 +4362,62 @@ bool VescInterface::downloadFwArchive()
 
 bool VescInterface::downloadFwLatest()
 {
-    bool res = false;
+    auto downloadFws = [this](QUrl url, QString path) {
+        bool res = false;
 
-    QString fwStr = QString::number(VT_VERSION, 'f', 2);
-    QUrl url(QString("http://home.vedder.se/vesc_fw_archive/res_fw_") + fwStr + ".rcc");
+        QNetworkAccessManager manager;
+        QNetworkRequest request(url);
+        QNetworkReply *reply = manager.get(request);
 
-    QNetworkAccessManager manager;
-    QNetworkRequest request(url);
-    QNetworkReply *reply = manager.get(request);
+        QFile file(path);
+        QResource::unregisterResource(path);
+        if (file.open(QIODevice::WriteOnly)) {
+            auto conn = connect(reply, &QNetworkReply::downloadProgress, [&file, reply, this]
+                                (qint64 bytesReceived, qint64 bytesTotal) {
+                                    emit fwArchiveDlProgress("Downloading " + QFileInfo(file).fileName(), (double)bytesReceived / (double)bytesTotal);
+                                    file.write(reply->read(reply->size()));
+                                });
+
+            QEventLoop loop;
+            connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+            loop.exec();
+            disconnect(conn);
+
+            if (reply->error() == QNetworkReply::NoError) {
+                file.write(reply->readAll());
+                emit fwArchiveDlProgress("Download Done", 1.0);
+            } else {
+                emit fwArchiveDlProgress("Download Failed", 0.0);
+            }
+
+            file.close();
+            QResource::registerResource(path);
+            res = true;
+        } else {
+            emit fwArchiveDlProgress("Could not open local file", 0.0);
+        }
+
+        reply->abort();
+        reply->deleteLater();
+
+        return res;
+    };
+
     QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     if (!QDir(appDataLoc).exists()) {
         QDir().mkpath(appDataLoc);
     }
+
+    QString fwStr = QString::number(VT_VERSION, 'f', 2);
+    QUrl url(QString("http://home.vedder.se/vesc_fw_archive/res_fw_") + fwStr + ".rcc");
     QString path = appDataLoc + "/res_fw_" + fwStr + ".rcc";
-    QFile file(path);
-    QResource::unregisterResource(path);
-    if (file.open(QIODevice::WriteOnly)) {
-        auto conn = connect(reply, &QNetworkReply::downloadProgress, [&file, reply, this]
-                            (qint64 bytesReceived, qint64 bytesTotal) {
-                                emit fwArchiveDlProgress("Downloading...", (double)bytesReceived / (double)bytesTotal);
-                                file.write(reply->read(reply->size()));
-                            });
+    bool res1 = downloadFws(url, path);
 
-        QEventLoop loop;
-        connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
-        loop.exec();
-        disconnect(conn);
+    url = "http://home.vedder.se/vesc_fw_archive/res_fw_esp32.rcc";
+    path = appDataLoc + "/res_fw_esp32.rcc";
+    bool res2 = downloadFws(url, path);
 
-        if (reply->error() == QNetworkReply::NoError) {
-            file.write(reply->readAll());
-            emit fwArchiveDlProgress("Download Done", 1.0);
-        } else {
-            emit fwArchiveDlProgress("Download Failed", 0.0);
-        }
-
-        file.close();
-        res = true;
-    } else {
-        emit fwArchiveDlProgress("Could not open local file", 0.0);
-    }
-
-    reply->abort();
-    reply->deleteLater();
-
-    return res;
+    return res1 || res2;
 }
 
 bool VescInterface::downloadConfigs()

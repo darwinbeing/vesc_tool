@@ -33,54 +33,35 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
 {
     QVariantMap hws;
 
-    QString fwDir = "://res/firmwares";
-
-    if (params.hwType == HW_TYPE_VESC_BMS) {
-        fwDir = "://res/firmwares_bms";
-    }
-
-    QDirIterator it(fwDir);
-    while (it.hasNext()) {
-        QFileInfo fi(it.next());
-        QStringList names = fi.fileName().split("_o_");
-
-        if (fi.isDir() && (hw.isEmpty() || names.contains(hw, Qt::CaseInsensitive))) {
-            QString name = names.at(0);
-            for(int i = 1;i < names.size();i++) {
-                name += " & " + names.at(i);
-            }
-
-            hws.insert(name, fi.absoluteFilePath());
+    if (params.hwType == HW_TYPE_CUSTOM_MODULE) {
+        QString path = "://res/firmwares_esp/esp32c3/" + params.hw;
+        if (!QFileInfo::exists(path)) {
+            path = "://res/firmwares_esp/esp32s3/" + params.hw;
         }
-    }
 
-    // Manually added entries. TODO: Come up with a system for them
-    if (params.hw == "VESC Express T") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VESC Express");
-    } else if (params.hw == "Devkit C3") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/DevKitM-1");
-    } else if (params.hw == "STR-DCDC") {
-        hws.insert(params.hw, "://res/firmwares_custom_module/str-dcdc");
-    } else if (params.hw == "VBMS32") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VBMS32");
-    } else if (params.hw == "STR365 IO") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/STR365");
-    } else if (params.hw == "VDisp") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VDisp");
-    } else if (params.hw == "VL Scope") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VL Scope");
-    } else if (params.hw == "Duet Expr") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/Duet");
-    } else if (params.hw == "VL Link") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VL Link");
-    } else if (params.hw == "VDisp 900") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VDisp 900");
-    } else if (params.hw == "Nanolog") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/Nanolog");
-    } else if (params.hw == "VBMS16") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/VBMS16");
-    } else if (params.hw == "Rmcore") {
-        hws.insert(params.hw, "://res/firmwares_esp/ESP32-C3/Rmcore");
+        if (QFileInfo::exists(path)) {
+            hws.insert(params.hw, path);
+        }
+    } else {
+        QString fwDir = "://res/firmwares";
+        if (params.hwType == HW_TYPE_VESC_BMS) {
+            fwDir = "://res/firmwares_bms";
+        }
+
+        QDirIterator it(fwDir);
+        while (it.hasNext()) {
+            QFileInfo fi(it.next());
+            QStringList names = fi.fileName().split("_o_");
+
+            if (fi.isDir() && (hw.isEmpty() || names.contains(hw, Qt::CaseInsensitive))) {
+                QString name = names.at(0);
+                for(int i = 1;i < names.size();i++) {
+                    name += " & " + names.at(i);
+                }
+
+                hws.insert(name, fi.absoluteFilePath());
+            }
+        }
     }
 
     return hws;
@@ -330,8 +311,13 @@ void FwHelper::reloadLatest()
     QString fwStr = QString::number(VT_VERSION, 'f', 2);
 
     QString path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_" + fwStr + ".rcc";
-    QFile file(path);
-    if (file.exists()) {
+    if (QFileInfo::exists(path)) {
+        QResource::unregisterResource(path);
+        QResource::registerResource(path);
+    }
+
+    path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/res_fw_esp32.rcc";
+    if (QFileInfo::exists(path)) {
         QResource::unregisterResource(path);
         QResource::registerResource(path);
     }
