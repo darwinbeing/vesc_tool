@@ -1,0 +1,716 @@
+From bf7df1ac6cafbdba2d72536b9f01b16e634b0746 Mon Sep 17 00:00:00 2001
+From: LI Tao <litroncn@gmail.com>
+Date: Tue, 18 Nov 2025 15:38:24 -0800
+Subject: [PATCH] Publish Builds With Firmware
+
+---
+ android/build.gradle                          |   4 +-
+ .../gradle/wrapper/gradle-wrapper.properties  |   2 +-
+ build_lin                                     | 216 +++++++++++++-----
+ build_macos                                   |  88 +++----
+ esp32/esp_loader.h                            |   5 +-
+ esp32/serial_comm.c                           |   2 +
+ esp32/serial_comm_prv.h                       |  39 ++--
+ ios/src/setIosParameters.h                    |   6 +-
+ mainwindow.cpp                                |   4 +-
+ mainwindow.h                                  |   4 +-
+ pages/pagecananalyzer.h                       |   1 +
+ vesc_tool.pro                                 |   7 +-
+ widgets/mtextedit.cpp                         |   2 +-
+ 13 files changed, 219 insertions(+), 161 deletions(-)
+
+diff --git a/android/build.gradle b/android/build.gradle
+index d35d2a9..b1cc61e 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -5,7 +5,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:3.2.0'
++        classpath 'com.android.tools.build:gradle:7.2.2'
+     }
+ }
+ 
+@@ -17,7 +17,7 @@ repositories {
+ apply plugin: 'com.android.application'
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+ }
+ 
+ android {
+diff --git a/android/gradle/wrapper/gradle-wrapper.properties b/android/gradle/wrapper/gradle-wrapper.properties
+index bf3de21..92f06b5 100644
+--- a/android/gradle/wrapper/gradle-wrapper.properties
++++ b/android/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-bin.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.4.2-all.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/build_lin b/build_lin
+index 0d61474..845a90f 100755
+--- a/build_lin
++++ b/build_lin
+@@ -18,6 +18,20 @@
+ # sudo make install
+ # sudo ldconfig
+ 
++# Qt 5.9:
++# cd /opt
++# sudo mkdir qt5
++# sudo chown $USER qt5
++# git clone https://code.qt.io/qt/qt5.git
++# cd qt5
++# git checkout 5.9
++# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
++# mkdir build
++# cd build
++# ../configure -prefix /opt/Qt/5.9-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-xinput2 -no-glib -qt-xkbcommon-x11 -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-xkbcommon-evdev -no-evdev -no-libproxy -no-icu -skip imageformats -no-xinput2 -qt-freetype -opengl es2
++# make -j9
++# sudo make install
++
+ # Qt 5.12:
+ # cd /opt
+ # sudo mkdir qt5
+@@ -28,7 +42,21 @@
+ # perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+ # mkdir build
+ # cd build
+-# ../configure -prefix /opt/Qt/5.12-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsensors -skip multimedia -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# ../configure -prefix /opt/Qt/5.12-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# make -j9
++# sudo make install
++
++# Qt 5.13:
++# cd /opt
++# sudo mkdir qt5
++# sudo chown $USER qt5
++# git clone https://code.qt.io/qt/qt5.git
++# cd qt5
++# git checkout 5.13
++# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
++# mkdir build
++# cd build
++# ../configure -prefix /opt/Qt/5.13-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
+ # make -j9
+ # sudo make install
+ 
+@@ -42,74 +70,138 @@
+ # perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+ # mkdir build
+ # cd build
+-# ../configure -prefix /opt/Qt/5.15-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsensors -skip multimedia -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
++# ../configure -prefix /opt/Qt/5.15-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -no-accessibility -qt-freetype -skip qtimageformats -opengl es2
+ # make -j9
+ # sudo make install
+ 
+ # Note: -no-dbus and -skip qtconnectivity can also be added, but then bluetooth and window titlebar menus don't work.
+ 
++# set -e
++
++# export PATH=/opt/Qt/5.12-static/bin:$PATH
++# rm -rf build/lin/*
++
++# # Original
++# qmake -config release "CONFIG += release_lin build_original"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Platinum
++# qmake -config release "CONFIG += release_lin build_platinum"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Gold
++# qmake -config release "CONFIG += release_lin build_gold"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Silver
++# qmake -config release "CONFIG += release_lin build_silver"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Bronze
++# qmake -config release "CONFIG += release_lin build_bronze"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
++# # Free of charge
++# qmake -config release "CONFIG += release_lin build_free"
++# make clean
++# make -j8
++# rm -rf build/lin/obj
++# cd build/lin
++# zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
++# ls | grep -v '\.zip$' | xargs rm
++# cd ../..
++
+ set -e
+ 
+-export PATH=/opt/Qt/5.15-static/bin:$PATH
++sudo apt-get install -y libxkbcommon-x11-0 libfuse2
++
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
++
+ rm -rf build/lin/*
+ 
+-# Original
+-qmake -config release "CONFIG += release_lin build_original"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_lin build_platinum"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Gold
+-qmake -config release "CONFIG += release_lin build_gold"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_lin build_silver"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_lin build_bronze"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
+-
+-# Free of charge
+-qmake -config release "CONFIG += release_lin build_free"
+-make clean
+-make -j8
+-rm -rf build/lin/obj
+-cd build/lin
+-zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm
+-cd ../..
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++
++for type in ${BuildType[@]}; do
++    qmake -config release "CONFIG += release_lin build_${type}"
++    make clean
++    make
++
++    mkdir -p appdir/usr/bin
++    cp -v build/lin/vesc_tool_${VT_VERSION} appdir/usr/bin/vesc_tool
++    # make INSTALL_ROOT=appdir install
++
++    # rm -rf build/lin/obj
++    # pushd build/lin
++
++    cp res/version/platinum_v.svg appdir/vesc-tool.svg
++    cat > "appdir/vesc-tool.desktop" <<EOF
++#!/usr/bin/env xdg-open
++[Desktop Entry]
++Name=VESC Tool
++Comment=VESC ESC configuration tool
++Exec=/usr/bin/vesc_tool
++Terminal=false
++Type=Application
++Icon=vesc-tool
++Categories=Development;Utility;
++EOF
++    find appdir/
++
++    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
++    chmod a+x linuxdeployqt-continuous-x86_64.AppImage
++
++    export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
++    # export VERSION="$VT_VERSION"
++    # ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
++    # -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    ./linuxdeployqt-continuous-x86_64.AppImage appdir/vesc-tool.desktop -bundle-non-qt-libs -no-translations -no-copy-copyright-files -verbose=2 -appimage
++    mv VESC_Tool-$(git rev-parse --short HEAD)-x86_64.AppImage VESC_Tool-x86_64.AppImage
++    find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
++
++    mv appdir vesc_tool_${type}-lin
++    zip -rv vesc_tool_${type}-lin.zip vesc_tool_${type}-lin
++
++    find vesc_tool*.zip
++    find VESC_Tool*.AppImage
++    chmod +x VESC_Tool-x86_64.AppImage
++
++    # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
++    # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
++    # chmod a+x linuxdeployqt
++    # ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage -unsupported-bundle-everything -bundle-non-qt-libs -unsupported-allow-new-glibc
++    # rm -rf vesc_tool_${VT_VERSION}
++    # mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
+ 
++    # popd
++done
+diff --git a/build_macos b/build_macos
+index 2c3b490..adfd43a 100755
+--- a/build_macos
++++ b/build_macos
+@@ -2,65 +2,33 @@
+ 
+ set -e
+ 
+-export PATH=/opt/Qt/5.9-static/bin:$PATH
+-rm -rf build/macos/*
+-
+-# Original
+-qmake -config release "CONFIG += release_macos build_original"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_original_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Platinum
+-qmake -config release "CONFIG += release_macos build_platinum"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_platinum_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+ 
+-# Gold
+-qmake -config release "CONFIG += release_macos build_gold"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_gold_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Silver
+-qmake -config release "CONFIG += release_macos build_silver"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_silver_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+-
+-# Bronze
+-qmake -config release "CONFIG += release_macos build_bronze"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_bronze_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
++export PATH=$HOME/Qt5.15.2/5.15.2/clang_64/bin:$PATH
++rm -rf build/macos/*
+ 
+-# Free of charge
+-qmake -config release "CONFIG += release_macos build_free"
+-make clean
+-make -j8
+-rm -rf build/macos/obj
+-cd build/macos
+-zip vesc_tool_free_macos.zip `ls | grep -v '\.zip$'`
+-ls | grep -v '\.zip$' | xargs rm -rf
+-cd ../..
+\ No newline at end of file
++# BuildType=(original platinum gold silver bronze free)
++BuildType=(platinum)
++TARGET="VESC Tool"
++
++for type in ${BuildType[@]}; do
++    qmake -config release "CONFIG += release_macos build_${type}"
++    make clean
++    make -j8
++    rm -rf build/macos/obj
++    pushd build/macos
++
++    mkdir -p "${TARGET}-release"
++    ln -s  /Applications "${TARGET}-release/Applications"
++    mv "${TARGET}.app" "${TARGET}-release"
++    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
++    rm -f "${TARGET}-release/${TARGET}.dmg"
++    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS.dmg
++
++    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
++    # rm -rf "${TARGET}".app
++    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
++    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
++    popd
++done
+diff --git a/esp32/esp_loader.h b/esp32/esp_loader.h
+index 8e42afd..c690965 100644
+--- a/esp32/esp_loader.h
++++ b/esp32/esp_loader.h
+@@ -88,10 +88,7 @@ typedef struct {
+                                100 millisecond delay is inserted after each try. */
+ } esp_loader_connect_args_t;
+ 
+-#define ESP_LOADER_CONNECT_DEFAULT() { \
+-  .sync_timeout = 100, \
+-  .trials = 10, \
+-}
++#define ESP_LOADER_CONNECT_DEFAULT() {100, 10}
+ 
+ /**
+   * @brief Connects to the target
+diff --git a/esp32/serial_comm.c b/esp32/serial_comm.c
+index 6643400..ef4a1c4 100644
+--- a/esp32/serial_comm.c
++++ b/esp32/serial_comm.c
+@@ -425,7 +425,9 @@ esp_loader_error_t loader_spi_parameters(uint32_t total_size)
+     return send_cmd(&spi_cmd, sizeof(spi_cmd), NULL);
+ }
+ 
++#if defined(__GNUC__) || defined(__clang__)
+ __attribute__ ((weak)) void loader_port_debug_print(const char *str)
+ {
+ 
+ }
++#endif
+diff --git a/esp32/serial_comm_prv.h b/esp32/serial_comm_prv.h
+index 4d21fcd..603db59 100644
+--- a/esp32/serial_comm_prv.h
++++ b/esp32/serial_comm_prv.h
+@@ -30,7 +30,8 @@ extern "C" {
+ 
+ #define MD5_SIZE 32
+ 
+-typedef enum __attribute__((packed))
++#pragma pack(push, 1)
++typedef enum
+ {
+     FLASH_BEGIN = 0x02,
+     FLASH_DATA  = 0x03,
+@@ -51,7 +52,7 @@ typedef enum __attribute__((packed))
+     SPI_FLASH_MD5    = 0x13,
+ } command_t;
+ 
+-typedef enum __attribute__((packed))
++typedef enum
+ {
+     RESPONSE_OK     = 0x00,
+     INVALID_COMMAND = 0x05, // parameters or length field is invalid
+@@ -63,7 +64,7 @@ typedef enum __attribute__((packed))
+     DEFLATE_ERROR   = 0x0b, // ESP32 compressed uploads only
+ } error_code_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -71,7 +72,7 @@ typedef struct __attribute__((packed))
+     uint32_t checksum;
+ } command_common_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t erase_size;
+@@ -81,7 +82,7 @@ typedef struct __attribute__((packed))
+     uint32_t encrypted;
+ } begin_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t data_size;
+@@ -90,26 +91,26 @@ typedef struct __attribute__((packed))
+     uint32_t zero_1;
+ } data_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+ } flash_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+     uint32_t entry_point_address;
+ } mem_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint8_t sync_sequence[36];
+ } sync_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -118,27 +119,27 @@ typedef struct __attribute__((packed))
+     uint32_t delay_us;
+ } write_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+ } read_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t configuration;
+     uint32_t zero; // ESP32 ROM only
+ } spi_attach_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t new_baudrate;
+     uint32_t old_baudrate;
+ } change_baudrate_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -147,7 +148,7 @@ typedef struct __attribute__((packed))
+     uint32_t reserved_1;
+ } spi_flash_md5_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -155,26 +156,26 @@ typedef struct __attribute__((packed))
+     uint32_t value;
+ } common_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t failed;
+     uint8_t error;
+ } response_status_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     response_status_t status;
+ } response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     uint8_t md5[MD5_SIZE];     // ROM only
+     response_status_t status;
+ } rom_md5_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t id;
+@@ -184,7 +185,7 @@ typedef struct __attribute__((packed))
+     uint32_t page_size;
+     uint32_t status_mask;
+ } write_spi_command_t;
+-
++#pragma pack(pop)
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/ios/src/setIosParameters.h b/ios/src/setIosParameters.h
+index ba077f5..4b83dea 100644
+--- a/ios/src/setIosParameters.h
++++ b/ios/src/setIosParameters.h
+@@ -1,10 +1,8 @@
+ #ifndef SETIOSPARAMETERS_H
+ #define SETIOSPARAMETERS_H
+-#include <QObject>
+-#include <QApplication>
++#include <QtGlobal>
+ #ifdef Q_OS_IOS
+-class SetIosParams : public QObject{
+-  Q_OBJECT
++class SetIosParams {
+ public:
+   SetIosParams();
+   void NoSleep();
+diff --git a/mainwindow.cpp b/mainwindow.cpp
+index 6ffc294..49d6584 100755
+--- a/mainwindow.cpp
++++ b/mainwindow.cpp
+@@ -1251,6 +1251,9 @@ void MainWindow::on_actionLaunchMobileTool_triggered()
+     qApp->quit();
+     QProcess::startDetached(program, params);
+ }
++#else
++void MainWindow::on_actionLaunchBoardConfigurator_triggered() {}
++void MainWindow::on_actionLaunchMobileTool_triggered() {}
+ #endif
+ 
+ void MainWindow::on_actionAbout_triggered()
+@@ -2183,4 +2186,3 @@ void MainWindow::on_actionRestartLispBM_triggered()
+ {
+     mVesc->commands()->lispSetRunning(1);
+ }
+-
+diff --git a/mainwindow.h b/mainwindow.h
+index c2612fc..1ad2316 100644
+--- a/mainwindow.h
++++ b/mainwindow.h
+@@ -113,10 +113,8 @@ private slots:
+     void on_actionSaveAppconfXml_triggered();
+     void on_actionLoadAppconfXml_triggered();
+     void on_actionExit_triggered();
+-    #ifndef Q_OS_IOS
+     void on_actionLaunchBoardConfigurator_triggered();
+     void on_actionLaunchMobileTool_triggered();
+-    #endif
+     void on_actionAbout_triggered();
+     void on_actionLibrariesUsed_triggered();
+     void on_dutyButton_clicked();
+@@ -157,7 +155,7 @@ private slots:
+     void on_actionRestoreConfigurationsCAN_triggered();
+     void on_scanCanButton_clicked();
+     void on_canList_currentRowChanged(int currentRow);
+-    void on_actionGamepadControl_triggered(bool checked);   
++    void on_actionGamepadControl_triggered(bool checked);
+     void on_actionPreferences_triggered();
+     void on_actionRestartLispBM_triggered();
+ 
+diff --git a/pages/pagecananalyzer.h b/pages/pagecananalyzer.h
+index be5d9a5..75d2001 100644
+--- a/pages/pagecananalyzer.h
++++ b/pages/pagecananalyzer.h
+@@ -21,6 +21,7 @@
+ #define PAGECANANALYZER_H
+ 
+ #include <QWidget>
++#include <QMessageBox>
+ #include "vescinterface.h"
+ #include "widgets/paramtable.h"
+ 
+diff --git a/vesc_tool.pro b/vesc_tool.pro
+index 056e297..b2564e8 100644
+--- a/vesc_tool.pro
++++ b/vesc_tool.pro
+@@ -79,10 +79,11 @@ DEFINES += HAS_POS
+ 
+ !ios: {
+     QT       += printsupport
++    DEFINES += HAS_SERIALPORT
+ !android: {
+     # Serial port available
+-    DEFINES += HAS_SERIALPORT
+     DEFINES += HAS_GAMEPAD
++    DEFINES += HAS_CANBUS
+ }
+ }
+ 
+@@ -135,6 +136,7 @@ contains(DEFINES, HAS_GAMEPAD) {
+ }
+ 
+ android: QT += androidextras
++android: QT += 3dquickscene2d
+ 
+ ios | macx: {
+     TARGET = "VESC Tool"
+@@ -179,9 +181,6 @@ release_win {
+ }
+ 
+ release_lin {
+-    # http://micro.nicholaswilson.me.uk/post/31855915892/rules-of-static-linking-libstdc-libc-libgcc
+-    # http://insanecoding.blogspot.se/2012/07/creating-portable-linux-binaries.html
+-    QMAKE_LFLAGS += -static-libstdc++ -static-libgcc
+     DESTDIR = build/lin
+     OBJECTS_DIR = build/lin/obj
+     MOC_DIR = build/lin/obj
+diff --git a/widgets/mtextedit.cpp b/widgets/mtextedit.cpp
+index b30be1d..b921b00 100644
+--- a/widgets/mtextedit.cpp
++++ b/widgets/mtextedit.cpp
+@@ -22,7 +22,7 @@
+ #include <QTextCursor>
+ #include <QImage>
+ #include <QByteArray>
+-#include <QBuffer>
++#include <QtCore/QBuffer>
+ #include <stdlib.h>
+ #include <QInputDialog>
+ 
+-- 
+2.41.0
+
