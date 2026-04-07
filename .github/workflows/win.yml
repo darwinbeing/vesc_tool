@@ -78,6 +78,11 @@ jobs:
           else
             CURRENT_TAG=""
             PREVIOUS_TAG=""
+            TARGET_REF="${VT_REF}"
+            TARGET_REV="${VT_REF}"
+            if ! git rev-parse -q --verify "${TARGET_REV}^{commit}" >/dev/null; then
+              TARGET_REV="HEAD"
+            fi
             if git rev-parse -q --verify "refs/tags/${VT_VERSION}" >/dev/null; then
               CURRENT_TAG="${VT_VERSION}"
             fi
@@ -85,25 +90,32 @@ jobs:
             if [ "${{ inputs.prerelease }}" = "true" ]; then
               TITLE="**VESC Tool Nightly Build ${VT_VERSION}**"
               if [ -n "${CURRENT_TAG}" ]; then
-                RANGE="${CURRENT_TAG}..HEAD"
+                RANGE="${CURRENT_TAG}..${TARGET_REV}"
+                DISPLAY_RANGE="${CURRENT_TAG}..${TARGET_REF}"
               else
-                RANGE="HEAD"
+                RANGE="${TARGET_REV}"
+                DISPLAY_RANGE="${TARGET_REF}"
               fi
             else
               TITLE="**VESC Tool Release Build ${VT_VERSION}**"
               if [ -n "${PREVIOUS_TAG}" ] && [ -n "${CURRENT_TAG}" ]; then
                 RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+                DISPLAY_RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
               elif [ -n "${PREVIOUS_TAG}" ]; then
-                RANGE="${PREVIOUS_TAG}..HEAD"
+                RANGE="${PREVIOUS_TAG}..${TARGET_REV}"
+                DISPLAY_RANGE="${PREVIOUS_TAG}..${TARGET_REF}"
               elif [ -n "${CURRENT_TAG}" ]; then
                 RANGE="${CURRENT_TAG}"
+                DISPLAY_RANGE="${CURRENT_TAG}"
               else
-                RANGE="HEAD"
+                RANGE="${TARGET_REV}"
+                DISPLAY_RANGE="${TARGET_REF}"
               fi
             fi
             RAW_CHANGES=$(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
             if [ -z "${RAW_CHANGES}" ] && [ "${{ inputs.prerelease }}" = "true" ] && [ -n "${PREVIOUS_TAG}" ]; then
-              RANGE="${PREVIOUS_TAG}..HEAD"
+              RANGE="${PREVIOUS_TAG}..${TARGET_REV}"
+              DISPLAY_RANGE="${PREVIOUS_TAG}..${TARGET_REF}"
               RAW_CHANGES=$(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
             fi
             FEATURES=""
@@ -146,7 +158,7 @@ jobs:
                 printf '%s' "${OTHER}"
                 echo
               fi
-              echo "_Range: ${RANGE}_"
+              echo "_Range: ${DISPLAY_RANGE}_"
               if [ -z "${FEATURES}${FIXES}${BUILD_CI}${OTHER}" ]; then
                 echo "- No commit summary available"
               else
