@@ -111,6 +111,11 @@ jobs:
                 RANGE="HEAD"
               fi
             fi
+            RAW_CHANGES=$(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
+            if [ -z "${RAW_CHANGES}" ] && [ "${{ inputs.prerelease }}" = "true" ] && [ -n "${PREVIOUS_TAG}" ]; then
+              RANGE="${PREVIOUS_TAG}..HEAD"
+              RAW_CHANGES=$(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
+            fi
             FEATURES=""
             FIXES=""
             BUILD_CI=""
@@ -126,7 +131,7 @@ jobs:
               else
                 OTHER="${OTHER}- ${entry}"$'\n'
               fi
-            done < <(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
+            done < <(printf '%s\n' "${RAW_CHANGES}")
             {
               echo "RELEASE_NOTES<<EOF"
               echo "${TITLE}"
@@ -151,10 +156,11 @@ jobs:
                 printf '%s' "${OTHER}"
                 echo
               fi
+              echo "_Range: ${RANGE}_"
               if [ -z "${FEATURES}${FIXES}${BUILD_CI}${OTHER}" ]; then
                 echo "- No commit summary available"
               else
-                echo "_Generated from git commits in ${RANGE}_"
+                echo "_Generated from git commits_"
               fi
               echo "EOF"
             } >> $GITHUB_OUTPUT

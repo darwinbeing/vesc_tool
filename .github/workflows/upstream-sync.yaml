@@ -16,16 +16,16 @@ on:
         required: true
         default: "master"
         type: string
-      prerelease:
-        description: "Release as Prerelease"
-        required: true
-        default: true
-        type: boolean
       release_notes:
         description: "Release Notes"
         required: false
         default: ""
         type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
 env:
   # Version: master or 3.01/6.00/6.02/X.XX
   DEFAULT_VT_VER: ${{ github.event.inputs.vt_ver || 'master' }}
