@@ -60,6 +60,11 @@ jobs:
           ref: ${{ env.VT_REF }}
           fetch-depth: 0
           fetch-tags: true
+      - name: Checkout Workflow Scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .workflow-src
       - name: Setup
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
@@ -71,7 +76,7 @@ jobs:
           echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
           export VT_VERSION
           export PRERELEASE="${{ inputs.prerelease }}"
-          bash .github/scripts/generate_release_notes.sh
+          bash .workflow-src/.github/scripts/generate_release_notes.sh
       - name: Install Qt (Linux)
         uses: jurplel/install-qt-action@v3
         with:
