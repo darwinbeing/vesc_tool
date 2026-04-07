@@ -118,17 +118,11 @@ jobs:
           workflow_conclusion: success
           search_artifacts: true
       - name: Apply Patch
+        env:
+          VT_VER: ${{ inputs.vt_ver }}
+          PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
         run: |
-          if [[ "${{ inputs.vt_ver }}" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
-              PATCH_VERSION="${{ inputs.vt_ver }}"
-          elif [[ "${{ inputs.vt_ver }}" == "master" ]]; then
-              PATCH_VERSION="master"
-          else
-              PATCH_VERSION=${{ env.PACKAGE_VERSION }}
-          fi
-          URL=https://raw.githubusercontent.com/darwinbeing/vesc_tool/ci/patches/"${PATCH_VERSION}"/vesc_tool.patch
-          curl "$URL" -o ${{ runner.temp }}/vesc_tool.patch
-          git apply "${{ runner.temp }}/vesc_tool.patch"
+          bash .workflow-src/.github/scripts/apply_patch.sh
         shell: bash
       - name: Configure And Compile
         run: |

@@ -129,19 +129,11 @@ jobs:
         with:
           arch: x64
       - name: Apply Patch
+        env:
+          VT_VER: ${{ inputs.vt_ver }}
+          PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
         run: |
-          if ("${{ inputs.vt_ver }}" -match '(\d+)\.(\d+)') {
-              $PATCH_VERSION = "${{ inputs.vt_ver }}"
-          } elseif ("${{ inputs.vt_ver }}" -eq "master") {
-              $PATCH_VERSION = "master"
-          } else {
-              $PATCH_VERSION = $env:PACKAGE_VERSION
-          }
-          $URL = "https://raw.githubusercontent.com/darwinbeing/vesc_tool/ci/patches/$PATCH_VERSION/vesc_tool.patch"
-          Write-Host $URL
-          Invoke-WebRequest -Uri $URL -OutFile "$env:RUNNER_TEMP\vesc_tool.patch"
-          git apply "$env:RUNNER_TEMP\vesc_tool.patch"
-
+          .\.workflow-src\.github\scripts\apply_patch.ps1
         shell: powershell
       - name: Configure And Compile
         run: |
