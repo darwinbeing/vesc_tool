@@ -29,16 +29,16 @@ on:
         required: true
         default: "16.4"
         type: string
-      prerelease:
-        description: "Release as Prerelease"
-        required: true
-        default: true
-        type: boolean
       release_notes:
         description: "Release Notes"
         required: false
         default: ""
         type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
 
 jobs:
   notify:
@@ -65,6 +65,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ env.VT_REF }}
+          fetch-depth: 0
+          fetch-tags: true
       - name: Setup
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
