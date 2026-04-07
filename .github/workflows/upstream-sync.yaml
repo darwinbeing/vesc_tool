@@ -21,11 +21,17 @@ on:
         required: true
         default: true
         type: boolean
+      release_notes:
+        description: "Release Notes"
+        required: false
+        default: ""
+        type: string
 env:
   # Version: master or 3.01/6.00/6.02/X.XX
   DEFAULT_VT_VER: ${{ github.event.inputs.vt_ver || 'master' }}
   DEFAULT_FW_VER: ${{ github.event.inputs.fw_ver || 'master' }}
   DEFAULT_PRERELEASE: ${{ github.event.inputs.prerelease || 'true' }}
+  DEFAULT_RELEASE_NOTES: ${{ github.event.inputs.release_notes || '' }}
 
 jobs:
   sync_latest_from_upstream:
@@ -84,4 +90,4 @@ jobs:
         with:
           workflow: CreateRelease
           token: ${{ secrets.VT_CR_TOKEN }}
-          inputs: '{ "vt_ver": "${{ env.DEFAULT_VT_VER }}", "fw_ver": "${{ env.DEFAULT_FW_VER  }}", "prerelease": "${{ env.DEFAULT_PRERELEASE }}" }'
+          inputs: '{ "vt_ver": "${{ env.DEFAULT_VT_VER }}", "fw_ver": "${{ env.DEFAULT_FW_VER  }}", "prerelease": "${{ env.DEFAULT_PRERELEASE }}", "release_notes": ${{ toJSON(env.DEFAULT_RELEASE_NOTES) }} }'

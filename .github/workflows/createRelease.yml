@@ -22,6 +22,11 @@ on:
         required: true
         default: true
         type: boolean
+      release_notes:
+        description: "Release Notes"
+        required: false
+        default: ""
+        type: string
 
 jobs:
   build:
@@ -43,15 +48,91 @@ jobs:
       - name: Setup
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          CUSTOM_RELEASE_NOTES: ${{ inputs.release_notes }}
         id: GetVersion
         run: |
           VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
           echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
           echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
-          if [ "${{ inputs.prerelease }}" = "true" ]; then
-            echo "RELEASE_NOTES=**VESC Tool Nightly Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+          if [ -n "${CUSTOM_RELEASE_NOTES}" ]; then
+            {
+              echo "RELEASE_NOTES<<EOF"
+              echo "${CUSTOM_RELEASE_NOTES}"
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           else
-            echo "RELEASE_NOTES=**VESC Tool Release Build ${VT_VERSION}**" >> $GITHUB_OUTPUT
+            CURRENT_TAG=""
+            PREVIOUS_TAG=""
+            if git rev-parse -q --verify "refs/tags/${VT_VERSION}" >/dev/null; then
+              CURRENT_TAG="${VT_VERSION}"
+            fi
+            PREVIOUS_TAG=$(git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+$' | grep -Fxv "${VT_VERSION}" | head -n 1 || true)
+            if [ "${{ inputs.prerelease }}" = "true" ]; then
+              TITLE="**VESC Tool Nightly Build ${VT_VERSION}**"
+              if [ -n "${CURRENT_TAG}" ]; then
+                RANGE="${CURRENT_TAG}..HEAD"
+              else
+                RANGE="HEAD"
+              fi
+            else
+              TITLE="**VESC Tool Release Build ${VT_VERSION}**"
+              if [ -n "${PREVIOUS_TAG}" ] && [ -n "${CURRENT_TAG}" ]; then
+                RANGE="${PREVIOUS_TAG}..${CURRENT_TAG}"
+              elif [ -n "${PREVIOUS_TAG}" ]; then
+                RANGE="${PREVIOUS_TAG}..HEAD"
+              elif [ -n "${CURRENT_TAG}" ]; then
+                RANGE="${CURRENT_TAG}"
+              else
+                RANGE="HEAD"
+              fi
+            fi
+            FEATURES=""
+            FIXES=""
+            BUILD_CI=""
+            OTHER=""
+            while IFS= read -r entry; do
+              [ -z "${entry}" ] && continue
+              if echo "${entry}" | grep -Eiq '\b(fix|fixed|bug|issue|correct|resolve|resolved|warning|crash|regression)\b'; then
+                FIXES="${FIXES}- ${entry}"$'\n'
+              elif echo "${entry}" | grep -Eiq '\b(ci|build|workflow|release|packag|android|ios|macos|linux|windows|qt|xcode|sign|deploy)\b'; then
+                BUILD_CI="${BUILD_CI}- ${entry}"$'\n'
+              elif echo "${entry}" | grep -Eiq '\b(add|added|new|support|improv|feature|example|show|enable|update|updated)\b'; then
+                FEATURES="${FEATURES}- ${entry}"$'\n'
+              else
+                OTHER="${OTHER}- ${entry}"$'\n'
+              fi
+            done < <(git log ${RANGE} --pretty=format:'%s (%h)' --no-merges --invert-grep --grep='has signed the CLA' || true)
+            {
+              echo "RELEASE_NOTES<<EOF"
+              echo "${TITLE}"
+              echo
+              if [ -n "${FEATURES}" ]; then
+                echo "### Features"
+                printf '%s' "${FEATURES}"
+                echo
+              fi
+              if [ -n "${FIXES}" ]; then
+                echo "### Fixes"
+                printf '%s' "${FIXES}"
+                echo
+              fi
+              if [ -n "${BUILD_CI}" ]; then
+                echo "### Build & CI"
+                printf '%s' "${BUILD_CI}"
+                echo
+              fi
+              if [ -n "${OTHER}" ]; then
+                echo "### Other"
+                printf '%s' "${OTHER}"
+                echo
+              fi
+              if [ -z "${FEATURES}${FIXES}${BUILD_CI}${OTHER}" ]; then
+                echo "- No commit summary available"
+              else
+                echo "_Generated from git commits in ${RANGE}_"
+              fi
+              echo "EOF"
+            } >> $GITHUB_OUTPUT
           fi
       - name: Create TMP Dir
         id: mktemp
@@ -105,46 +186,46 @@ jobs:
         with:
           workflow: Windows
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow Linux
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Linux
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow macOS x86_64
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: macOS-x86_64
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-15", "xcode_ver": "16.4", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-15", "xcode_ver": "16.4", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow macOS arm64
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: macOS-arm64
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-14", "xcode_ver": "15.1", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-14", "xcode_ver": "15.1", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow macOS universal
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: macOS-universal
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-14", "xcode_ver": "15.1", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "os_ver": "macos-14", "xcode_ver": "15.1", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow Android
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: Android
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       # - name: Invoke workflow Android2
       #   uses: benc-uk/workflow-dispatch@v1
       #   with:
       #     workflow: Android2
       #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+      #     inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow iOS
         uses: benc-uk/workflow-dispatch@v1
         with:
           workflow: iOS
           token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}" }'
+          inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
