@@ -25,5 +25,29 @@ if (-not (Test-Path $PatchFile)) {
 }
 
 Write-Host "Applying patch: $PatchFile"
+
 git apply --check "$PatchFile"
-git apply "$PatchFile"
+if ($LASTEXITCODE -eq 0) {
+    git apply "$PatchFile"
+    exit $LASTEXITCODE
+}
+
+git apply --3way --check "$PatchFile"
+if ($LASTEXITCODE -eq 0) {
+    git apply --3way "$PatchFile"
+    exit $LASTEXITCODE
+}
+
+git apply --ignore-space-change --ignore-whitespace --check "$PatchFile"
+if ($LASTEXITCODE -eq 0) {
+    git apply --ignore-space-change --ignore-whitespace "$PatchFile"
+    exit $LASTEXITCODE
+}
+
+git apply --3way --ignore-space-change --ignore-whitespace --check "$PatchFile"
+if ($LASTEXITCODE -eq 0) {
+    git apply --3way --ignore-space-change --ignore-whitespace "$PatchFile"
+    exit $LASTEXITCODE
+}
+
+throw "Failed to apply patch with direct, 3-way, and whitespace-tolerant modes: $PatchFile"

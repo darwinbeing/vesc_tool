@@ -23,5 +23,16 @@ if [[ ! -f "${PATCH_FILE}" ]]; then
 fi
 
 echo "Applying patch: ${PATCH_FILE}"
-git apply --check "${PATCH_FILE}"
-git apply "${PATCH_FILE}"
+
+if git apply --check "${PATCH_FILE}"; then
+  git apply "${PATCH_FILE}"
+elif git apply --3way --check "${PATCH_FILE}"; then
+  git apply --3way "${PATCH_FILE}"
+elif git apply --ignore-space-change --ignore-whitespace --check "${PATCH_FILE}"; then
+  git apply --ignore-space-change --ignore-whitespace "${PATCH_FILE}"
+elif git apply --3way --ignore-space-change --ignore-whitespace --check "${PATCH_FILE}"; then
+  git apply --3way --ignore-space-change --ignore-whitespace "${PATCH_FILE}"
+else
+  echo "Failed to apply patch with direct, 3-way, and whitespace-tolerant modes: ${PATCH_FILE}" >&2
+  exit 1
+fi
