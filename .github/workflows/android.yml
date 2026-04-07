@@ -30,6 +30,9 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: write
+
 env:
   NDK_VERSION: "r23b"
 

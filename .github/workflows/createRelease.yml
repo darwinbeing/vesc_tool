@@ -28,6 +28,10 @@ on:
         default: true
         type: boolean
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build:
     runs-on: macos-latest
