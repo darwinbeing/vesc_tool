@@ -335,6 +335,7 @@
 <name>canget-current-dir</name>
 <name>canget-current-in</name>
 <name>canget-duty</name>
+<name>canget-duty-abs</name>
 <name>canget-rpm</name>
 <name>canget-temp-fet</name>
 <name>canget-temp-motor</name>

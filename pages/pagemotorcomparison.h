@@ -300,7 +300,7 @@ public:
                 id = (lambda - sqrt(SQ(lambda) + 8.0 * SQ(ld_lq_diff) * SQ(iq))) / (4.0 * ld_lq_diff);
                 iq_adj = iq - SIGN(iq) * sqrt(SQ(iq) - SQ(id));
                 iq = SIGN(iq) * sqrt(SQ(iq) - SQ(id));
-                id -= params.fwCurrent;
+                id = Utility::absMax(id, -params.fwCurrent);
             }
 
             torque_motor_shaft_updated = (3.0 / 2.0) * pole_pairs * (iq * lambda + iq * id * (ld - lq)) - t_nl;

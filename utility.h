@@ -48,6 +48,17 @@ public:
     static double map(double x, double in_min, double in_max, double out_min, double out_max);
     static float throttle_curve(float val, float curve_acc, float curve_brake, int mode);
     static bool autoconnectBlockingWithProgress(VescInterface *vesc, QWidget *parent = nullptr);
+    static inline double absMax(double a, double b)
+    {
+        float res;
+        if (fabs(a) > fabs(b)) {
+            res = a;
+        } else {
+            res = b;
+        }
+
+        return res;
+    }
     Q_INVOKABLE static void checkVersion(VescInterface *vesc = nullptr);
     Q_INVOKABLE static QString fwChangeLog();
     Q_INVOKABLE static QString vescToolChangeLog();
