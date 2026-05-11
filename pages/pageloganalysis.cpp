@@ -23,15 +23,32 @@
 #include "utility.h"
 #include <QFileDialog>
 #include <QMessageBox>
+#include <algorithm>
 #include <cmath>
 #include <QStandardPaths>
 #include <QScrollBar>
+#include <QFontDatabase>
+#include <QHBoxLayout>
+#include <QPainter>
+#include <QPixmap>
+#include <QLabel>
+#include <QToolButton>
+#include <QDoubleSpinBox>
+#include <QItemSelectionModel>
+#include <QSignalBlocker>
 
 static const int dataTableColName = 0;
 static const int dataTableColValue = 1;
 static const int dataTableColY1 = 2;
 static const int dataTableColY2 = 3;
 static const int dataTableColScale = 4;
+
+static const int selectedTableColColor = 0;
+static const int selectedTableColSeries = 1;
+static const int selectedTableColValue = 2;
+static const int selectedTableColScale = 3;
+static const int selectedTableColAxis = 4;
+static const int selectedTableColRemove = 5;
 
 PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     QWidget(parent),
@@ -80,15 +97,36 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     ui->logTable->setColumnWidth(0, 250);
     ui->vescLogTable->setColumnWidth(0, 250);
 
-    ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColName, QHeaderView::Interactive);
-    ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColValue, QHeaderView::Stretch);
+    ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColName, QHeaderView::Stretch);
+    ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColValue, QHeaderView::Fixed);
     ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColY1, QHeaderView::Fixed);
     ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColY2, QHeaderView::Fixed);
     ui->dataTable->horizontalHeader()->setSectionResizeMode(dataTableColScale, QHeaderView::Fixed);
 
+    ui->dataTable->setColumnWidth(dataTableColValue, 170);
     ui->dataTable->setColumnWidth(dataTableColY1, 30);
     ui->dataTable->setColumnWidth(dataTableColY2, 30);
     ui->dataTable->setColumnWidth(dataTableColScale, 60);
+    ui->dataTable->setColumnHidden(dataTableColY1, true);
+    ui->dataTable->setColumnHidden(dataTableColY2, true);
+    ui->dataTable->setColumnHidden(dataTableColScale, true);
+    ui->dataTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColColor, QHeaderView::Fixed);
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColSeries, QHeaderView::Stretch);
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColValue, QHeaderView::Fixed);
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColScale, QHeaderView::Fixed);
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColAxis, QHeaderView::Fixed);
+    ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColRemove, QHeaderView::Fixed);
+    ui->selectedDataItems->setColumnWidth(selectedTableColColor, 24);
+    ui->selectedDataItems->setColumnWidth(selectedTableColValue, 136);
+    ui->selectedDataItems->setColumnWidth(selectedTableColScale, 48);
+    ui->selectedDataItems->setColumnWidth(selectedTableColAxis, 48);
+    ui->selectedDataItems->setColumnWidth(selectedTableColRemove, 32);
+    ui->selectedDataItems->verticalHeader()->setVisible(false);
+    ui->selectedDataItems->verticalHeader()->setDefaultSectionSize(24);
+    ui->selectedDataItems->setShowGrid(false);
+    ui->selectedDataItems->setFocusPolicy(Qt::NoFocus);
 
     connect(ui->dataTable, &QTableWidget::itemChanged, [this](QTableWidgetItem *item) {
         if (item->checkState() == Qt::Checked) {
@@ -101,6 +139,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
         }
         if (item->column() > dataTableColValue) {
             updateGraphs();
+            updateSelectedDataItemValues();
         }
     });
 
@@ -236,6 +275,54 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
 
     connect(ui->dataTable, &QTableWidget::itemSelectionChanged, [this]() {
         updateGraphs();
+        updateSelectedDataItems();
+    });
+
+    auto activateDataSeriesRows = [this](const QList<int> &rows) {
+        if (!ui->dataTable->selectionModel() || !ui->dataTable->model()) {
+            return;
+        }
+
+        foreach (int row, rows) {
+            if (row < 0 || row >= ui->dataTable->rowCount()) {
+                continue;
+            }
+
+            QTableWidgetItem *y1 = ui->dataTable->item(row, dataTableColY1);
+            QTableWidgetItem *y2 = ui->dataTable->item(row, dataTableColY2);
+
+            if (y1 && y2) {
+                if (y1->checkState() != Qt::Checked && y2->checkState() != Qt::Checked) {
+                    y1->setCheckState(Qt::Checked);
+                }
+            }
+
+            QModelIndex rowIndex = ui->dataTable->model()->index(row, dataTableColName);
+            ui->dataTable->selectionModel()->select(rowIndex,
+                                                    QItemSelectionModel::Select | QItemSelectionModel::Rows);
+        }
+    };
+
+    connect(ui->dataTable, &QTableWidget::cellDoubleClicked, [activateDataSeriesRows](int row, int column) {
+        (void)column;
+        activateDataSeriesRows(QList<int>() << row);
+    });
+
+    connect(ui->addSeriesButton, &QPushButton::clicked, [this, activateDataSeriesRows]() {
+        QList<int> rows;
+        QSet<int> rowSet;
+
+        foreach (const QModelIndex &index, ui->dataTable->selectionModel()->selectedRows()) {
+            rowSet.insert(index.row());
+        }
+
+        if (rowSet.isEmpty() && ui->dataTable->currentRow() >= 0) {
+            rowSet.insert(ui->dataTable->currentRow());
+        }
+
+        rows = rowSet.values();
+        std::sort(rows.begin(), rows.end());
+        activateDataSeriesRows(rows);
     });
 
     connect(ui->filterOutlierBox, &QGroupBox::toggled, [this]() {
@@ -273,6 +360,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     on_gridBox_toggled(ui->gridBox->isChecked());
     logListRefresh();
     on_logLocalRefreshButton_clicked();
+    updateSelectedDataItemsHeight();
 
     QSettings set;
     mLastSaveCsvPath = set.value("pageloganalysis/lastSaveCsvPath", true).toString();
@@ -315,6 +403,7 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
             generateMissingEntries();
 
             ui->dataTable->setRowCount(0);
+            updateSelectedDataItems();
 
             if (mLog.size() == 0) {
                 return;
@@ -671,6 +760,7 @@ void PageLogAnalysis::loadVescLog(QVector<LOG_DATA> log)
     updateInds();
 
     ui->dataTable->setRowCount(0);
+    updateSelectedDataItems();
 
     if (mLog.size() == 0) {
         return;
@@ -884,6 +974,7 @@ void PageLogAnalysis::updateGraphs()
 
     ui->plot->clearGraphs();
     ui->plot->yAxis2->setVisible(false);
+    mGraphRowColors.clear();
 
     for (int i = 0;i < yAxes.size();i++) {
         QPen pen = QPen(Utility::getAppQColor("plot_graph1"));
@@ -918,6 +1009,7 @@ void PageLogAnalysis::updateGraphs()
         ui->plot->graph(i)->setPen(pen);
         ui->plot->graph(i)->setName(names.at(i));
         ui->plot->graph(i)->setData(xAxis, yAxes.at(i));
+        mGraphRowColors[row] = pen.color();
     }
 
     mVerticalLine->setVisible(false);
@@ -938,6 +1030,376 @@ void PageLogAnalysis::updateGraphs()
     }
 
     ui->plot->replotWhenVisible();
+}
+
+void PageLogAnalysis::updateSelectedDataItems()
+{
+    if (!ui->dataTable->selectionModel()) {
+        ui->selectedDataItems->setRowCount(0);
+        updateSelectedDataItemsHeight();
+        return;
+    }
+
+    QSet<int> rowsToShow;
+    foreach (const QModelIndex &index, ui->dataTable->selectionModel()->selectedRows()) {
+        rowsToShow.insert(index.row());
+    }
+
+    for (int row = 0; row < ui->dataTable->rowCount(); ++row) {
+        QTableWidgetItem *y1Item = ui->dataTable->item(row, dataTableColY1);
+        QTableWidgetItem *y2Item = ui->dataTable->item(row, dataTableColY2);
+
+        if ((y1Item && y1Item->checkState() == Qt::Checked) ||
+            (y2Item && y2Item->checkState() == Qt::Checked)) {
+            rowsToShow.insert(row);
+        }
+    }
+
+    QList<int> rows = rowsToShow.values();
+    std::sort(rows.begin(), rows.end());
+
+    ui->selectedDataItems->setUpdatesEnabled(false);
+    ui->selectedDataItems->setRowCount(0);
+
+    foreach (int sourceRow, rows) {
+        auto nameItem = ui->dataTable->item(sourceRow, dataTableColName);
+        auto scaleSource = qobject_cast<QDoubleSpinBox*>(ui->dataTable->cellWidget(sourceRow, dataTableColScale));
+
+        if (!nameItem) {
+            continue;
+        }
+
+        int row = ui->selectedDataItems->rowCount();
+        ui->selectedDataItems->insertRow(row);
+
+        auto colorWidget = new QWidget(ui->selectedDataItems);
+        auto colorLayout = new QHBoxLayout(colorWidget);
+        colorLayout->setContentsMargins(4, 0, 4, 0);
+        colorLayout->setSpacing(0);
+
+        auto colorSwatch = new QLabel(colorWidget);
+        colorSwatch->setObjectName("graphColorSwatch");
+        colorSwatch->setFixedSize(12, 7);
+
+        colorLayout->addStretch(1);
+        colorLayout->addWidget(colorSwatch);
+        colorLayout->addStretch(1);
+
+        ui->selectedDataItems->setCellWidget(row, selectedTableColColor, colorWidget);
+
+        auto seriesItem = new QTableWidgetItem();
+        seriesItem->setFlags(Qt::ItemIsEnabled);
+        seriesItem->setData(Qt::UserRole, sourceRow);
+        ui->selectedDataItems->setItem(row, selectedTableColSeries, seriesItem);
+
+        auto valueCellItem = new QTableWidgetItem();
+        valueCellItem->setFlags(Qt::ItemIsEnabled);
+        valueCellItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        valueCellItem->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+        ui->selectedDataItems->setItem(row, selectedTableColValue, valueCellItem);
+
+        if (scaleSource) {
+            auto scaleWidget = new QWidget(ui->selectedDataItems);
+            auto scaleLayout = new QHBoxLayout(scaleWidget);
+            scaleLayout->setContentsMargins(2, 0, 2, 0);
+            scaleLayout->setSpacing(4);
+
+            auto scaleLabel = new QLabel(QString::fromUtf8("×"), scaleWidget);
+            scaleLabel->setAlignment(Qt::AlignCenter);
+            scaleLabel->setFixedWidth(10);
+
+            auto scaleBox = new QDoubleSpinBox(scaleWidget);
+            scaleBox->setObjectName("selectedScaleControl");
+            scaleBox->setDecimals(scaleSource->decimals());
+            scaleBox->setMinimum(scaleSource->minimum());
+            scaleBox->setMaximum(scaleSource->maximum());
+            scaleBox->setSingleStep(scaleSource->singleStep());
+            scaleBox->setValue(scaleSource->value());
+            scaleBox->setAlignment(Qt::AlignRight);
+            scaleBox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+
+            connect(scaleBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, [this, sourceRow](double value) {
+                if (QDoubleSpinBox *source = qobject_cast<QDoubleSpinBox*>(ui->dataTable->cellWidget(sourceRow, dataTableColScale))) {
+                    source->setValue(value);
+                }
+            });
+
+            scaleLayout->addWidget(scaleBox, 1);
+            scaleLayout->addWidget(scaleLabel);
+            ui->selectedDataItems->setCellWidget(row, selectedTableColScale, scaleWidget);
+        } else {
+            auto scaleItem = new QTableWidgetItem("-");
+            scaleItem->setTextAlignment(Qt::AlignCenter);
+            scaleItem->setFlags(Qt::ItemIsEnabled);
+            ui->selectedDataItems->setItem(row, selectedTableColScale, scaleItem);
+        }
+
+        auto createAxisIcon = [](bool rightSide) {
+            QPixmap px(32, 32);
+            int width = 32;
+            int height = 32;
+            px.fill(Qt::transparent);
+
+            QPainter p(&px);
+            p.setRenderHint(QPainter::Antialiasing, true);
+            QColor c = Utility::getAppQColor("normalText");
+            p.setPen(QPen(c, 2.0));
+
+            // Draw Y axis
+            int margin = 5;
+            int yAxisX = rightSide ? width - margin: margin;
+            p.drawLine(yAxisX, margin, yAxisX, height - margin);
+
+            // Draw X axis
+            p.drawLine(margin,  height - margin, width - margin, height-margin);
+
+            p.setPen(QPen(c, 1.0));
+            // Draw ticks
+            int tick1 = 1 * height/4;
+            int tick2 = 2 * height/4;
+            int tick3 = 3 * height/4;
+            int tickWidth = 4;
+            int tickStartX = yAxisX - tickWidth;
+            int tickEndX = yAxisX + tickWidth;
+            
+            p.drawLine(tickStartX, tick1, tickEndX, tick1);
+            p.drawLine(tickStartX, tick2, tickEndX, tick2);
+            p.drawLine(tickStartX, tick3, tickEndX, tick3);
+
+            return QIcon(px);
+        };
+
+        auto axisWidget = new QWidget(ui->selectedDataItems);
+        axisWidget->setObjectName("axisPill");
+        auto axisLayout = new QHBoxLayout(axisWidget);
+        axisLayout->setContentsMargins(1, 0, 1, 0);
+        axisLayout->setSpacing(0);
+
+        auto axisLeft = new QToolButton(axisWidget);
+        axisLeft->setObjectName("axisLeftButton");
+        axisLeft->setToolTip("Plot on left Y axis");
+        axisLeft->setCheckable(true);
+        axisLeft->setAutoRaise(true);
+        axisLeft->setIcon(createAxisIcon(false));
+        axisLeft->setIconSize(QSize(32, 32));
+        axisLeft->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        // axisLeft->setMinimumWidth(42);
+        axisLeft->setFixedHeight(16);
+
+        auto axisRight = new QToolButton(axisWidget);
+        axisRight->setObjectName("axisRightButton");
+        axisRight->setToolTip("Plot on right Y axis");
+        axisRight->setCheckable(true);
+        axisRight->setAutoRaise(true);
+        axisRight->setIcon(createAxisIcon(true));
+        axisRight->setIconSize(QSize(32, 32));
+        axisRight->setToolButtonStyle(Qt::ToolButtonIconOnly);
+        // axisRight->setMinimumWidth(42);
+        axisRight->setFixedHeight(16);
+
+        axisWidget->setFixedHeight(18);
+
+        QColor axisBorder = Utility::getAppQColor("normalText");
+        axisWidget->setStyleSheet(QString(
+            "QWidget#axisPill { border: 2px; border-radius: 5px; }"
+            "QToolButton { border: none; padding: 0px 0px; }"
+            "QToolButton#axisLeftButton  { border-top-left-radius:  5px; border-bottom-left-radius:  5px; }"
+            "QToolButton#axisRightButton { border-top-right-radius: 5px; border-bottom-right-radius: 5px; }"
+            "QToolButton:checked { background: palette(highlight); color: palette(highlighted-text); }"));
+
+        connect(axisLeft, &QToolButton::toggled, this, [this, sourceRow, axisRight](bool checked) {
+            if (!checked) {
+                return;
+            }
+
+            QSignalBlocker block(axisRight);
+            axisRight->setChecked(false);
+
+            QTableWidgetItem *y1 = ui->dataTable->item(sourceRow, dataTableColY1);
+            QTableWidgetItem *y2 = ui->dataTable->item(sourceRow, dataTableColY2);
+            if (!y1 || !y2) {
+                return;
+            }
+
+            y1->setCheckState(Qt::Checked);
+            y2->setCheckState(Qt::Unchecked);
+        });
+
+        connect(axisRight, &QToolButton::toggled, this, [this, sourceRow, axisLeft](bool checked) {
+            if (!checked) {
+                return;
+            }
+
+            QSignalBlocker block(axisLeft);
+            axisLeft->setChecked(false);
+
+            QTableWidgetItem *y1 = ui->dataTable->item(sourceRow, dataTableColY1);
+            QTableWidgetItem *y2 = ui->dataTable->item(sourceRow, dataTableColY2);
+            if (!y1 || !y2) {
+                return;
+            }
+
+            y2->setCheckState(Qt::Checked);
+            y1->setCheckState(Qt::Unchecked);
+        });
+
+        axisLayout->addWidget(axisLeft);
+        axisLayout->addWidget(axisRight);
+        ui->selectedDataItems->setCellWidget(row, selectedTableColAxis, axisWidget);
+
+        auto removeButton = new QToolButton(ui->selectedDataItems);
+        removeButton->setObjectName("removeSeriesButton");
+        removeButton->setText("×");
+        removeButton->setAutoRaise(true);
+        removeButton->setToolTip("Remove this data series");
+
+        connect(removeButton, &QToolButton::clicked, this, [this, sourceRow]() {
+            if (!ui->dataTable->model() || !ui->dataTable->selectionModel()) {
+                return;
+            }
+
+            QModelIndex rowIndex = ui->dataTable->model()->index(sourceRow, dataTableColName);
+            ui->dataTable->selectionModel()->select(rowIndex, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
+
+            if (QTableWidgetItem *y1 = ui->dataTable->item(sourceRow, dataTableColY1)) {
+                y1->setCheckState(Qt::Unchecked);
+            }
+            if (QTableWidgetItem *y2 = ui->dataTable->item(sourceRow, dataTableColY2)) {
+                y2->setCheckState(Qt::Unchecked);
+            }
+
+            QTimer::singleShot(0, this, [this]() {
+                updateSelectedDataItems();
+            });
+        });
+
+        ui->selectedDataItems->setCellWidget(row, selectedTableColRemove, removeButton);
+    }
+
+    updateSelectedDataItemValues();
+    ui->selectedDataItems->setUpdatesEnabled(true);
+    updateSelectedDataItemsHeight();
+    ui->selectedDataItems->viewport()->update();
+}
+
+void PageLogAnalysis::updateSelectedDataItemValues()
+{
+    if (ui->selectedDataItems->rowCount() == 0) {
+        return;
+    }
+
+    ui->selectedDataItems->setUpdatesEnabled(false);
+
+    for (int row = 0; row < ui->selectedDataItems->rowCount(); ++row) {
+        auto seriesItem = ui->selectedDataItems->item(row, selectedTableColSeries);
+        if (!seriesItem) {
+            continue;
+        }
+
+        int sourceRow = seriesItem->data(Qt::UserRole).toInt();
+        if (sourceRow < 0 || sourceRow >= ui->dataTable->rowCount()) {
+            continue;
+        }
+
+        auto nameItem = ui->dataTable->item(sourceRow, dataTableColName);
+        auto valueItem = ui->dataTable->item(sourceRow, dataTableColValue);
+
+        if (nameItem) {
+            seriesItem->setText(nameItem->text());
+        } else {
+            seriesItem->setText(QString());
+        }
+
+        auto selectedValueItem = ui->selectedDataItems->item(row, selectedTableColValue);
+        if (selectedValueItem) {
+            QString valueText = valueItem ? valueItem->text() : QString();
+            if (!valueText.isEmpty()) {
+                valueText = QString::fromUtf8("\u2009") + valueText + QString::fromUtf8("\u2009");
+            }
+            selectedValueItem->setText(valueText);
+        }
+
+        if (QWidget *colorWidget = ui->selectedDataItems->cellWidget(row, selectedTableColColor)) {
+            if (QLabel *swatch = colorWidget->findChild<QLabel*>("graphColorSwatch")) {
+                QColor graphColor = mGraphRowColors.value(sourceRow, Utility::getAppQColor("normalText"));
+                QColor swatchBorder = Utility::getAppQColor("normalText");
+                swatch->setStyleSheet(QString("background: %1; border: 1px solid rgba(%2, %3, %4, 85); border-radius: 4px;")
+                                      .arg(graphColor.name(QColor::HexRgb))
+                                      .arg(swatchBorder.red())
+                                      .arg(swatchBorder.green())
+                                      .arg(swatchBorder.blue()));
+                swatch->setToolTip(graphColor.name(QColor::HexRgb));
+            }
+        }
+
+        QTableWidgetItem *y1Item = ui->dataTable->item(sourceRow, dataTableColY1);
+        QTableWidgetItem *y2Item = ui->dataTable->item(sourceRow, dataTableColY2);
+        bool hasAxisToggle = (y1Item != nullptr && y2Item != nullptr);
+
+        if (QWidget *axisWidget = ui->selectedDataItems->cellWidget(row, selectedTableColAxis)) {
+            auto axisLeft = axisWidget->findChild<QToolButton*>("axisLeftButton");
+            auto axisRight = axisWidget->findChild<QToolButton*>("axisRightButton");
+
+            if (axisLeft && axisRight) {
+                axisLeft->setEnabled(hasAxisToggle);
+                axisRight->setEnabled(hasAxisToggle);
+
+                QSignalBlocker blockLeft(axisLeft);
+                QSignalBlocker blockRight(axisRight);
+                bool y2Checked = hasAxisToggle && y2Item->checkState() == Qt::Checked;
+                axisRight->setChecked(y2Checked);
+                axisLeft->setChecked(!y2Checked);
+            }
+        }
+
+        if (QWidget *scaleWidget = ui->selectedDataItems->cellWidget(row, selectedTableColScale)) {
+            if (QDoubleSpinBox *scaleBox = scaleWidget->findChild<QDoubleSpinBox*>("selectedScaleControl")) {
+                if (QDoubleSpinBox *source = qobject_cast<QDoubleSpinBox*>(ui->dataTable->cellWidget(sourceRow, dataTableColScale))) {
+                    QSignalBlocker blockScale(scaleBox);
+                    scaleBox->setDecimals(source->decimals());
+                    scaleBox->setMinimum(source->minimum());
+                    scaleBox->setMaximum(source->maximum());
+                    scaleBox->setSingleStep(source->singleStep());
+                    scaleBox->setValue(source->value());
+                    scaleBox->setEnabled(true);
+                } else {
+                    scaleBox->setEnabled(false);
+                }
+            }
+        }
+    }
+
+    ui->selectedDataItems->setUpdatesEnabled(true);
+    updateSelectedDataItemsHeight();
+}
+
+void PageLogAnalysis::updateSelectedDataItemsHeight()
+{
+    int height = ui->selectedDataItems->frameWidth() * 2;
+
+    if (ui->selectedDataItems->horizontalHeader()->isVisible()) {
+        height += ui->selectedDataItems->horizontalHeader()->height();
+    }
+
+    int rows = ui->selectedDataItems->rowCount();
+
+    if (rows > 0) {
+        for (int i = 0; i < rows; ++i) {
+            int rowHeight = ui->selectedDataItems->rowHeight(i);
+            if (rowHeight <= 0) {
+                rowHeight = ui->selectedDataItems->verticalHeader()->defaultSectionSize();
+            }
+            if (rowHeight <= 0) {
+                rowHeight = ui->selectedDataItems->fontMetrics().height() + 8;
+            }
+            height += rowHeight;
+        }
+    } else {
+        height += ui->selectedDataItems->fontMetrics().height() + 8;
+    }
+
+    ui->selectedDataItems->setMinimumHeight(height);
+    ui->selectedDataItems->setMaximumHeight(height);
 }
 
 void PageLogAnalysis::updateStats()
@@ -1093,6 +1555,8 @@ void PageLogAnalysis::updateDataAndPlot(double time)
 
         ind++;
     }
+
+    updateSelectedDataItemValues();
 
     bool skip = false;
     if (mInd_gnss_h_acc >= 0) {
@@ -1253,7 +1717,11 @@ void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep,
     
     auto nameItem = new QTableWidgetItem(name);
     ui->dataTable->setItem(currentRow, dataTableColName, nameItem);
-    ui->dataTable->setItem(currentRow, dataTableColValue, new QTableWidgetItem(""));
+
+    auto valueItem = new QTableWidgetItem("");
+    valueItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    valueItem->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
+    ui->dataTable->setItem(currentRow, dataTableColValue, valueItem);
 
     if (hasScale) {
         QDoubleSpinBox *sb = new QDoubleSpinBox;
@@ -1267,6 +1735,7 @@ void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep,
                 [this](double value) {
             (void)value;
             updateGraphs();
+            updateSelectedDataItemValues();
         });
 
     // Y1
@@ -1355,6 +1824,7 @@ void PageLogAnalysis::openLog(QString name, QByteArray data)
         generateMissingEntries();
 
         ui->dataTable->setRowCount(0);
+        updateSelectedDataItems();
 
         if (mLog.size() == 0) {
             return;
@@ -1635,6 +2105,7 @@ void PageLogAnalysis::restoreSelection()
     }
     ui->dataTable->setSelectionMode(modeOld);
     ui->dataTable->verticalScrollBar()->setValue(mSelection.scrollPos);
+    updateSelectedDataItems();
 }
 
 void PageLogAnalysis::setFileButtonsEnabled(bool en)
