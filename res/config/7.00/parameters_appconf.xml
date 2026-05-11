@@ -318,6 +318,9 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Unused&lt;/span&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;CAN-frames are not processed at all and just ignored. Custom applications and scripts can still process CAN-frames. This is very similar to &lt;span style=&quot; font-weight:600;&quot;&gt;Comm Bridge&lt;/span&gt;, but the received frames are not forwarded using commands.&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;UAVCAN and VESC&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Experimental mode where frames that aren't processed by UAVCAN are processed by the VESC decoder. This can give limited VESC Tool configuration support on UAVCAN networks.&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
             <cDefine>APPCONF_CAN_MODE</cDefine>
             <valInt>0</valInt>
@@ -325,6 +328,7 @@ p, li { white-space: pre-wrap; }
             <enumNames>UAVCAN</enumNames>
             <enumNames>Comm Bridge</enumNames>
             <enumNames>Unused</enumNames>
+            <enumNames>UAVCAN and VESC</enumNames>
         </can_mode>
         <uavcan_esc_index>
             <longName>UAVCAN ESC Index</longName>
