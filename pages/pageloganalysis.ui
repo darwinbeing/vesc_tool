@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" ?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>PageLogAnalysis</class>
  <widget class="QWidget" name="PageLogAnalysis">
@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1200</width>
-    <height>717</height>
+    <height>813</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,11 +49,7 @@
         </widget>
        </item>
        <item>
-        <layout
-                                    class="QVBoxLayout"
-                                    name="verticalLayout_2"
-                                    stretch="0,0,0,0,0,0,0,1,0,0"
-                                >
+        <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0,0,0,0,0,1,0,0">
          <property name="spacing">
           <number>2</number>
          </property>
@@ -239,12 +235,11 @@
             <string>Zoom in on trace</string>
            </property>
            <property name="text">
-            <string />
+            <string/>
            </property>
            <property name="icon">
             <iconset resource="../res.qrc">
-             <normaloff
-                                                    >:/res/icons/icons8-target-96.png</normaloff>:/res/icons/icons8-target-96.png</iconset>
+             <normaloff>:/res/icons/icons8-target-96.png</normaloff>:/res/icons/icons8-target-96.png</iconset>
            </property>
           </widget>
          </item>
@@ -254,12 +249,11 @@
             <string>Play log in real time</string>
            </property>
            <property name="text">
-            <string />
+            <string/>
            </property>
            <property name="icon">
             <iconset resource="../res.qrc">
-             <normaloff
-                                                    >:/res/icons/Circled Play-96.png</normaloff>:/res/icons/Circled Play-96.png</iconset>
+             <normaloff>:/res/icons/Circled Play-96.png</normaloff>:/res/icons/Circled Play-96.png</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -318,8 +312,7 @@
          <item>
           <widget class="QTabWidget" name="browseTabWidget">
            <property name="toolTip">
-            <string
-                                                >Logs created from LispBM and sent to local VESC Tool.</string>
+            <string>Logs created from LispBM and sent to local VESC Tool.</string>
            </property>
            <property name="tabPosition">
             <enum>QTabWidget::TabPosition::North</enum>
@@ -382,16 +375,9 @@
                 <number>2</number>
                </property>
                <item>
-                <widget
-                                                                    class="DisplayPercentage"
-                                                                    name="vescDisplay"
-                                                                    native="true"
-                                                                >
+                <widget class="DisplayPercentage" name="vescDisplay" native="true">
                  <property name="sizePolicy">
-                  <sizepolicy
-                                                                            hsizetype="MinimumExpanding"
-                                                                            vsizetype="Preferred"
-                                                                        >
+                  <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                    <horstretch>0</horstretch>
                    <verstretch>0</verstretch>
                   </sizepolicy>
@@ -452,8 +438,7 @@
                   </property>
                   <property name="icon">
                    <iconset resource="../res.qrc">
-                    <normaloff
-                                                                                >:/res/icons/Delete-96.png</normaloff>:/res/icons/Delete-96.png</iconset>
+                    <normaloff>:/res/icons/Delete-96.png</normaloff>:/res/icons/Delete-96.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -464,8 +449,7 @@
                   </property>
                   <property name="icon">
                    <iconset resource="../res.qrc">
-                    <normaloff
-                                                                                >:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+                    <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -476,8 +460,7 @@
                   </property>
                   <property name="icon">
                    <iconset resource="../res.qrc">
-                    <normaloff
-                                                                                >:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
+                    <normaloff>:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -491,8 +474,7 @@
                   </property>
                   <property name="icon">
                    <iconset resource="../res.qrc">
-                    <normaloff
-                                                                                >:/res/icons/Upload-96.png</normaloff>:/res/icons/Upload-96.png</iconset>
+                    <normaloff>:/res/icons/Upload-96.png</normaloff>:/res/icons/Upload-96.png</iconset>
                   </property>
                  </widget>
                 </item>
@@ -553,7 +535,7 @@
              <item>
               <widget class="QLabel" name="pathLabel">
                <property name="text">
-                <string />
+                <string/>
                </property>
                <property name="wordWrap">
                 <bool>true</bool>
@@ -575,8 +557,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+                   <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -600,8 +581,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+                   <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -612,8 +592,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
+                   <normaloff>:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -624,8 +603,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Upload-96.png</normaloff>:/res/icons/Upload-96.png</iconset>
+                   <normaloff>:/res/icons/Upload-96.png</normaloff>:/res/icons/Upload-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -639,11 +617,7 @@
             </attribute>
             <layout class="QHBoxLayout" name="horizontalLayout_9">
              <item>
-              <layout
-                                                            class="QVBoxLayout"
-                                                            name="verticalLayout_13"
-                                                            stretch="0,1"
-                                                        >
+              <layout class="QVBoxLayout" name="verticalLayout_13" stretch="0,1">
                <item>
                 <widget class="QPushButton" name="openCurrentButton">
                  <property name="toolTip">
@@ -654,8 +628,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+                   <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -750,8 +723,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Delete-96.png</normaloff>:/res/icons/Delete-96.png</iconset>
+                   <normaloff>:/res/icons/Delete-96.png</normaloff>:/res/icons/Delete-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -762,8 +734,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
+                   <normaloff>:/res/icons/Open Folder-96.png</normaloff>:/res/icons/Open Folder-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -774,8 +745,7 @@
                  </property>
                  <property name="icon">
                   <iconset resource="../res.qrc">
-                   <normaloff
-                                                                            >:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
+                   <normaloff>:/res/icons/Refresh-96.png</normaloff>:/res/icons/Refresh-96.png</iconset>
                  </property>
                 </widget>
                </item>
@@ -791,169 +761,197 @@
         <attribute name="title">
          <string>Data</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout">
+        <layout class="QVBoxLayout" name="verticalLayout_17">
+         <property name="spacing">
+          <number>0</number>
+         </property>
          <property name="leftMargin">
-          <number>3</number>
+          <number>0</number>
          </property>
          <property name="topMargin">
-          <number>3</number>
+          <number>0</number>
          </property>
          <property name="rightMargin">
-          <number>3</number>
+          <number>0</number>
          </property>
          <property name="bottomMargin">
-          <number>3</number>
+          <number>0</number>
          </property>
          <item>
-          <layout class="QVBoxLayout" name="verticalLayout_16">
-           <item>
-            <widget class="QLabel" name="selectedDataLabel">
-             <property name="text">
-              <string>Plot</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QTableWidget" name="selectedDataItems">
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="editTriggers">
-              <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
-             </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
-             </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
-             </property>
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOff</enum>
-             </property>
-             <attribute name="horizontalHeaderVisible">
-              <bool>false</bool>
-             </attribute>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>false</bool>
-             </attribute>
-             <column>
-              <property name="text">
-               <string>Color</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Series</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Value</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Scale</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Axis</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Remove</string>
-              </property>
-             </column>
-            </widget>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_13">
+          <widget class="QSplitter" name="splitter">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="childrenCollapsible">
+            <bool>false</bool>
+           </property>
+           <widget class="QWidget" name="layoutWidget">
+            <layout class="QVBoxLayout" name="verticalLayout_16">
              <item>
-              <widget class="QLabel" name="allDataLabel">
-               <property name="text">
-                <string>Log data</string>
+              <widget class="QScrollArea" name="scrollArea">
+               <property name="widgetResizable">
+                <bool>true</bool>
                </property>
+               <widget class="QWidget" name="scrollAreaWidgetContents">
+                <property name="geometry">
+                 <rect>
+                  <x>0</x>
+                  <y>0</y>
+                  <width>960</width>
+                  <height>156</height>
+                 </rect>
+                </property>
+                <layout class="QVBoxLayout" name="verticalLayout">
+                 <property name="leftMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="rightMargin">
+                  <number>0</number>
+                 </property>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QTableWidget" name="selectedDataItems">
+                   <property name="verticalScrollBarPolicy">
+                    <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
+                   </property>
+                   <property name="editTriggers">
+                    <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+                   </property>
+                   <property name="selectionMode">
+                    <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
+                   </property>
+                   <property name="selectionBehavior">
+                    <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+                   </property>
+                   <attribute name="horizontalHeaderVisible">
+                    <bool>false</bool>
+                   </attribute>
+                   <attribute name="horizontalHeaderStretchLastSection">
+                    <bool>false</bool>
+                   </attribute>
+                   <column>
+                    <property name="text">
+                     <string>Color</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Series</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Value</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Scale</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Axis</string>
+                    </property>
+                   </column>
+                   <column>
+                    <property name="text">
+                     <string>Remove</string>
+                    </property>
+                   </column>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
               </widget>
              </item>
              <item>
-              <spacer name="horizontalSpacer_8">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
-              <widget class="QPushButton" name="addSeriesButton">
-               <property name="toolTip">
-                <string>Add selected row(s) to graph on Y1 axis</string>
-               </property>
-               <property name="text">
-                <string>Add to plot</string>
-               </property>
-              </widget>
+              <layout class="QHBoxLayout" name="horizontalLayout_13">
+               <item>
+                <widget class="QLabel" name="allDataLabel">
+                 <property name="text">
+                  <string>Log data</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_8">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+               <item>
+                <widget class="QPushButton" name="addSeriesButton">
+                 <property name="toolTip">
+                  <string>Add selected row(s) to graph on Y1 axis</string>
+                 </property>
+                 <property name="text">
+                  <string>Add to plot</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
-           </item>
-           <item>
-            <widget class="QTableWidget" name="dataTable">
-             <property name="editTriggers">
-              <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+           </widget>
+           <widget class="QTableWidget" name="dataTable">
+            <property name="editTriggers">
+             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
+            </property>
+            <property name="alternatingRowColors">
+             <bool>true</bool>
+            </property>
+            <property name="selectionMode">
+             <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+            </property>
+            <attribute name="horizontalHeaderStretchLastSection">
+             <bool>false</bool>
+            </attribute>
+            <column>
+             <property name="text">
+              <string>Name</string>
              </property>
-             <property name="alternatingRowColors">
-              <bool>true</bool>
+            </column>
+            <column>
+             <property name="text">
+              <string>Value</string>
              </property>
-             <property name="selectionMode">
-              <enum>QAbstractItemView::SelectionMode::ExtendedSelection</enum>
+            </column>
+            <column>
+             <property name="text">
+              <string>Y1</string>
              </property>
-             <property name="selectionBehavior">
-              <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
+            </column>
+            <column>
+             <property name="text">
+              <string>Y2</string>
              </property>
-             <attribute name="horizontalHeaderStretchLastSection">
-              <bool>false</bool>
-             </attribute>
-             <column>
-              <property name="text">
-               <string>Name</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Value</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Y1</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Y2</string>
-              </property>
-              <property name="toolTip">
-               <string
-                                                            >&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show this data series on the second Y axis to the right&lt;/p&gt;&lt;p&gt;Y axes will be autoscaled independently&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Scale</string>
-              </property>
-             </column>
-            </widget>
-           </item>
-          </layout>
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Show this data series on the second Y axis to the right&lt;/p&gt;&lt;p&gt;Y axes will be autoscaled independently&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Scale</string>
+             </property>
+            </column>
+           </widget>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -1009,7 +1007,7 @@
         <attribute name="title">
          <string>IMU</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_4" />
+        <layout class="QVBoxLayout" name="verticalLayout_4"/>
        </widget>
        <widget class="QWidget" name="tab_6">
         <attribute name="title">
@@ -1021,11 +1019,7 @@
            <property name="title">
             <string>Image</string>
            </property>
-           <layout
-                                                class="QVBoxLayout"
-                                                name="verticalLayout_14"
-                                                stretch="0,0,0,1"
-                                            >
+           <layout class="QVBoxLayout" name="verticalLayout_14" stretch="0,0,0,1">
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_8">
               <item>
@@ -1080,8 +1074,7 @@
                 </property>
                 <property name="icon">
                  <iconset resource="../res.qrc">
-                  <normaloff
-                                                                        >:/res/icons/Waypoint Map-96.png</normaloff>:/res/icons/Waypoint Map-96.png</iconset>
+                  <normaloff>:/res/icons/Waypoint Map-96.png</normaloff>:/res/icons/Waypoint Map-96.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1095,8 +1088,7 @@
                 </property>
                 <property name="icon">
                  <iconset resource="../res.qrc">
-                  <normaloff
-                                                                        >:/res/icons/Waypoint Map-96.png</normaloff>:/res/icons/Waypoint Map-96.png</iconset>
+                  <normaloff>:/res/icons/Waypoint Map-96.png</normaloff>:/res/icons/Waypoint Map-96.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1114,8 +1106,7 @@
                 </property>
                 <property name="icon">
                  <iconset resource="../res.qrc">
-                  <normaloff
-                                                                        >:/res/icons/Line Chart-96.png</normaloff>:/res/icons/Line Chart-96.png</iconset>
+                  <normaloff>:/res/icons/Line Chart-96.png</normaloff>:/res/icons/Line Chart-96.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1129,8 +1120,7 @@
                 </property>
                 <property name="icon">
                  <iconset resource="../res.qrc">
-                  <normaloff
-                                                                        >:/res/icons/Line Chart-96.png</normaloff>:/res/icons/Line Chart-96.png</iconset>
+                  <normaloff>:/res/icons/Line Chart-96.png</normaloff>:/res/icons/Line Chart-96.png</iconset>
                 </property>
                </widget>
               </item>
@@ -1241,7 +1231,7 @@
   </customwidget>
  </customwidgets>
  <resources>
-  <include location="../res.qrc" />
+  <include location="../res.qrc"/>
  </resources>
- <connections />
+ <connections/>
 </ui>

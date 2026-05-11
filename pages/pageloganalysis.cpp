@@ -120,7 +120,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     ui->selectedDataItems->horizontalHeader()->setSectionResizeMode(selectedTableColRemove, QHeaderView::Fixed);
     ui->selectedDataItems->setColumnWidth(selectedTableColColor, 24);
     ui->selectedDataItems->setColumnWidth(selectedTableColValue, 136);
-    ui->selectedDataItems->setColumnWidth(selectedTableColScale, 48);
+    ui->selectedDataItems->setColumnWidth(selectedTableColScale, 70);
     ui->selectedDataItems->setColumnWidth(selectedTableColAxis, 48);
     ui->selectedDataItems->setColumnWidth(selectedTableColRemove, 32);
     ui->selectedDataItems->verticalHeader()->setVisible(false);
