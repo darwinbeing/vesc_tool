@@ -42,6 +42,7 @@ static const int dataTableColValue = 1;
 static const int dataTableColY1 = 2;
 static const int dataTableColY2 = 3;
 static const int dataTableColScale = 4;
+static const int dataTableColAddButton = 5;
 
 static const int selectedTableColColor = 0;
 static const int selectedTableColSeries = 1;
@@ -88,6 +89,9 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     ui->statSplitter->setStretchFactor(0, 6);
     ui->statSplitter->setStretchFactor(1, 1);
 
+    ui->dataSplitter->setStretchFactor(0, 1);
+    ui->dataSplitter->setStretchFactor(1, 6);
+
     Utility::setPlotColors(ui->plot);
     ui->plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
     ui->plot->axisRect()->setRangeZoom(Qt::Orientations());
@@ -107,6 +111,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     ui->dataTable->setColumnWidth(dataTableColY1, 30);
     ui->dataTable->setColumnWidth(dataTableColY2, 30);
     ui->dataTable->setColumnWidth(dataTableColScale, 60);
+    ui->dataTable->setColumnWidth(dataTableColAddButton, 50);
     ui->dataTable->setColumnHidden(dataTableColY1, true);
     ui->dataTable->setColumnHidden(dataTableColY2, true);
     ui->dataTable->setColumnHidden(dataTableColScale, true);
@@ -202,7 +207,7 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     QFont legendFont = font();
     legendFont.setPointSize(9);
 
-    ui->plot->legend->setVisible(true);
+    ui->plot->legend->setVisible(false);
     ui->plot->legend->setFont(legendFont);
     ui->plot->axisRect()->insetLayout()->setInsetAlignment(0, Qt::AlignRight|Qt::AlignBottom);
     ui->plot->xAxis->setLabel("Seconds (s)");
@@ -303,26 +308,12 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
         }
     };
 
-    connect(ui->dataTable, &QTableWidget::cellDoubleClicked, [activateDataSeriesRows](int row, int column) {
+    connect(ui->dataTable, &QTableWidget::cellDoubleClicked, [this](int row, int column) {
         (void)column;
-        activateDataSeriesRows(QList<int>() << row);
-    });
 
-    connect(ui->addSeriesButton, &QPushButton::clicked, [this, activateDataSeriesRows]() {
-        QList<int> rows;
-        QSet<int> rowSet;
-
-        foreach (const QModelIndex &index, ui->dataTable->selectionModel()->selectedRows()) {
-            rowSet.insert(index.row());
+        if (QToolButton *btn = qobject_cast<QToolButton*>(ui->dataTable->cellWidget(row, dataTableColAddButton))) {
+            btn->click();
         }
-
-        if (rowSet.isEmpty() && ui->dataTable->currentRow() >= 0) {
-            rowSet.insert(ui->dataTable->currentRow());
-        }
-
-        rows = rowSet.values();
-        std::sort(rows.begin(), rows.end());
-        activateDataSeriesRows(rows);
     });
 
     connect(ui->filterOutlierBox, &QGroupBox::toggled, [this]() {
@@ -360,7 +351,6 @@ PageLogAnalysis::PageLogAnalysis(QWidget *parent) :
     on_gridBox_toggled(ui->gridBox->isChecked());
     logListRefresh();
     on_logLocalRefreshButton_clicked();
-    updateSelectedDataItemsHeight();
 
     QSettings set;
     mLastSaveCsvPath = set.value("pageloganalysis/lastSaveCsvPath", true).toString();
@@ -1034,17 +1024,7 @@ void PageLogAnalysis::updateGraphs()
 
 void PageLogAnalysis::updateSelectedDataItems()
 {
-    if (!ui->dataTable->selectionModel()) {
-        ui->selectedDataItems->setRowCount(0);
-        updateSelectedDataItemsHeight();
-        return;
-    }
-
     QSet<int> rowsToShow;
-    foreach (const QModelIndex &index, ui->dataTable->selectionModel()->selectedRows()) {
-        rowsToShow.insert(index.row());
-    }
-
     for (int row = 0; row < ui->dataTable->rowCount(); ++row) {
         QTableWidgetItem *y1Item = ui->dataTable->item(row, dataTableColY1);
         QTableWidgetItem *y2Item = ui->dataTable->item(row, dataTableColY2);
@@ -1207,8 +1187,9 @@ void PageLogAnalysis::updateSelectedDataItems()
             "QToolButton#axisRightButton { border-top-right-radius: 5px; border-bottom-right-radius: 5px; }"
             "QToolButton:checked { background: palette(highlight); color: palette(highlighted-text); }"));
 
-        connect(axisLeft, &QToolButton::toggled, this, [this, sourceRow, axisRight](bool checked) {
+        connect(axisLeft, &QToolButton::toggled, this, [this, sourceRow, axisLeft, axisRight](bool checked) {
             if (!checked) {
+                axisLeft->setChecked(true);
                 return;
             }
 
@@ -1225,8 +1206,9 @@ void PageLogAnalysis::updateSelectedDataItems()
             y2->setCheckState(Qt::Unchecked);
         });
 
-        connect(axisRight, &QToolButton::toggled, this, [this, sourceRow, axisLeft](bool checked) {
+        connect(axisRight, &QToolButton::toggled, this, [this, sourceRow, axisLeft, axisRight](bool checked) {
             if (!checked) {
+                axisRight->setChecked(true);
                 return;
             }
 
@@ -1268,6 +1250,10 @@ void PageLogAnalysis::updateSelectedDataItems()
                 y2->setCheckState(Qt::Unchecked);
             }
 
+            if (QToolButton *btn = qobject_cast<QToolButton*>(ui->dataTable->cellWidget(sourceRow, dataTableColAddButton))) {
+                btn->setText("+");
+            }
+
             QTimer::singleShot(0, this, [this]() {
                 updateSelectedDataItems();
             });
@@ -1278,7 +1264,6 @@ void PageLogAnalysis::updateSelectedDataItems()
 
     updateSelectedDataItemValues();
     ui->selectedDataItems->setUpdatesEnabled(true);
-    updateSelectedDataItemsHeight();
     ui->selectedDataItems->viewport()->update();
 }
 
@@ -1370,36 +1355,6 @@ void PageLogAnalysis::updateSelectedDataItemValues()
     }
 
     ui->selectedDataItems->setUpdatesEnabled(true);
-    updateSelectedDataItemsHeight();
-}
-
-void PageLogAnalysis::updateSelectedDataItemsHeight()
-{
-    int height = ui->selectedDataItems->frameWidth() * 2;
-
-    if (ui->selectedDataItems->horizontalHeader()->isVisible()) {
-        height += ui->selectedDataItems->horizontalHeader()->height();
-    }
-
-    int rows = ui->selectedDataItems->rowCount();
-
-    if (rows > 0) {
-        for (int i = 0; i < rows; ++i) {
-            int rowHeight = ui->selectedDataItems->rowHeight(i);
-            if (rowHeight <= 0) {
-                rowHeight = ui->selectedDataItems->verticalHeader()->defaultSectionSize();
-            }
-            if (rowHeight <= 0) {
-                rowHeight = ui->selectedDataItems->fontMetrics().height() + 8;
-            }
-            height += rowHeight;
-        }
-    } else {
-        height += ui->selectedDataItems->fontMetrics().height() + 8;
-    }
-
-    ui->selectedDataItems->setMinimumHeight(height);
-    ui->selectedDataItems->setMaximumHeight(height);
 }
 
 void PageLogAnalysis::updateStats()
@@ -1733,20 +1688,42 @@ void PageLogAnalysis::addDataItem(QString name, bool hasScale, double scaleStep,
         ui->dataTable->setCellWidget(currentRow, dataTableColScale, sb);
         connect(sb, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [this](double value) {
-            (void)value;
-            updateGraphs();
-            updateSelectedDataItemValues();
+                    (void)value;
+                    updateGraphs();
+                    updateSelectedDataItemValues();
+                });
+
+        // Y1
+        QTableWidgetItem *y1Item = new QTableWidgetItem("");
+        y1Item->setCheckState(Qt::Unchecked);
+        ui->dataTable->setItem(currentRow, dataTableColY1, y1Item);
+
+        // Y2
+        QTableWidgetItem *y2Item = new QTableWidgetItem("");
+        y2Item->setCheckState(Qt::Unchecked);
+        ui->dataTable->setItem(currentRow, dataTableColY2, y2Item);
+
+        QToolButton *addButton = new QToolButton();
+        addButton->setText("+");
+        connect(addButton, &QToolButton::clicked, [this, y1Item, y2Item, currentRow, addButton]() {
+            auto selection = QItemSelectionModel::Select | QItemSelectionModel::Rows;
+
+            if (y1Item->checkState() == Qt::Unchecked && y2Item->checkState() == Qt::Unchecked) {
+                y1Item->setCheckState(Qt::Checked);
+                addButton->setText("-");
+            } else {
+                y1Item->setCheckState(Qt::Unchecked);
+                y2Item->setCheckState(Qt::Unchecked);
+                selection = QItemSelectionModel::Deselect | QItemSelectionModel::Rows;
+                addButton->setText("+");
+            }
+
+            QModelIndex rowIndex = ui->dataTable->model()->index(currentRow, dataTableColName);
+            ui->dataTable->selectionModel()->select(rowIndex, selection);
+            updateSelectedDataItems();
         });
 
-    // Y1
-    QTableWidgetItem *y1Item = new QTableWidgetItem("");
-    y1Item->setCheckState(Qt::Unchecked);
-    ui->dataTable->setItem(currentRow, dataTableColY1, y1Item);
-
-    // Y2
-    QTableWidgetItem *y2Item = new QTableWidgetItem("");
-    y2Item->setCheckState(Qt::Unchecked);
-    ui->dataTable->setItem(currentRow, dataTableColY2, y2Item);
+        ui->dataTable->setCellWidget(currentRow, dataTableColAddButton, addButton);
 
     } else {
         ui->dataTable->setItem(currentRow, dataTableColScale, new QTableWidgetItem("N/A"));
@@ -2538,4 +2515,10 @@ void PageLogAnalysis::on_logLocalDeleteButton_clicked()
     } else {
         mVesc->emitMessageDialog("Delete File(s)", "No file(s) selected", false);
     }
+}
+
+void PageLogAnalysis::on_showLegendBox_toggled(bool checked)
+{
+    ui->plot->legend->setVisible(checked);
+    updateGraphs();
 }

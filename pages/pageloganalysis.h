@@ -73,6 +73,7 @@ private slots:
     void on_logLocalRefreshButton_clicked();
     void on_logLocalTable_cellDoubleClicked(int row, int column);
     void on_logLocalDeleteButton_clicked();
+    void on_showLegendBox_toggled(bool checked);
 
 private:
     Ui::PageLogAnalysis *ui;
@@ -180,7 +181,6 @@ private:
     void updateGraphs();
     void updateSelectedDataItems();
     void updateSelectedDataItemValues();
-    void updateSelectedDataItemsHeight();
     void updateStats();
     void updateDataAndPlot(double time);
     QVector<double> getLogSample(double time);
