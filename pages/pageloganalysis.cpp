@@ -1236,27 +1236,9 @@ void PageLogAnalysis::updateSelectedDataItems()
         removeButton->setToolTip("Remove this data series");
 
         connect(removeButton, &QToolButton::clicked, this, [this, sourceRow]() {
-            if (!ui->dataTable->model() || !ui->dataTable->selectionModel()) {
-                return;
-            }
-
-            QModelIndex rowIndex = ui->dataTable->model()->index(sourceRow, dataTableColName);
-            ui->dataTable->selectionModel()->select(rowIndex, QItemSelectionModel::Deselect | QItemSelectionModel::Rows);
-
-            if (QTableWidgetItem *y1 = ui->dataTable->item(sourceRow, dataTableColY1)) {
-                y1->setCheckState(Qt::Unchecked);
-            }
-            if (QTableWidgetItem *y2 = ui->dataTable->item(sourceRow, dataTableColY2)) {
-                y2->setCheckState(Qt::Unchecked);
-            }
-
             if (QToolButton *btn = qobject_cast<QToolButton*>(ui->dataTable->cellWidget(sourceRow, dataTableColAddButton))) {
-                btn->setText("+");
+                btn->click();
             }
-
-            QTimer::singleShot(0, this, [this]() {
-                updateSelectedDataItems();
-            });
         });
 
         ui->selectedDataItems->setCellWidget(row, selectedTableColRemove, removeButton);
