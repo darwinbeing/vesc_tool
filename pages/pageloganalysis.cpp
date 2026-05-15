@@ -374,6 +374,10 @@ VescInterface *PageLogAnalysis::vesc() const
 
 void PageLogAnalysis::setVesc(VescInterface *vesc)
 {
+    if (vesc == mVesc) {
+        return;
+    }
+
     mVesc = vesc;
 
     if (mVesc) {
@@ -386,16 +390,18 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
 
             resetInds();
 
+            ui->dataTable->setRowCount(0);
+
             mLogHeader = mLogRtHeader;
             mLog = mLogRt;
 
             updateInds();
             generateMissingEntries();
 
-            ui->dataTable->setRowCount(0);
             updateSelectedDataItems();
 
             if (mLog.size() == 0) {
+                mLogTruncated.clear();
                 return;
             }
 
@@ -412,7 +418,7 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
             }
         };
 
-        connect(mVesc->commands(), &Commands::logStart, [this]
+        connect(mVesc->commands(), &Commands::logStart, [this, updatePlots]
                 (int fieldNum, double rateHz, bool appendTime, bool appendGnss, bool appendGnssTime) {
             (void)appendGnss; (void)appendGnssTime;
 
@@ -446,6 +452,7 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
             mLogRtSamplesNow.resize(fieldNum);
             mLogRtTimer->start(1000.0 / rateHz);
             mLogRt.clear();
+            updatePlots();
         });
 
         connect(mVesc->commands(), &Commands::logStop, [this, updatePlots] () {
@@ -475,7 +482,7 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
             mLogRtHeader[fieldInd] = h;
         });
 
-        connect(mVesc->commands(), &Commands::logSamples, [this, updatePlots](int fieldStart, QVector<double> samples) {
+        connect(mVesc->commands(), &Commands::logSamples, [this](int fieldStart, QVector<double> samples) {
             if (mLogRtAppendTime) {
                 fieldStart++;
             }
@@ -485,10 +492,6 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
                 if (mLogRtSamplesNow.size() > ind) {
                     mLogRtSamplesNow[ind] = samples.at(i);
                 }
-            }
-
-            if (ui->updateRtBox->isChecked()) {
-                updatePlots();
             }
         });
 
@@ -500,7 +503,16 @@ void PageLogAnalysis::setVesc(VescInterface *vesc)
             mLogRt.append(mLogRtSamplesNow);
 
             if (ui->updateRtBox->isChecked()) {
-                updatePlots();
+                mLogHeader = mLogRtHeader;
+                mLog = mLogRt;
+
+                if (mLogHeader.size() != ui->dataTable->rowCount()) {
+                    updatePlots();
+                } else {
+                    if (!mLog.isEmpty()) {
+                        truncateDataAndPlot(ui->autoZoomBox->isChecked());
+                    }
+                }
             }
         });
 
@@ -897,7 +909,7 @@ void PageLogAnalysis::updateGraphs()
     QSet<QModelIndex> uniqueRows;
 
     auto selectedRows = ui->dataTable->selectionModel()->selectedRows();
-    for (const QModelIndex &index : selectedRows) {
+    foreach (const QModelIndex &index, selectedRows) {
         uniqueRows.insert(index);
     }
 
