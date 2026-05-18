@@ -246,7 +246,7 @@ void PageFirmware::updateHwList(FW_RX_PARAMS params)
             fwDir = "://res/firmwares_bms";
         }
 
-        fwdirExists = QDir(fwDir).entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries).count() == 0;
+        fwdirExists = QDir(fwDir).entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries).count() > 1;
 
         foreach (const auto &fi, QDir(fwDir).entryInfoList(QDir::NoFilter, QDir::Name)) {
             QStringList names = fi.fileName().split("_o_");
