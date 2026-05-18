@@ -51,7 +51,7 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
             fwDir = "://res/firmwares_bms";
         }
 
-        fwdirExists = QDir(fwDir).entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries).count() == 0;
+        fwdirExists = QDir(fwDir).entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries).count() > 1;
 
         QDirIterator it(fwDir);
         while (it.hasNext()) {
