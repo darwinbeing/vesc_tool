@@ -1,4 +1,25 @@
 target_sources(vesc_tool PRIVATE
+    include/internal/LispHighlighter.hpp
+    include/internal/QCodeEditor.hpp
+    include/internal/QCXXHighlighter.hpp
+    include/internal/QFramedTextAttribute.hpp
+    include/internal/QGLSLCompleter.hpp
+    include/internal/QGLSLHighlighter.hpp
+    include/internal/QHighlightBlockRule.hpp
+    include/internal/QHighlightRule.hpp
+    include/internal/QJSONHighlighter.hpp
+    include/internal/QLanguage.hpp
+    include/internal/QLineNumberArea.hpp
+    include/internal/QLispCompleter.hpp
+    include/internal/QLuaCompleter.hpp
+    include/internal/QLuaHighlighter.hpp
+    include/internal/QPythonCompleter.hpp
+    include/internal/QPythonHighlighter.hpp
+    include/internal/QStyleSyntaxHighlighter.hpp
+    include/internal/QSyntaxStyle.hpp
+    include/internal/QXMLHighlighter.hpp
+    include/internal/QmlHighlighter.hpp
+    include/internal/QVescCompleter.hpp
     src/internal/LispHighlighter.cpp
     src/internal/QCodeEditor.cpp
     src/internal/QCXXHighlighter.cpp

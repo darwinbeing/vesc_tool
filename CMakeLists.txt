@@ -59,6 +59,7 @@ qt_add_executable(vesc_tool
     hexfile.cpp
     bleuart.cpp
     systemcommandexecutor.h
+    datatypes.h
     mainwindow.ui
     boardsetupwindow.ui
     parametereditor.ui
