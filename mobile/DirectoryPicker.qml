@@ -24,7 +24,6 @@ SOFTWARE.
 */
 
 import QtQuick 2.0
-import QtQuick.Controls 1.4 as OldControls
 import QtQuick.Controls 2.1
 import Qt.labs.folderlistmodel 2.1
 import QtQuick.Layouts 1.3
@@ -132,27 +131,36 @@ Item {
         anchors.left: parent.left
         spacing: 0
 
-        OldControls.TableView {
-            id: view
+        ColumnLayout {
             Layout.fillHeight: true
             Layout.fillWidth: true
-            model: folderListModel
-            headerDelegate:headerDelegate
-            rowDelegate: Rectangle {
+            spacing: 0
+
+            Rectangle {
+                id: headerDelegate
+                Layout.fillWidth: true
                 height: rowHeight
-                color: Utility.getAppHexColor("disabledText")
+                color: Utility.getAppHexColor("lightestBackground")
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    height: headerTextSize
+                    font.bold: true
+                    elide: Text.ElideMiddle
+                    color: Utility.getAppHexColor("lightText")
+                    text: qsTr("FileName")
+                }
             }
 
-            OldControls.TableViewColumn {
-                title: qsTr("FileName")
-                role: "fileName"
-                resizable: true
-                delegate: fileDelegate
-            }
+            ListView {
+                id: view
+                Layout.fillHeight: true
+                Layout.fillWidth: true
+                clip: true
+                model: folderListModel
 
-            Component {
-                id: fileDelegate
-                Item {
+                delegate: Item {
+                    width: view.width
                     height: rowHeight
                     Rectangle {
                         color: Utility.getAppHexColor("disabledText")
@@ -171,7 +179,7 @@ Item {
                             anchors.top: parent.top
                             anchors.bottom: parent.bottom
                             anchors.right: parent.right
-                            text: styleData.value !== undefined ? styleData.value : ""
+                            text: fileName !== undefined ? fileName : ""
                             verticalAlignment: Text.AlignVCenter
                         }
                         Image {
@@ -184,22 +192,6 @@ Item {
                             source: isFolder(fileNameText.text) ? "qrc" + Utility.getThemePath() + "icons/ic_folder_open_black_48dp.png" :
                                                                   "qrc" + Utility.getThemePath() + "icons/ic_insert_drive_file_black_48dp.png"
                         }
-                    }
-                }
-            }
-            Component {
-                id: headerDelegate
-                Rectangle {
-                    height: rowHeight
-                    color: Utility.getAppHexColor("lightestBackground")
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        height: headerTextSize
-                        font.bold: true
-                        elide: Text.ElideMiddle
-                        color: Utility.getAppHexColor("lightText")
-                        text: styleData.value !== undefined ? styleData.value : ""
                     }
                 }
             }

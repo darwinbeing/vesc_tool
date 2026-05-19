@@ -20,17 +20,16 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import QtQuick.Extras 1.4
-import QtQuick.Controls.Styles 1.4
 import Qt5Compat.GraphicalEffects
 import QtQuick.Controls.Material 2.2
 
 import Vedder.vesc.utility 1.0
 
 Item {
-    property alias minimumValue: gauge.minimumValue
-    property alias maximumValue: gauge.maximumValue
-    property alias value: gauge.value
+    id: gauge
+    property double minimumValue: 0
+    property double maximumValue: 100
+    property double value: 0
     property string unitText: ""
     property string typeText: ""
     property string tickmarkSuffix: ""
@@ -40,107 +39,217 @@ Item {
     property double maxAngle: 144
     property double minAngle: -144
 
-    CircularGauge {
-        id: gauge
-        anchors.fill: parent
+    // Geometry shared with the canvas/needle (mirrors the old CircularGaugeStyle).
+    readonly property double outerRadius: Math.min(width, height) / 2
 
-        Behavior on value {
-            NumberAnimation {
-                easing.type: Easing.OutCirc
-                duration: 100
+    // Map a gauge value to an angle in degrees (0 = pointing straight down,
+    // positive = clockwise), matching QtQuick.Extras CircularGauge semantics.
+    function valueToAngle(v) {
+        var range = maximumValue - minimumValue
+        if (range === 0) {
+            return minAngle
+        }
+        var clamped = Math.max(minimumValue, Math.min(maximumValue, v))
+        return minAngle + (clamped - minimumValue) / range * (maxAngle - minAngle)
+    }
+
+    Behavior on value {
+        NumberAnimation {
+            easing.type: Easing.OutCirc
+            duration: 100
+        }
+    }
+
+    onValueChanged: { background.requestPaint(); ticks.requestPaint() }
+    onMinimumValueChanged: { background.requestPaint(); ticks.requestPaint() }
+    onMaximumValueChanged: { background.requestPaint(); ticks.requestPaint() }
+    onLabelStepChanged: ticks.requestPaint()
+    onMinAngleChanged: { background.requestPaint(); ticks.requestPaint() }
+    onMaxAngleChanged: { background.requestPaint(); ticks.requestPaint() }
+
+    Item {
+        id: gaugeArea
+        width: gauge.outerRadius * 2
+        height: gauge.outerRadius * 2
+        anchors.centerIn: parent
+
+        function d2r(degrees) {
+            return degrees * (Math.PI / 180.0)
+        }
+
+        function isCovered(v) {
+            var res = false
+            if (gauge.value > 0) {
+                if (v <= gauge.value && v >= 0) {
+                    res = true
+                }
+            } else {
+                if (v >= gauge.value && v <= 0) {
+                    res = true
+                }
+            }
+            return res
+        }
+
+        // Background: filled disc + trace arcs (was CircularGaugeStyle.background)
+        Canvas {
+            id: background
+            anchors.fill: parent
+
+            onPaint: {
+                var outerRadius = gauge.outerRadius
+                var ctx = getContext("2d")
+                ctx.reset()
+                ctx.beginPath()
+
+                ctx.fillStyle = Utility.getAppHexColor("normalBackground")
+                ctx.arc(outerRadius, outerRadius, outerRadius, 0, Math.PI * 2)
+                ctx.fill()
+
+                ctx.beginPath();
+                ctx.strokeStyle = Utility.getAppHexColor("darkBackground")
+                ctx.lineWidth = outerRadius
+                ctx.arc(outerRadius,
+                        outerRadius,
+                        outerRadius / 2,
+                        gaugeArea.d2r(gauge.valueToAngle(Math.max(gauge.value, 0)) - 90),
+                        gaugeArea.d2r(gauge.valueToAngle(gauge.maximumValue) - 90));
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(outerRadius,
+                        outerRadius,
+                        outerRadius / 2,
+                        gaugeArea.d2r(gauge.valueToAngle(gauge.minimumValue) - 90),
+                        gaugeArea.d2r(gauge.valueToAngle(Math.min(gauge.value, 0)) - 90));
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(outerRadius,
+                        outerRadius,
+                        outerRadius / 2,
+                        gaugeArea.d2r(gauge.valueToAngle(gauge.maximumValue) - 90),
+                        gaugeArea.d2r(gauge.valueToAngle(gauge.minimumValue) - 90));
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.strokeStyle = Utility.getAppHexColor("normalText")
+                ctx.lineWidth = 1
+                ctx.arc(outerRadius,
+                        outerRadius,
+                        outerRadius - 0.5,
+                        0, 2 * Math.PI);
+                ctx.stroke();
+
+                if (gauge.value < 0) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = Utility.getAppHexColor("lightAccent")
+                    ctx.lineWidth = outerRadius * 0.1
+                    ctx.arc(outerRadius,
+                            outerRadius,
+                            outerRadius - outerRadius * 0.05,
+                            gaugeArea.d2r(gauge.valueToAngle(gauge.value) - 90),
+                            gaugeArea.d2r(gauge.valueToAngle(0) - 90));
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.strokeStyle = Utility.getAppHexColor("lightAccent")
+                    ctx.lineWidth = outerRadius * 0.1
+                    ctx.arc(outerRadius,
+                            outerRadius,
+                            outerRadius - outerRadius * 0.05,
+                            gaugeArea.d2r(gauge.valueToAngle(0) - 90),
+                            gaugeArea.d2r(gauge.valueToAngle(gauge.value) - 90));
+                    ctx.stroke();
+                }
             }
         }
 
-        style: CircularGaugeStyle {
-            id: style
-            labelStepSize: labelStep
-            tickmarkStepSize: labelStep
-            labelInset: outerRadius * 0.28
-            tickmarkInset: 2
-            minorTickmarkInset: 2
-            minimumValueAngle: minAngle
-            maximumValueAngle: maxAngle
+        // Tick marks, minor tick marks and tick labels
+        // (was CircularGaugeStyle.tickmark / minorTickmark / tickmarkLabel)
+        Canvas {
+            id: ticks
+            anchors.fill: parent
 
-            background:
-                Canvas {
-                property double value: gauge.value
+            onPaint: {
+                var outerRadius = gauge.outerRadius
+                var ctx = getContext("2d")
+                ctx.reset()
 
-                anchors.fill: parent
-                onValueChanged: requestPaint()
-
-                function d2r(degrees) {
-                    return degrees * (Math.PI / 180.0);
+                if (gauge.labelStep <= 0) {
+                    return
                 }
 
-                onPaint: {
-                    var ctx = getContext("2d")
-                    ctx.reset()
+                var labelInset = outerRadius * 0.28
+                var minorCount = 4
+
+                ctx.textAlign = "center"
+                ctx.textBaseline = "middle"
+                ctx.font = (outerRadius * 0.15) + "px sans-serif"
+
+                for (var v = gauge.minimumValue;
+                     v <= gauge.maximumValue + 1e-9;
+                     v += gauge.labelStep) {
+                    var covered = gaugeArea.isCovered(v)
+                    var col = covered ? Utility.getAppHexColor("lightText")
+                                      : Utility.getAppHexColor("lightestBackground")
+                    var ang = gaugeArea.d2r(gauge.valueToAngle(v) - 90)
+
+                    // Major tickmark: 2 x (outerRadius * 0.09), drawn radially.
+                    var tickLen = outerRadius * 0.09
+                    var tickOuter = outerRadius
+                    var tickInner = outerRadius - tickLen
                     ctx.beginPath()
+                    ctx.strokeStyle = col
+                    ctx.lineWidth = 2
+                    ctx.moveTo(outerRadius + Math.cos(ang) * tickInner,
+                               outerRadius + Math.sin(ang) * tickInner)
+                    ctx.lineTo(outerRadius + Math.cos(ang) * tickOuter,
+                               outerRadius + Math.sin(ang) * tickOuter)
+                    ctx.stroke()
 
-                    ctx.fillStyle = Utility.getAppHexColor("normalBackground")
-                    ctx.arc(outerRadius, outerRadius, outerRadius, 0, Math.PI * 2)
-                    ctx.fill()
+                    // Tickmark label
+                    var labelRadius = outerRadius - labelInset
+                    ctx.fillStyle = col
+                    ctx.fillText(parseFloat(v * gauge.tickmarkScale).toFixed(0) + gauge.tickmarkSuffix,
+                                 outerRadius + Math.cos(ang) * labelRadius,
+                                 outerRadius + Math.sin(ang) * labelRadius)
 
-                    ctx.beginPath();
-                    ctx.strokeStyle = Utility.getAppHexColor("darkBackground")
-                    ctx.lineWidth = outerRadius
-                    ctx.arc(outerRadius,
-                            outerRadius,
-                            outerRadius / 2,
-                            d2r(valueToAngle(Math.max(gauge.value, 0)) - 90),
-                            d2r(valueToAngle(gauge.maximumValue) - 90));
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(outerRadius,
-                            outerRadius,
-                            outerRadius / 2,
-                            d2r(valueToAngle(gauge.minimumValue) - 90),
-                            d2r(valueToAngle(Math.min(gauge.value, 0)) - 90));
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(outerRadius,
-                            outerRadius,
-                            outerRadius / 2,
-                            d2r(valueToAngle(gauge.maximumValue) - 90),
-                            d2r(valueToAngle(gauge.minimumValue) - 90));
-                    ctx.stroke();
-
-                    ctx.beginPath();
-                    ctx.strokeStyle = Utility.getAppHexColor("normalText")
-                    ctx.lineWidth = 1
-                    ctx.arc(outerRadius,
-                            outerRadius,
-                            outerRadius - 0.5,
-                            0, 2 * Math.PI);
-                    ctx.stroke();
-
-                    if (gauge.value < 0) {
-                        ctx.beginPath();
-                        ctx.strokeStyle = Utility.getAppHexColor("lightAccent")
-                        ctx.lineWidth = outerRadius * 0.1
-                        ctx.arc(outerRadius,
-                                outerRadius,
-                                outerRadius - outerRadius * 0.05,
-                                d2r(valueToAngle(gauge.value) - 90),
-                                d2r(valueToAngle(0) - 90));
-                        ctx.stroke();
-                    } else {
-                        ctx.beginPath();
-                        ctx.strokeStyle = Utility.getAppHexColor("lightAccent")
-                        ctx.lineWidth = outerRadius * 0.1
-                        ctx.arc(outerRadius,
-                                outerRadius,
-                                outerRadius - outerRadius * 0.05,
-                                d2r(valueToAngle(0) - 90),
-                                d2r(valueToAngle(gauge.value) - 90));
-                        ctx.stroke();
+                    // Minor tickmarks between this major and the next.
+                    if (v + gauge.labelStep <= gauge.maximumValue + 1e-9) {
+                        for (var m = 1; m < minorCount + 1; m++) {
+                            var mv = v + gauge.labelStep * m / (minorCount + 1)
+                            var mCovered = gaugeArea.isCovered(mv)
+                            var mCol = mCovered ? Utility.getAppHexColor("lightText")
+                                                : Utility.getAppHexColor("normalText")
+                            var mAng = gaugeArea.d2r(gauge.valueToAngle(mv) - 90)
+                            var mLen = outerRadius * 0.05
+                            ctx.beginPath()
+                            ctx.strokeStyle = mCol
+                            ctx.lineWidth = 1.5
+                            ctx.moveTo(outerRadius + Math.cos(mAng) * (outerRadius - mLen),
+                                       outerRadius + Math.sin(mAng) * (outerRadius - mLen))
+                            ctx.lineTo(outerRadius + Math.cos(mAng) * outerRadius,
+                                       outerRadius + Math.sin(mAng) * outerRadius)
+                            ctx.stroke()
+                        }
                     }
                 }
             }
+        }
 
-            needle: Item {
-                y: -outerRadius * 0.82
-                height: outerRadius * 0.18
+        // Needle (was CircularGaugeStyle.needle)
+        Item {
+            id: needleContainer
+            anchors.centerIn: parent
+            width: 1
+            height: 1
+            rotation: gauge.valueToAngle(gauge.value)
+
+            Item {
+                y: -gauge.outerRadius * 0.82
+                x: -needle.width / 2
+                height: gauge.outerRadius * 0.18
+                width: needle.width
+
                 Rectangle {
                     id: needle
                     height: parent.height
@@ -159,83 +268,46 @@ Item {
                     source: needle
                 }
             }
+        }
 
-            foreground: Item {
-                Text {
-                    id: speedLabel
-                    anchors.verticalCenterOffset: outerRadius * 0.08
-                    anchors.centerIn: parent
-                    text: gauge.value.toFixed(0)
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: outerRadius * 0.3
-                    color: Utility.getAppHexColor("lightText")
-                    antialiasing: true
-                }
+        // Foreground value/unit/type text (was CircularGaugeStyle.foreground)
+        Item {
+            anchors.fill: parent
 
-                Text {
-                    id: speedLabelUnit
-                    text: unitText
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: speedLabel.bottom
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: outerRadius * 0.15
-                    color: Utility.getAppHexColor("lightText")
-                    antialiasing: true
-                }
-
-                Text {
-                    id: typeLabel
-                    text: typeText
-                    verticalAlignment: Text.AlignVCenter
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -outerRadius * 0.3
-                    anchors.bottomMargin: outerRadius * 0.05
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: outerRadius * 0.15
-                    color: Utility.getAppHexColor("lightText")
-                    antialiasing: true
-                }
-            }
-
-            function isCovered(value) {
-                var res = false
-                if (gauge.value > 0) {
-                    if (value <= gauge.value && value >= 0) {
-                        res = true
-                    }
-                } else {
-                    if (value >= gauge.value && value <= 0) {
-                        res = true
-                    }
-                }
-
-                return res
-            }
-
-            tickmarkLabel:  Text {
-                font.pixelSize: outerRadius * 0.15
-                text: parseFloat(styleData.value * tickmarkScale).toFixed(0) + tickmarkSuffix
-                color: isCovered(styleData.value) ? Utility.getAppHexColor("lightText") : Utility.getAppHexColor("lightestBackground")
+            Text {
+                id: speedLabel
+                anchors.verticalCenterOffset: gauge.outerRadius * 0.08
+                anchors.centerIn: parent
+                text: gauge.value.toFixed(0)
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: gauge.outerRadius * 0.3
+                color: Utility.getAppHexColor("lightText")
                 antialiasing: true
             }
 
-            tickmark: Rectangle {
-                implicitWidth: 2
-                implicitHeight: outerRadius * 0.09
-
+            Text {
+                id: speedLabelUnit
+                text: unitText
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.top: speedLabel.bottom
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: gauge.outerRadius * 0.15
+                color: Utility.getAppHexColor("lightText")
                 antialiasing: true
-                smooth: true
-                color: isCovered(styleData.value) ? Utility.getAppHexColor("lightText") : Utility.getAppHexColor("lightestBackground")
             }
 
-            minorTickmark: Rectangle {
-                implicitWidth: 1.5
-                implicitHeight: outerRadius * 0.05
-
+            Text {
+                id: typeLabel
+                text: typeText
+                verticalAlignment: Text.AlignVCenter
+                anchors.horizontalCenter: parent.horizontalCenter
+                anchors.centerIn: parent
+                anchors.verticalCenterOffset: -gauge.outerRadius * 0.3
+                anchors.bottomMargin: gauge.outerRadius * 0.05
+                horizontalAlignment: Text.AlignHCenter
+                font.pixelSize: gauge.outerRadius * 0.15
+                color: Utility.getAppHexColor("lightText")
                 antialiasing: true
-                smooth: true
-                color: isCovered(styleData.value) ? Utility.getAppHexColor("lightText") : Utility.getAppHexColor("normalText")
             }
         }
     }
