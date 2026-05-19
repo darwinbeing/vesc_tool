@@ -6,3 +6,5 @@ target_sources(vesc_tool PRIVATE
     vesc3ditem.cpp vesc3ditem.h
 )
 target_include_directories(vesc_tool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_sources(vesc_tool PRIVATE qml.qrc)

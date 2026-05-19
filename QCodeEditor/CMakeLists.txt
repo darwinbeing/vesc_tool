@@ -20,3 +20,5 @@ target_sources(vesc_tool PRIVATE
     src/internal/QVescCompleter.cpp
 )
 target_include_directories(vesc_tool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_sources(vesc_tool PRIVATE resources/qcodeeditor_resources.qrc)

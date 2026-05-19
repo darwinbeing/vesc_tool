@@ -96,6 +96,23 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Gamepad
 )
 
+# --- Resources ---
+option(VT_EXCLUDE_FW "Exclude built-in firmwares" ON)
+
+target_sources(vesc_tool PRIVATE
+    res.qrc
+    res_custom_module.qrc
+    res_lisp.qrc
+    res_qml.qrc
+    res/config/res_config.qrc
+    res_fw_bms.qrc
+    res_neutral.qrc
+)
+
+if(NOT VT_EXCLUDE_FW)
+    target_sources(vesc_tool PRIVATE res/firmwares/res_fw.qrc)
+endif()
+
 # Subdirectory source contributions (added in later tasks):
 add_subdirectory(pages)
 add_subdirectory(widgets)
