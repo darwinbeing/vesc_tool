@@ -23,8 +23,8 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # --- Qt (version-agnostic: prefers Qt6 if present, falls back to Qt5) ---
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
-    Core Gui Widgets Network Quick QuickControls2 QuickWidgets Svg
-    PrintSupport SerialPort Bluetooth Positioning Gamepad)
+    Core Gui Widgets Network Qml Quick QuickControls2 QuickWidgets Svg
+    PrintSupport SerialPort Bluetooth Positioning Core5Compat)
 
 # qt_add_executable was introduced in Qt6; provide a shim for Qt5 builds.
 if(QT_VERSION_MAJOR EQUAL 5 AND NOT COMMAND qt_add_executable)
@@ -76,7 +76,6 @@ target_compile_definitions(vesc_tool PRIVATE
     HAS_BLUETOOTH
     HAS_POS
     HAS_SERIALPORT
-    HAS_GAMEPAD
     VER_NEUTRAL
 )
 
@@ -94,7 +93,8 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::SerialPort
     Qt${QT_VERSION_MAJOR}::Bluetooth
     Qt${QT_VERSION_MAJOR}::Positioning
-    Qt${QT_VERSION_MAJOR}::Gamepad
+    Qt${QT_VERSION_MAJOR}::Core5Compat
+    Qt${QT_VERSION_MAJOR}::Qml
 )
 
 # --- Resources ---
