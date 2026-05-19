@@ -292,9 +292,9 @@ bool Utility::requestBleScanPermission()
 #ifdef Q_OS_ANDROID
     QtAndroidPrivate::PermissionResult r =
             QtAndroidPrivate::checkPermission(QStringLiteral("android.permission.BLUETOOTH_SCAN")).result();
-    if (r == QtAndroidPrivate::Denied) {
+    if (r == QtAndroidPrivate::PermissionResult::Denied) {
         r = QtAndroidPrivate::requestPermission(QStringLiteral("android.permission.BLUETOOTH_SCAN")).result();
-        if (r == QtAndroidPrivate::Denied) {
+        if (r == QtAndroidPrivate::PermissionResult::Denied) {
             return false;
         }
     }
@@ -310,9 +310,9 @@ bool Utility::requestBleConnectPermission()
 #ifdef Q_OS_ANDROID
     QtAndroidPrivate::PermissionResult r =
             QtAndroidPrivate::checkPermission(QStringLiteral("android.permission.BLUETOOTH_CONNECT")).result();
-    if (r == QtAndroidPrivate::Denied) {
+    if (r == QtAndroidPrivate::PermissionResult::Denied) {
         r = QtAndroidPrivate::requestPermission(QStringLiteral("android.permission.BLUETOOTH_CONNECT")).result();
-        if (r == QtAndroidPrivate::Denied) {
+        if (r == QtAndroidPrivate::PermissionResult::Denied) {
             return false;
         }
     }
@@ -328,7 +328,7 @@ bool Utility::hasLocationPermission()
 #ifdef Q_OS_ANDROID
     QtAndroidPrivate::PermissionResult r =
             QtAndroidPrivate::checkPermission(QStringLiteral("android.permission.ACCESS_FINE_LOCATION")).result();
-    if (r == QtAndroidPrivate::Denied) {
+    if (r == QtAndroidPrivate::PermissionResult::Denied) {
         return false;
     } else {
         return true;
