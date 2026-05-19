@@ -1,0 +1,80 @@
+#!/bin/bash
+
+set -e
+
+export OS=$(uname | tr '[:upper:]' '[:lower:]')
+export ARCH=$(uname -m)
+
+export NDK_VERSION=23.1.7779620
+export ANDROID_HOME=$HOME/Library/Android/sdk
+# export ANDROID_NDK_HOST=darwin-x86_64
+export ANDROID_NDK_HOST=${OS}-${ARCH}
+# export ANDROID_NDK_PLATFORM=android-30
+# export ANDROID_NDK_TOOLCHAIN_VERSION=4.9
+# export ANDROID_API_VERSION=android-31
+export ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/$NDK_VERSION
+export ANDROID_SDK_ROOT=$ANDROID_HOME
+
+# export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_161.jdk/Contents/Home
+export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.12.jdk/Contents/Home
+export PATH=$JAVA_HOME/bin:$PATH
+
+ANDROID_BUILD_TOOLS_VERSION=31.0.0
+export PATH=$ANDROID_SDK_ROOT/emulator:$PATH
+export PATH=$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/tools:$ANDROID_SDK_ROOT/tools/bin:$ANDROID_SDK_ROOT/tools/proguard/bin:$ANDROID_SDK_ROOT/build-tools/$ANDROID_BUILD_TOOLS_VERSION:$ANDROID_NDK_ROOT:$PATH
+
+
+rm -rf build/android/*
+
+# armv7
+# ANDROID_ARCH=arm
+# export PATH=$HOME/Qt5.12.3/5.12.3/android_armv7/bin/:$PATH
+# export ANDROID_NDK_TOOLCHAIN_PREFIX=arm-linux-androideabi
+# export ANDROID_NDK_TOOLS_PREFIX=arm-linux-androideabi
+
+# armv8
+ANDROID_ARCH=arm64
+# export PATH=$HOME/Qt5.14.2/5.14.2/android_arm64_v8a/bin/:$PATH
+export PATH=$HOME/Qt5.14.2/5.14.2/android/bin/:$PATH
+export PATH=$QT_ROOT/bin:$PATH
+export LD_LIBRARY_PATH=$HOME/Qt5.14.2/5.14.2/android/lib:$LD_LIBRARY_PATH
+export PKG_CONFIG_PATH=$HOME/Qt5.14.2/5.14.2/android/lib/pkgconfig:$PKG_CONFIG_PATH
+export QML_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML_IMPORT_PATH
+export QML2_IMPORT_PATH=$HOME/Qt5.14.2/5.14.2/android/qml/:$QML2_IMPORT_PATH
+export QT_PLUGIN_PATH=$HOME/Qt5.14.2/5.14.2/android/plugins/:$QT_PLUGIN_PATH
+# export ANDROID_NDK_TOOLCHAIN_PREFIX=aarch64-linux-android
+# export ANDROID_NDK_TOOLS_PREFIX=aarch64-linux-android
+
+export QML_IMPORT_PATH=mobile/:$QML_IMPORT_PATH
+
+# Mobile
+qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android build_mobile" -spec android-clang ANDROID_ABIS='arm64-v8a'
+make clean
+make -j8
+make install INSTALL_ROOT=build/android/build
+ls build/android/build/libs/arm64-v8a/
+androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
+mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_mobile.apk
+rm -rf build/android/build
+rm -rf build/android/obj
+rm -f build/android/libvesc_tool.so
+
+# Full
+qmake -config release "CONFIG += sdk_no_version_check exclude_fw release_android" -spec android-clang ANDROID_ABIS='arm64-v8a'
+make clean
+make -j8
+make install INSTALL_ROOT=build/android/build
+
+androiddeployqt --gradle --no-gdbserver --output build/android/build --input android-vesc_tool-deployment-settings.json --android-platform android-31
+mv build/android/build/build/outputs/apk/debug/build-debug.apk build/android/vesc_tool_full.apk
+rm -rf build/android/build
+rm -rf build/android/obj
+rm -f build/android/libvesc_tool.so
+
+# Zip APKs
+cd build/android
+# zip vesc_tool_android-$ANDROID_ARCH.zip vesc_tool_mobile.apk vesc_tool_full.apk
+zip vesc_tool-android.zip vesc_tool_mobile.apk vesc_tool_full.apk
+rm -f vesc_tool_mobile.apk
+rm -f vesc_tool_full.apk
+cd ../..

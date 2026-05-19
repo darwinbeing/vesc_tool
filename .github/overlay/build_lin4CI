@@ -1,0 +1,207 @@
+#!/bin/bash
+
+# https://github.com/LairdCP/UwTerminalX/wiki/Compiling-Qt-Statically
+# https://wiki.qt.io/Building_Qt_5_from_Git
+
+# sudo apt-get build-dep qt5-default
+# sudo apt-get install libxcb-xinerama0-dev build-essential perl python git "^libxcb.*" libx11-xcb-dev libglu1-mesa-dev libxrender-dev libxi-dev flex bison gperf libicu-dev libxslt-dev ruby libssl-dev libxcursor-dev libxcomposite-dev libxdamage-dev libxrandr-dev libfontconfig1-dev libcap-dev libxtst-dev libpulse-dev libudev-dev libpci-dev libnss3-dev libasound2-dev libxss-dev libegl1-mesa-dev gperf bison libbz2-dev libgcrypt20-dev libdrm-dev libcups2-dev libatkmm-1.6-dev libasound2-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libbluetooth-dev bluetooth blueman bluez libusb-dev libdbus-1-dev bluez-hcidump bluez-tools libbluetooth-dev libgles2-mesa-dev
+
+# OpenSSL (Not too sure about this...)
+# cd /opt
+# sudo mkdir openssl
+# sudo chown $USER openssl
+# git clone git://git.openssl.org/openssl.git
+# cd openssl
+# git checkout OpenSSL_1_1_1c
+# ./config no-shared
+# make -j8
+# sudo make install
+# sudo ldconfig
+
+# Qt 5.9:
+# cd /opt
+# sudo mkdir qt5
+# sudo chown $USER qt5
+# git clone https://code.qt.io/qt/qt5.git
+# cd qt5
+# git checkout 5.9
+# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+# mkdir build
+# cd build
+# ../configure -prefix /opt/Qt/5.9-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-xinput2 -no-glib -qt-xkbcommon-x11 -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-xkbcommon-evdev -no-evdev -no-libproxy -no-icu -skip imageformats -no-xinput2 -qt-freetype -opengl es2
+# make -j9
+# sudo make install
+
+# Qt 5.12:
+# cd /opt
+# sudo mkdir qt5
+# sudo chown $USER qt5
+# git clone https://code.qt.io/qt/qt5.git
+# cd qt5
+# git checkout 5.12
+# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+# mkdir build
+# cd build
+# ../configure -prefix /opt/Qt/5.12-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
+# make -j9
+# sudo make install
+
+# Qt 5.13:
+# cd /opt
+# sudo mkdir qt5
+# sudo chown $USER qt5
+# git clone https://code.qt.io/qt/qt5.git
+# cd qt5
+# git checkout 5.13
+# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+# mkdir build
+# cd build
+# ../configure -prefix /opt/Qt/5.13-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -qt-xcb -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -qt-freetype -skip qtimageformats -opengl es2
+# make -j9
+# sudo make install
+
+# Qt 5.15:
+# cd /opt
+# sudo mkdir qt5
+# sudo chown $USER qt5
+# git clone https://code.qt.io/qt/qt5.git
+# cd qt5
+# git checkout 5.15
+# perl init-repository --module-subset=default,-qtwebkit,-qtwebkit-examples,-qtwebengine
+# mkdir build
+# cd build
+# ../configure -prefix /opt/Qt/5.15-static/ -release -opensource -confirm-license -static -no-sql-mysql -no-sql-psql -no-sql-sqlite -no-journald -qt-zlib -no-mtdev -no-gif -qt-libpng -qt-libjpeg -qt-harfbuzz -qt-pcre -no-glib -no-compile-examples -no-cups -no-iconv -no-tslib -dbus-linked -no-xcb-xlib -no-eglfs -no-directfb -no-linuxfb -no-kms -nomake examples -nomake tests -skip qtwebsockets -skip qtwebchannel -skip qtwebengine -skip qtwayland -skip qtwinextras -skip qtsvg -skip qtsensors -skip multimedia -no-evdev -no-libproxy -no-icu -no-accessibility -qt-freetype -skip qtimageformats -opengl es2
+# make -j9
+# sudo make install
+
+# Note: -no-dbus and -skip qtconnectivity can also be added, but then bluetooth and window titlebar menus don't work.
+
+# set -e
+
+# export PATH=/opt/Qt/5.12-static/bin:$PATH
+# rm -rf build/lin/*
+
+# # Original
+# qmake -config release "CONFIG += release_lin build_original"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_original_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Platinum
+# qmake -config release "CONFIG += release_lin build_platinum"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_platinum_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Gold
+# qmake -config release "CONFIG += release_lin build_gold"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_gold_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Silver
+# qmake -config release "CONFIG += release_lin build_silver"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_silver_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Bronze
+# qmake -config release "CONFIG += release_lin build_bronze"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_bronze_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+# # Free of charge
+# qmake -config release "CONFIG += release_lin build_free"
+# make clean
+# make -j8
+# rm -rf build/lin/obj
+# cd build/lin
+# zip vesc_tool_free_linux.zip `ls | grep -v '\.zip$'`
+# ls | grep -v '\.zip$' | xargs rm
+# cd ../..
+
+set -e
+
+sudo apt-get install -y libxkbcommon-x11-0 libfuse2
+
+VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+
+rm -rf build/lin/*
+
+# BuildType=(original platinum gold silver bronze free)
+BuildType=(platinum)
+
+for type in ${BuildType[@]}; do
+    qmake -config release "CONFIG += release_lin build_${type}"
+    make clean
+    make
+
+    mkdir -p appdir/usr/bin
+    cp -v build/lin/vesc_tool_${VT_VERSION} appdir/usr/bin/vesc_tool
+    # make INSTALL_ROOT=appdir install
+
+    # rm -rf build/lin/obj
+    # pushd build/lin
+
+    cp res/version/platinum_v.svg appdir/vesc-tool.svg
+    cat > "appdir/vesc-tool.desktop" <<EOF
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=VESC Tool
+Comment=VESC ESC configuration tool
+Exec=/usr/bin/vesc_tool
+Terminal=false
+Type=Application
+Icon=vesc-tool
+Categories=Development;Utility;
+EOF
+    find appdir/
+
+    wget -c -nv "https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage"
+    chmod a+x linuxdeployqt-continuous-x86_64.AppImage
+
+    export VERSION=$(git rev-parse --short HEAD) # linuxdeployqt uses this for naming the file
+    # export VERSION="$VT_VERSION"
+    # ./linuxdeployqt-continuous-x86_64.AppImage appdir/usr/share/applications/vesc_tool.desktop -bundle-non-qt-libs \
+    # -no-translations -no-copy-copyright-files -verbose=2 -appimage
+    ./linuxdeployqt-continuous-x86_64.AppImage appdir/vesc-tool.desktop -bundle-non-qt-libs -no-translations -no-copy-copyright-files -verbose=2 -appimage
+    mv VESC_Tool-$(git rev-parse --short HEAD)-x86_64.AppImage VESC_Tool-x86_64.AppImage
+    find appdir -executable -type f -exec ldd {} \; | grep " => /usr" | cut -d " " -f 2-3 | sort | uniq
+
+    mv appdir vesc_tool_${type}-lin
+    zip -rv vesc_tool_${type}-lin.zip vesc_tool_${type}-lin
+
+    find vesc_tool*.zip
+    find VESC_Tool*.AppImage
+    chmod +x VESC_Tool-x86_64.AppImage
+
+    # wget https://github.com/probonopd/linuxdeployqt/releases/download/6/linuxdeployqt-6-x86_64.AppImage
+    # mv linuxdeployqt-6-x86_64.AppImage linuxdeployqt
+    # chmod a+x linuxdeployqt
+    # ./linuxdeployqt  vesc_tool_${VT_VERSION} -appimage -unsupported-bundle-everything -bundle-non-qt-libs -unsupported-allow-new-glibc
+    # rm -rf vesc_tool_${VT_VERSION}
+    # mv vesc_tool_${VT_VERSION}.AppImage vesc_tool_${type}-lin.AppImage
+
+    # popd
+done

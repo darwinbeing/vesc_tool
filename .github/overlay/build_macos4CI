@@ -1,0 +1,34 @@
+#!/bin/bash
+
+set -e
+
+VT_VERSION=$(grep -m1 VT_VERSION vesc_tool.pro  | awk -F= '{ print $2 }' | sed 's/[ ",]//g')
+
+export PATH=$HOME/Qt5.15.2/5.15.2/clang_64/bin:$PATH
+rm -rf build/macos/*
+
+# BuildType=(original platinum gold silver bronze free)
+BuildType=(platinum)
+TARGET="VESC Tool"
+
+for type in ${BuildType[@]}; do
+    qmake -config release QMAKE_APPLE_DEVICE_ARCHS="x86_64" "CONFIG += release_macos build_${type}"
+    make clean
+    make -j8
+    rm -rf build/macos/obj
+    pushd build/macos
+
+    mkdir -p "${TARGET}-release"
+    ln -s  /Applications "${TARGET}-release/Applications"
+    mv "${TARGET}.app" "${TARGET}-release"
+    macdeployqt "${TARGET}-release/${TARGET}.app" -qmldir=. -verbose=1 -dmg
+    rm -f "${TARGET}-release/${TARGET}.dmg"
+    hdiutil create -volname "${TARGET}" -srcfolder "${TARGET}-release" -ov -format UDZO -fs HFS+ -o VESC_Tool_${type}-macOS-x86_64.dmg
+
+    # macdeployqt "${TARGET}".app -qmldir=. -verbose=1 -dmg
+    # rm -rf "${TARGET}".app
+    # mv -f "${TARGET}".dmg VESC_Tool_${type}-macOS.dmg
+    # mv -f "${TARGET}".dmg "${TARGET}"_${type}-macOS.dmg
+    # mv -f "${TARGET}".dmg vesc_tool_${type}-macOS.dmg
+    popd
+done
