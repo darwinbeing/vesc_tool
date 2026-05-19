@@ -14,7 +14,7 @@ Subject: [PATCH] Publish Builds With Firmware
  build_macos_universal                         |  34 +++
  build_win4CI.ps1                              | 197 ++++++++++++++++
  esp32/esp_loader.h                            |   5 +-
- esp32/serial_comm.c                           |   2 +
+ esp32/protocol_serial.c                       |   2 +
  esp32/serial_comm_prv.h                       |  39 ++--
  ios/src/setIosParameters.h                    |   6 +-
  mainwindow.cpp                                |   3 +
@@ -887,18 +887,17 @@ index 8e42afd..c690965 100644
  
  /**
    * @brief Connects to the target
-diff --git a/esp32/serial_comm.c b/esp32/serial_comm.c
-index 6643400..ef4a1c4 100644
---- a/esp32/serial_comm.c
-+++ b/esp32/serial_comm.c
-@@ -425,7 +425,9 @@ esp_loader_error_t loader_spi_parameters(uint32_t total_size)
-     return send_cmd(&spi_cmd, sizeof(spi_cmd), NULL);
+diff --git a/esp32/protocol_serial.c b/esp32/protocol_serial.c
+--- a/esp32/protocol_serial.c
++++ b/esp32/protocol_serial.c
+@@ -570,7 +570,9 @@
  }
- 
+
+
 +#if defined(__GNUC__) || defined(__clang__)
  __attribute__ ((weak)) void loader_port_debug_print(const char *str)
  {
- 
+     (void) str;
  }
 +#endif
 diff --git a/esp32/serial_comm_prv.h b/esp32/serial_comm_prv.h
@@ -1117,7 +1116,7 @@ index d55abc1..2cd45b6 100644
 +    void on_actionGamepadControl_triggered(bool checked);
      void on_actionPreferences_triggered();
      void on_actionRestartLispBM_triggered();
- 
+     void on_actionRemoveDownloadedConfigs_triggered();
 diff --git a/pages/pagecananalyzer.h b/pages/pagecananalyzer.h
 index be5d9a5..75d2001 100644
 --- a/pages/pagecananalyzer.h
