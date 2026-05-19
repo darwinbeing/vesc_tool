@@ -30,11 +30,15 @@ jobs:
           v="${{ matrix.version }}"
           if [[ "$v" == "master" ]]; then
             echo "REF=master" >> "$GITHUB_OUTPUT"
+          elif [[ "$v" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "REF=release_${BASH_REMATCH[1]}_${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
           else
-            echo "REF=release_${v/./_}" >> "$GITHUB_OUTPUT"
+            echo "Unrecognized version: $v" >&2
+            exit 1
           fi
         shell: bash
 
+      # master / release_X_Y are fork-local copies of upstream, synced by upstream-sync.yaml
       - name: Checkout upstream source
         uses: actions/checkout@v4
         with:
