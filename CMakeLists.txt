@@ -113,6 +113,20 @@ if(NOT VT_EXCLUDE_FW)
     target_sources(vesc_tool PRIVATE res/firmwares/res_fw.qrc)
 endif()
 
+# --- macOS app bundle configuration ---
+if(APPLE AND NOT IOS)
+    set(MACOSX_BUNDLE_ICON_FILE appIcon.icns)
+    set(app_icon "${CMAKE_CURRENT_SOURCE_DIR}/macos/appIcon.icns")
+    set_source_files_properties(${app_icon} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources")
+    target_sources(vesc_tool PRIVATE ${app_icon})
+
+    set_target_properties(vesc_tool PROPERTIES
+        MACOSX_BUNDLE ON
+        OUTPUT_NAME "VESC Tool"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/macos/Info.plist")
+endif()
+
 # Subdirectory source contributions (added in later tasks):
 add_subdirectory(pages)
 add_subdirectory(widgets)
