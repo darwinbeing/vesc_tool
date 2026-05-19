@@ -118,6 +118,27 @@ if(ANDROID)
         QT_ANDROID_MIN_SDK_VERSION 23)
 endif()
 
+if(IOS)
+    # Objective-C++ source only compiled on iOS.
+    target_sources(vesc_tool PRIVATE
+        ios/src/setIosParameters.h
+        ios/src/setIosParameters.mm)
+
+    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE QT_NO_PRINTER)
+
+    set_target_properties(vesc_tool PROPERTIES
+        MACOSX_BUNDLE ON
+        OUTPUT_NAME "VESC Tool"
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/ios/Info.plist"
+        XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+        QT_IOS_LAUNCH_SCREEN "${CMAKE_CURRENT_SOURCE_DIR}/ios/MyLaunchScreen.storyboard")
+
+    # Asset catalog (app icon).
+    target_sources(vesc_tool PRIVATE ios/Images.xcassets)
+    set_source_files_properties(ios/Images.xcassets PROPERTIES
+        MACOSX_PACKAGE_LOCATION Resources)
+endif()
+
 target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Gui
