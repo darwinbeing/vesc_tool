@@ -71,7 +71,7 @@ qt_add_executable(vesc_tool
     preferences.ui
 )
 
-# --- Build-feature macros (macOS desktop; mirrors vesc_tool.pro DEFINES) ---
+# --- Build-feature macros (desktop; mirrors vesc_tool.pro DEFINES) ---
 target_compile_definitions(vesc_tool PRIVATE
     VT_VERSION=${VT_VERSION}
     VT_INTRO_VERSION=${VT_INTRO_VERSION}
@@ -79,10 +79,19 @@ target_compile_definitions(vesc_tool PRIVATE
     VT_IS_TEST_VERSION=${VT_IS_TEST_VERSION}
     VT_GIT_COMMIT=${VT_GIT_COMMIT}
     HAS_BLUETOOTH
-    HAS_POS
     HAS_SERIALPORT
     VER_NEUTRAL
 )
+
+# Positioning is not used on Windows (matches the original vesc_tool.pro: !win32).
+if(NOT WIN32)
+    target_compile_definitions(vesc_tool PRIVATE HAS_POS)
+endif()
+
+if(WIN32)
+    target_compile_definitions(vesc_tool PRIVATE _USE_MATH_DEFINES NOMINMAX)
+    set_target_properties(vesc_tool PROPERTIES WIN32_EXECUTABLE ON)
+endif()
 
 target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
