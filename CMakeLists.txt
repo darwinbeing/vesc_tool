@@ -68,7 +68,6 @@ qt_add_executable(vesc_tool
     tcpserversimple.cpp
     hexfile.cpp
     bleuart.cpp
-    systemcommandexecutor.h
     datatypes.h
     mainwindow.ui
     boardsetupwindow.ui
@@ -121,6 +120,12 @@ if(ANDROID)
         QT_ANDROID_VERSION_CODE 207
         QT_ANDROID_TARGET_SDK_VERSION 34
         QT_ANDROID_MIN_SDK_VERSION 28)
+endif()
+
+# systemcommandexecutor.h uses QProcess, which is unavailable on iOS.
+# Matches the original vesc_tool.pro: unix: !ios: HEADERS += systemcommandexecutor.h
+if(NOT IOS)
+    target_sources(vesc_tool PRIVATE systemcommandexecutor.h)
 endif()
 
 if(IOS)
