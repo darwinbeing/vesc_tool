@@ -54,8 +54,19 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt 6.8.3 (host - linux)
-        id: qt_host
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android NDK 26.1.10909125 (required by Qt 6.8)
+        run: |
+          set -e
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "ndk;26.1.10909125" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (host - linux desktop, for androiddeployqt/qmlimportscanner)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -63,8 +74,9 @@ jobs:
           target: desktop
           arch: linux_gcc_64
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
-      - name: Install Qt 6.8.3 (Android)
-        id: qt_android
+      - name: Capture host Qt path
+        run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (Android arm64)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -72,11 +84,6 @@ jobs:
           target: android
           arch: android_arm64_v8a
           modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
       - name: Configure
         run: >
           cmake -S . -B build
@@ -84,8 +91,9 @@ jobs:
           -DQT_HOST_PATH=$QT_HOST_PATH
           -DCMAKE_BUILD_TYPE=Release
           -DANDROID_ABI=arm64-v8a
+          -DANDROID_PLATFORM=android-23
           -DANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
-          -DANDROID_NDK_ROOT=$ANDROID_NDK_ROOT
+          -DANDROID_NDK=$ANDROID_NDK_ROOT
       - name: Build
         run: cmake --build build --parallel
 
@@ -93,7 +101,11 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt 6.8.3 (host - macOS)
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install Qt 6.8.3 (host - macOS desktop, for tools)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -101,6 +113,8 @@ jobs:
           target: desktop
           arch: clang_64
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+      - name: Capture host Qt path
+        run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
       - name: Install Qt 6.8.3 (iOS)
         uses: jurplel/install-qt-action@v4
         with:
@@ -112,8 +126,8 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build -G Xcode
-          -DCMAKE_TOOLCHAIN_FILE=$Qt6_DIR_IOS/lib/cmake/Qt6/qt.toolchain.cmake
-          -DQT_HOST_PATH=$Qt6_DIR
+          -DCMAKE_TOOLCHAIN_FILE=$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake
+          -DQT_HOST_PATH=$QT_HOST_PATH
           -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: >

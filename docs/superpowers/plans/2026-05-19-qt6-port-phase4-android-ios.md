@@ -232,13 +232,25 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 
 - [ ] **Step 1: Add an `android` job**
 
-Append to the `jobs:` map in `.github/workflows/build.yml`:
+Append to the `jobs:` map in `.github/workflows/build.yml`. The job explicitly installs the Qt 6.8-required NDK (`26.1.10909125`, r26b) via `sdkmanager` because the runner's default NDK is not guaranteed to match. The Qt-for-Android arch package omits a host Qt, so a host (linux desktop) Qt is installed first for `androiddeployqt`/`qmlimportscanner`; its path is captured into `QT_HOST_PATH` before the Android install overwrites `QT_ROOT_DIR`.
 ```yaml
   android:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt 6.8.3 (host - linux)
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android NDK 26.1.10909125 (required by Qt 6.8)
+        run: |
+          set -e
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "ndk;26.1.10909125" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (host - linux desktop, for androiddeployqt/qmlimportscanner)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -246,7 +258,9 @@ Append to the `jobs:` map in `.github/workflows/build.yml`:
           target: desktop
           arch: linux_gcc_64
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
-      - name: Install Qt 6.8.3 (Android)
+      - name: Capture host Qt path
+        run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (Android arm64)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -254,31 +268,33 @@ Append to the `jobs:` map in `.github/workflows/build.yml`:
           target: android
           arch: android_arm64_v8a
           modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
       - name: Configure
         run: >
           cmake -S . -B build
-          -DCMAKE_TOOLCHAIN_FILE=$Qt6_DIR_ANDROID/lib/cmake/Qt6/qt.toolchain.cmake
-          -DQT_HOST_PATH=$Qt6_DIR
+          -DCMAKE_TOOLCHAIN_FILE=$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake
+          -DQT_HOST_PATH=$QT_HOST_PATH
           -DCMAKE_BUILD_TYPE=Release
           -DANDROID_ABI=arm64-v8a
+          -DANDROID_PLATFORM=android-23
+          -DANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+          -DANDROID_NDK=$ANDROID_NDK_ROOT
       - name: Build
         run: cmake --build build --parallel
 ```
-> The exact env var names for the host vs Android Qt prefixes depend on how `install-qt-action` exports them — it sets `Qt6_DIR` for the most-recent install. Two installs need disambiguation: either give each step an `id` and use its outputs, or install the Android Qt second and use `QT_HOST_PATH` pointing at the desktop install dir. Adjust in Task 5 once the real CI log shows the actual paths.
 
 - [ ] **Step 2: Add an `ios` job**
 
+Explicitly selects an Xcode version (the `macos-14` runner ships several) and uses the same host-Qt-path capture pattern.
 ```yaml
   ios:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - name: Install Qt 6.8.3 (host - macOS)
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Install Qt 6.8.3 (host - macOS desktop, for tools)
         uses: jurplel/install-qt-action@v4
         with:
           version: 6.8.3
@@ -286,6 +302,8 @@ Append to the `jobs:` map in `.github/workflows/build.yml`:
           target: desktop
           arch: clang_64
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+      - name: Capture host Qt path
+        run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
       - name: Install Qt 6.8.3 (iOS)
         uses: jurplel/install-qt-action@v4
         with:
@@ -297,15 +315,15 @@ Append to the `jobs:` map in `.github/workflows/build.yml`:
       - name: Configure
         run: >
           cmake -S . -B build -G Xcode
-          -DCMAKE_TOOLCHAIN_FILE=$Qt6_DIR_IOS/lib/cmake/Qt6/qt.toolchain.cmake
-          -DQT_HOST_PATH=$Qt6_DIR
+          -DCMAKE_TOOLCHAIN_FILE=$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake
+          -DQT_HOST_PATH=$QT_HOST_PATH
           -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: >
           cmake --build build --config Release --
           -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
 ```
-> Same prefix-disambiguation caveat as the android job. The iOS build is unsigned for the simulator SDK — "does it compile/link" is the Phase 4 bar. Adjust paths in Task 6 from the real CI log.
+The iOS build targets the simulator SDK unsigned — "does it compile/link" is the Phase 4 bar.
 
 - [ ] **Step 3: Commit**
 
