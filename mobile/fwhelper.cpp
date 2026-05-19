@@ -26,12 +26,14 @@
 
 FwHelper::FwHelper(QObject *parent) : QObject(parent)
 {
+    mFwDlStatus = FwDlNotDownloaded;
     reloadLatest();
 }
 
 QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
 {
     QVariantMap hws;
+    bool fwdirExists = false;
 
     if (params.hwType == HW_TYPE_CUSTOM_MODULE) {
         QString path = "://res/firmwares_esp/esp32c3/" + params.hw;
@@ -40,6 +42,7 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
         }
 
         if (QFileInfo::exists(path)) {
+            fwdirExists = true;
             hws.insert(params.hw, path);
         }
     } else {
@@ -47,6 +50,8 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
         if (params.hwType == HW_TYPE_VESC_BMS) {
             fwDir = "://res/firmwares_bms";
         }
+
+        fwdirExists = QDir(fwDir).entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries).count() > 1;
 
         QDirIterator it(fwDir);
         while (it.hasNext()) {
@@ -62,6 +67,16 @@ QVariantMap FwHelper::getHardwares(FW_RX_PARAMS params, QString hw)
                 hws.insert(name, fi.absoluteFilePath());
             }
         }
+    }
+
+    if (hws.isEmpty()) {
+        if (fwdirExists) {
+            mFwDlStatus = FwDlNotFound;
+        } else {
+            mFwDlStatus = FwDlNotDownloaded;
+        }
+    } else {
+        mFwDlStatus = FwDlFound;
     }
 
     return hws;
@@ -182,7 +197,7 @@ bool FwHelper::uploadFirmwareV2(QString filename, VescInterface *vesc, bool isBo
         return false;
     }
 
-    if (file.size() > 1600000) {
+    if (file.size() > 8000000) {
         vesc->emitMessageDialog(tr("Upload Error"),
                                 tr("The selected file is too large to be a firmware."),
                                 false);
@@ -321,4 +336,19 @@ void FwHelper::reloadLatest()
         QResource::unregisterResource(path);
         QResource::registerResource(path);
     }
+}
+
+QString FwHelper::fwDlText(VescInterface *vesc)
+{
+    QString res = "";
+
+    if (vesc && mFwDlStatus != FwDlFound) {
+        ConfigParam *param = vesc->infoConfig()->getParam(
+            mFwDlStatus == FwDlNotDownloaded ? "fw_not_downloaded" : "fw_not_included");
+        if (param) {
+            res = param->description;
+        }
+    }
+
+    return res;
 }

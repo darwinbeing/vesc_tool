@@ -23,6 +23,8 @@
 
 #include <QWidget>
 #include <QCheckBox>
+#include <QColor>
+#include <QHash>
 #include <vescinterface.h>
 #include "widgets/qcustomplot.h"
 #include "widgets/vesc3dview.h"
@@ -71,6 +73,7 @@ private slots:
     void on_logLocalRefreshButton_clicked();
     void on_logLocalTable_cellDoubleClicked(int row, int column);
     void on_logLocalDeleteButton_clicked();
+    void on_showLegendBox_toggled(bool checked);
 
 private:
     Ui::PageLogAnalysis *ui;
@@ -126,6 +129,7 @@ private:
     };
 
     SelectoData mSelection;
+    QHash<int, QColor> mGraphRowColors;
 
     void resetInds() {
         mInd_t_day = -1;
@@ -175,6 +179,8 @@ private:
 
     void truncateDataAndPlot(bool zoomGraph = true);
     void updateGraphs();
+    void updateSelectedDataItems();
+    void updateSelectedDataItemValues();
     void updateStats();
     void updateDataAndPlot(double time);
     QVector<double> getLogSample(double time);

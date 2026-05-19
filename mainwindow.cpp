@@ -177,6 +177,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionLaunchMobileTool->setIcon(Utility::getIcon("icons/v_icon-96.png"));
     ui->actionLaunchBoardConfigurator->setIcon(Utility::getIcon("icons/v_icon-96.png"));
     ui->actionRestartLispBM->setIcon(Utility::getIcon("icons/Refresh-96.png"));
+    ui->actionRemoveDownloadedConfigs->setIcon(Utility::getIcon("icons/Delete-96.png"));
 
     QIcon mycon = QIcon(Utility::getIcon("icons/keys_off.png"));
     mycon.addPixmap(Utility::getIcon("icons/keys_on.png"), QIcon::Normal, QIcon::On);
@@ -1088,8 +1089,9 @@ void MainWindow::mcConfigCheckResult(QStringList paramsNotSet)
 {
     if (!paramsNotSet.isEmpty()) {
         ParamDialog::showParams(tr("Parameters truncated"),
-                                tr("The following parameters were truncated because they were set outside "
-                                   "of their allowed limits."),
+                                tr( "The following parameters were truncated or not updated. That can happen because "
+                                    "they were set outside their allowed limits or because the write failed. In case the "
+                                    "write failed you can try writing them again."),
                                 mVesc->mcConfig(),
                                 paramsNotSet,
                                 this);
@@ -2231,4 +2233,9 @@ void MainWindow::on_actionGamepadControl_triggered(bool checked)
 void MainWindow::on_actionRestartLispBM_triggered()
 {
     mVesc->commands()->lispSetRunning(1);
+}
+
+void MainWindow::on_actionRemoveDownloadedConfigs_triggered()
+{
+    mVesc->removeDownloadedConfigs();
 }

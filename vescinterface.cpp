@@ -1577,7 +1577,7 @@ bool VescInterface::fwUpload(QByteArray &newFirmware, bool isBootloader, bool fw
         }
     }
 
-    if (szTot > 5000000) {
+    if (szTot > 8000000) {
         emitMessageDialog(tr("Firmware too big"),
                           tr("The firmware you are trying to upload is unreasonably "
                              "large, most likely it is an invalid file"), false);
@@ -4469,6 +4469,27 @@ bool VescInterface::downloadConfigs()
 
     reply->abort();
     reply->deleteLater();
+
+    return res;
+}
+
+bool VescInterface::removeDownloadedConfigs()
+{
+    bool res = true;
+
+    QString appDataLoc = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    QString path = appDataLoc + "/res_config.rcc";
+    QFile file(path);
+
+    if (file.exists()) {
+        QResource::unregisterResource(path);
+        if (!file.remove()) {
+            res = false;
+        }
+
+        auto fwPair = getSupportedFirmwarePairs().first();
+        Utility::configLoad(this, fwPair.first, fwPair.second);
+    }
 
     return res;
 }

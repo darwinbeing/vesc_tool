@@ -1,13 +1,16 @@
 ### 7.00
-#### Released TBD
+#### 2026-05-15
 * Firmwares are no longer included. They are now downloaded on demand.
 * Drag and drop support of files from system.
 * Added loganalysis source tab for local LBM logs and save them automatically when stopping the log.
 * Added LispBM-page to mobile UI.
 * Improved keyboard behavior on Android.
+* Improved log analysis page thanks to https://github.com/vedderb/vesc_tool/pull/460
+
+---
 
 ### 6.06
-#### Released 2024-08-19
+#### Released 2025-08-19
 * Auto-save UI-state on regular intervals.
 * Movable LispBM tabs and better tab behavior in general.
 * Detect file system changes in script editor.
