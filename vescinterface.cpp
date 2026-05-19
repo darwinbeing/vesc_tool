@@ -112,19 +112,18 @@ VescInterface::VescInterface(QObject *parent) : QObject(parent)
     mBlockFwSwap = false;
 
 #ifdef Q_OS_ANDROID
-    QAndroidJniObject activity = QAndroidJniObject::callStaticObjectMethod(
-                "org/qtproject/qt5/android/QtNative", "activity", "()Landroid/app/Activity;");
+    QJniObject activity = QNativeInterface::QAndroidApplication::context();
 
     if (activity.isValid()) {
-        QAndroidJniObject serviceName = QAndroidJniObject::getStaticObjectField<jstring>(
+        QJniObject serviceName = QJniObject::getStaticObjectField<jstring>(
                     "android/content/Context","POWER_SERVICE");
         if (serviceName.isValid()) {
-            QAndroidJniObject powerMgr = activity.callObjectMethod(
+            QJniObject powerMgr = activity.callObjectMethod(
                         "getSystemService", "(Ljava/lang/String;)Ljava/lang/Object;",serviceName.object<jobject>());
             if (powerMgr.isValid()) {
-                jint levelAndFlags = QAndroidJniObject::getStaticField<jint>(
+                jint levelAndFlags = QJniObject::getStaticField<jint>(
                             "android/os/PowerManager","PARTIAL_WAKE_LOCK");
-                QAndroidJniObject tag = QAndroidJniObject::fromString( "VESC Tool" );
+                QJniObject tag = QJniObject::fromString( "VESC Tool" );
                 mWakeLock = powerMgr.callObjectMethod("newWakeLock",
                                                        "(ILjava/lang/String;)Landroid/os/PowerManager$WakeLock;",
                                                        levelAndFlags,tag.object<jstring>());
