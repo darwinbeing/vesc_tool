@@ -99,7 +99,6 @@ jobs:
           workflow_conclusion: success
           search_artifacts: true
       - name: Overlay Build Scripts
-        if: ${{ inputs.vt_ver == 'master' }}
         run: |
           bash .workflow-src/.github/scripts/overlay_files.sh
         shell: bash
