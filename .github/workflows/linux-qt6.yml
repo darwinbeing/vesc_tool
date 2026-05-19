@@ -1,0 +1,125 @@
+name: Linux-qt6
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool branch/tag"
+        required: true
+        default: "qt6-port"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      release_notes:
+        description: "Release Notes"
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.vt_ver }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Checkout Workflow Scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .workflow-src
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          CUSTOM_RELEASE_NOTES: ${{ inputs.release_notes }}
+        id: GetVersion
+        run: |
+          # The Qt6 branch removed vesc_tool.pro; read VT_VERSION from CMakeLists.txt.
+          VT_VERSION=$(grep -m1 'set(VT_VERSION' CMakeLists.txt | sed 's/.*set(VT_VERSION //; s/).*//')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          export VT_VERSION
+          export VT_REF="${{ inputs.vt_ver }}"
+          export PRERELEASE="${{ inputs.prerelease }}"
+          bash .workflow-src/.github/scripts/generate_release_notes.sh
+        shell: bash
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build \
+            libgl1-mesa-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libbluetooth-dev '^libxcb.*-dev' libx11-xcb-dev \
+            libglu1-mesa-dev libxrender-dev libxi-dev libfuse2
+      - name: Install Qt 6.8.3
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.3
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          cache: 'true'
+          cache-key-prefix: install-qt-action-qt6
+      - name: Create TMP Dir
+        id: mktemp
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+        shell: bash
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+      - name: Configure
+        run: |
+          mkdir -p res/firmwares
+          cp -rv "${{ env.FW_TMP_DIR }}"/* res/firmwares/
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Package AppImage
+        run: |
+          # Stage files into AppDir
+          mkdir -p AppDir/usr/bin
+          cp "build/vesc_tool_${PACKAGE_VERSION}" AppDir/usr/bin/vesc_tool 2>/dev/null || \
+            cp build/vesc_tool AppDir/usr/bin/vesc_tool
+          # Provide a minimal .desktop + icon
+          mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+          cp .workflow-src/.github/scripts/vesc_tool.desktop AppDir/usr/share/applications/ 2>/dev/null || \
+            printf '[Desktop Entry]\nName=VESC Tool\nExec=vesc_tool\nType=Application\nIcon=vesc_tool\nCategories=Utility;\n' > AppDir/usr/share/applications/vesc_tool.desktop
+          # Run linuxdeploy with the Qt plugin
+          curl -fLs -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fLs -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy linuxdeploy-plugin-qt
+          ./linuxdeploy --appdir AppDir --plugin qt --output appimage
+          mv VESC*AppImage "vesc_tool-${PACKAGE_VERSION}-qt6.AppImage" 2>/dev/null || \
+            mv *AppImage "vesc_tool-${PACKAGE_VERSION}-qt6.AppImage"
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: vesc_tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.AppImage
+          asset_name: vesc_tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.AppImage
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}
