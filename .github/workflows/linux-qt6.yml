@@ -102,10 +102,19 @@ jobs:
           mkdir -p AppDir/usr/bin
           cp "build/vesc_tool_${PACKAGE_VERSION}" AppDir/usr/bin/vesc_tool 2>/dev/null || \
             cp build/vesc_tool AppDir/usr/bin/vesc_tool
-          # Provide a minimal .desktop + icon
-          mkdir -p AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/256x256/apps
+          # Provide a minimal .desktop file
+          mkdir -p AppDir/usr/share/applications
           cp .workflow-src/.github/scripts/vesc_tool.desktop AppDir/usr/share/applications/ 2>/dev/null || \
             printf '[Desktop Entry]\nName=VESC Tool\nExec=vesc_tool\nType=Application\nIcon=vesc_tool\nCategories=Utility;\n' > AppDir/usr/share/applications/vesc_tool.desktop
+          # Copy icon from repo into AppDir (256x256 from the VESC Favicon.iconset)
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          if [ -f "VESC Favicon.iconset/icon_256x256.png" ]; then
+            cp "VESC Favicon.iconset/icon_256x256.png" AppDir/usr/share/icons/hicolor/256x256/apps/vesc_tool.png
+          else
+            # Generate a minimal 1x1 PNG as placeholder so linuxdeploy does not abort
+            printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82' \
+              > AppDir/usr/share/icons/hicolor/256x256/apps/vesc_tool.png
+          fi
           # Run linuxdeploy with the Qt plugin
           curl -fLs -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           curl -fLs -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
