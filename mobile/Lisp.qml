@@ -1,7 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.3 as Dl
+import QtQuick.Dialogs as Dl
 import Qt.labs.folderlistmodel 2.1
 import QtCore as QSettings
 
@@ -433,10 +433,9 @@ Item {
                                     id: fileDialogSave
                                     title: "Please choose a file"
                                     nameFilters: ["LBM files (*.lbm *.lisp)"]
-                                    selectExisting: false
-                                    selectMultiple: false
+                                    fileMode: FileDialog.SaveFile
                                     onAccepted: {
-                                        var path = fileUrl.toString()
+                                        var path = selectedFile.toString()
 
                                         var okOpen = mLogWriter.openLogFileFullPath(path)
                                         var okWrite = mLogWriter.writeToLogFile(editorText.text)
@@ -740,11 +739,10 @@ Item {
         id: fileDialogLoad
         title: "Open LispBM File"
         nameFilters: ["LispBM files (*.lbm *.lisp)", "All files (*)"]
-        selectExisting: true
-        selectMultiple: false
+        fileMode: FileDialog.OpenFile
 
         onAccepted: {
-            var path = fileUrlToPath(fileUrl)
+            var path = fileUrlToPath(selectedFile)
             openFilePath(path)
             close()
             parent.forceActiveFocus()
