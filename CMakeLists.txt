@@ -99,8 +99,8 @@ target_link_libraries(vesc_tool PRIVATE
 # Subdirectory source contributions (added in later tasks):
 add_subdirectory(pages)
 add_subdirectory(widgets)
-# add_subdirectory(mobile)
-# add_subdirectory(map)
+add_subdirectory(mobile)
+add_subdirectory(map)
 # add_subdirectory(lzokay)
 # add_subdirectory(heatshrink)
 # add_subdirectory(QCodeEditor)
