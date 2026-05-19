@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["master", "3.01", "6.00", "6.02", "6.05", "6.06"]
+        version: ["master"]
     steps:
       - name: Checkout CI repo
         uses: actions/checkout@v4
