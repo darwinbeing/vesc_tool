@@ -11,7 +11,16 @@ fi
 
 echo "Overlaying CI build scripts from ${OVERLAY_DIR}"
 
-for f in "${OVERLAY_DIR}"/*; do
+shopt -s nullglob
+files=( "${OVERLAY_DIR}"/* )
+shopt -u nullglob
+
+if [[ ${#files[@]} -eq 0 ]]; then
+  echo "No files found in ${OVERLAY_DIR}" >&2
+  exit 1
+fi
+
+for f in "${files[@]}"; do
   name="$(basename "${f}")"
   cp -v "${f}" "./${name}"
   case "${name}" in
