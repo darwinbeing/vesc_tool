@@ -131,7 +131,7 @@ jobs:
       - name: Overlay Build Scripts
         run: |
           .\.workflow-src\.github\scripts\overlay_files.ps1
-        shell: pwsh
+        shell: powershell
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}
