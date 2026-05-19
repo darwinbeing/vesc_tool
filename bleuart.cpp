@@ -76,7 +76,10 @@ void BleUart::startConnect(QString addr)
     mControl = QLowEnergyController::createCentral(deviceInfo, this);
 
 #else
-    mControl = QLowEnergyController::createCentral(QBluetoothAddress(addr), this);
+    // Qt6 removed the QBluetoothAddress overload of createCentral(); it now
+    // takes a QBluetoothDeviceInfo. Build one from the device address.
+    QBluetoothDeviceInfo deviceInfo(QBluetoothAddress(addr), QString(), 0);
+    mControl = QLowEnergyController::createCentral(deviceInfo, this);
 #endif
 
     mControl->setRemoteAddressType(QLowEnergyController::RandomAddress);
