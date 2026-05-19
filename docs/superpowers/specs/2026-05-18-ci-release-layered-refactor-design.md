@@ -3,6 +3,17 @@
 Date: 2026-05-18
 Branch: `ci`
 
+> **Update (post-implementation):** Section 3 originally proposed Direction A treating
+> all versions uniformly (clean upstream mirror + a slim per-version patch). During
+> implementation we found that all 4 release branches (3.01/6.00/6.05/6.06) had already
+> committed the CI build scripts into the branch, and release branches are frozen. Final
+> decision: **only `master` keeps the overlay + slim-patch mechanism; release versions
+> switch to "branch is the product"** — CI checks out the `release_X_Y` branch and builds
+> it directly, with no patch. Only `master` remains under `patches/`, and
+> `validate-patches.yml` only validates `master`. In the workflows, `Overlay Build
+> Scripts` runs for every version (the build scripts are CI infrastructure); only
+> `Apply Patch` is gated with `if: vt_ver == 'master'`.
+
 ## 1. Background
 
 This repository is a fork of `vedderb/vesc_tool` that publishes multi-platform
