@@ -79,9 +79,13 @@ target_compile_definitions(vesc_tool PRIVATE
     VT_IS_TEST_VERSION=${VT_IS_TEST_VERSION}
     VT_GIT_COMMIT=${VT_GIT_COMMIT}
     HAS_BLUETOOTH
-    HAS_SERIALPORT
     VER_NEUTRAL
 )
+
+# Serial port is desktop-only (not Android/iOS).
+if(NOT ANDROID AND NOT IOS)
+    target_compile_definitions(vesc_tool PRIVATE HAS_SERIALPORT)
+endif()
 
 # Positioning is not used on Windows (matches the original vesc_tool.pro: !win32).
 if(NOT WIN32)
@@ -91,6 +95,27 @@ endif()
 if(WIN32)
     target_compile_definitions(vesc_tool PRIVATE _USE_MATH_DEFINES NOMINMAX)
     set_target_properties(vesc_tool PROPERTIES WIN32_EXECUTABLE ON)
+endif()
+
+if(ANDROID)
+    # Mobile QML GUI
+    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE)
+
+    # Generate AndroidManifest.xml from the .in template.
+    # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
+    # are androiddeployqt placeholders that configure_file leaves intact.
+    set(VT_ANDROID_VERSION 207)
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml
+        @ONLY)
+
+    set_target_properties(vesc_tool PROPERTIES
+        QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
+        QT_ANDROID_VERSION_NAME ${VT_VERSION}
+        QT_ANDROID_VERSION_CODE 207
+        QT_ANDROID_TARGET_SDK_VERSION 34
+        QT_ANDROID_MIN_SDK_VERSION 23)
 endif()
 
 target_link_libraries(vesc_tool PRIVATE
