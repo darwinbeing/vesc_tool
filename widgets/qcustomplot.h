@@ -159,26 +159,8 @@ class QCPPolarGraph;
   
   It provides QMetaObject-based reflection of its enums and flags via \a QCP::staticMetaObject.
 */
-#ifndef Q_MOC_RUN
 namespace QCP {
-#else
-class QCP { // when in moc-run, make it look like a class, so we get Q_GADGET, Q_ENUMS/Q_FLAGS features in namespace
-  Q_GADGET
-  Q_ENUMS(ExportPen)
-  Q_ENUMS(ResolutionUnit)
-  Q_ENUMS(SignDomain)
-  Q_ENUMS(MarginSide)
-  Q_FLAGS(MarginSides)
-  Q_ENUMS(AntialiasedElement)
-  Q_FLAGS(AntialiasedElements)
-  Q_ENUMS(PlottingHint)
-  Q_FLAGS(PlottingHints)
-  Q_ENUMS(Interaction)
-  Q_FLAGS(Interactions)
-  Q_ENUMS(SelectionRectMode)
-  Q_ENUMS(SelectionType)
-public:
-#endif
+Q_NAMESPACE
 
 /*!
   Defines the different units in which the image resolution can be specified in the export
@@ -190,6 +172,7 @@ enum ResolutionUnit { ruDotsPerMeter       ///< Resolution is given in dots per 
                       ,ruDotsPerCentimeter ///< Resolution is given in dots per centimeter (dpcm)
                       ,ruDotsPerInch       ///< Resolution is given in dots per inch (DPI/PPI)
                     };
+Q_ENUM_NS(ResolutionUnit)
 
 /*!
   Defines how cosmetic pens (pens with numerical width 0) are handled during export.
@@ -199,6 +182,7 @@ enum ResolutionUnit { ruDotsPerMeter       ///< Resolution is given in dots per 
 enum ExportPen { epNoCosmetic     ///< Cosmetic pens are converted to pens with pixel width 1 when exporting
                  ,epAllowCosmetic ///< Cosmetic pens are exported normally (e.g. in PDF exports, cosmetic pens always appear as 1 pixel on screen, independent of viewer zoom level)
                };
+Q_ENUM_NS(ExportPen)
 
 /*!
   Represents negative and positive sign domain, e.g. for passing to \ref
@@ -211,6 +195,7 @@ enum SignDomain { sdNegative  ///< The negative sign domain, i.e. numbers smalle
                   ,sdBoth     ///< Both sign domains, including zero, i.e. all numbers
                   ,sdPositive ///< The positive sign domain, i.e. numbers greater than zero
                 };
+Q_ENUM_NS(SignDomain)
 
 /*!
   Defines the sides of a rectangular entity to which margins can be applied.
@@ -224,7 +209,9 @@ enum MarginSide { msLeft     = 0x01 ///< <tt>0x01</tt> left margin
                   ,msAll     = 0xFF ///< <tt>0xFF</tt> all margins
                   ,msNone    = 0x00 ///< <tt>0x00</tt> no margin
                 };
+Q_ENUM_NS(MarginSide)
 Q_DECLARE_FLAGS(MarginSides, MarginSide)
+Q_FLAG_NS(MarginSides)
 
 /*!
   Defines what objects of a plot can be forcibly drawn antialiased/not antialiased. If an object is
@@ -249,7 +236,9 @@ enum AntialiasedElement { aeAxes           = 0x0001 ///< <tt>0x0001</tt> Axis ba
                           ,aeAll           = 0xFFFF ///< <tt>0xFFFF</tt> All elements
                           ,aeNone          = 0x0000 ///< <tt>0x0000</tt> No elements
                         };
+Q_ENUM_NS(AntialiasedElement)
 Q_DECLARE_FLAGS(AntialiasedElements, AntialiasedElement)
+Q_FLAG_NS(AntialiasedElements)
 
 /*!
   Defines plotting hints that control various aspects of the quality and speed of plotting.
@@ -263,7 +252,9 @@ enum PlottingHint { phNone              = 0x000 ///< <tt>0x000</tt> No hints are
                                                 ///<                This is set by default to prevent the plot from freezing on fast consecutive replots (e.g. user drags ranges with mouse).
                     ,phCacheLabels      = 0x004 ///< <tt>0x004</tt> axis (tick) labels will be cached as pixmaps, increasing replot performance.
                   };
+Q_ENUM_NS(PlottingHint)
 Q_DECLARE_FLAGS(PlottingHints, PlottingHint)
+Q_FLAG_NS(PlottingHints)
 
 /*!
   Defines the mouse interactions possible with QCustomPlot.
@@ -283,7 +274,9 @@ enum Interaction { iNone              = 0x000 ///< <tt>0x000</tt> None of the in
                    ,iSelectOther      = 0x080 ///< <tt>0x080</tt> All other objects are selectable (e.g. your own derived layerables, other layout elements,...)
                    ,iSelectPlottablesBeyondAxisRect = 0x100 ///< <tt>0x100</tt> When performing plottable selection/hit tests, this flag extends the sensitive area beyond the axis rect
                  };
+Q_ENUM_NS(Interaction)
 Q_DECLARE_FLAGS(Interactions, Interaction)
+Q_FLAG_NS(Interactions)
 
 /*!
   Defines the behaviour of the selection rect.
@@ -295,6 +288,7 @@ enum SelectionRectMode { srmNone    ///< The selection rect is disabled, and all
                          ,srmSelect ///< When dragging the mouse, a selection rect becomes active. Upon releasing, plottable data points that were within the selection rect are selected, if the plottable's selectability setting permits. (See  \ref dataselection "data selection mechanism" for details.)
                          ,srmCustom ///< When dragging the mouse, a selection rect becomes active. It is the programmer's responsibility to connect according slots to the selection rect's signals (e.g. \ref QCPSelectionRect::accepted) in order to process the user interaction.
                        };
+Q_ENUM_NS(SelectionRectMode)
 
 /*!
   Defines the different ways a plottable can be selected. These images show the effect of the
@@ -320,6 +314,7 @@ enum SelectionType { stNone                ///< The plottable is not selectable
                      ,stDataRange          ///< Multiple contiguous data points (a data range) can be selected
                      ,stMultipleDataRanges ///< Any combination of data points/ranges can be selected
                     };
+Q_ENUM_NS(SelectionType)
 
 /*! \internal
   
@@ -381,8 +376,6 @@ inline int getMarginValue(const QMargins &margins, QCP::MarginSide side)
   return 0;
 }
 
-
-extern const QMetaObject staticMetaObject; // in moc-run we create a static meta object for QCP "fake" object. This line is the link to it via QCP::staticMetaObject in normal operation as namespace
 
 } // end of namespace QCP
 Q_DECLARE_OPERATORS_FOR_FLAGS(QCP::AntialiasedElements)

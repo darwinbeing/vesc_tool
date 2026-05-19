@@ -73,10 +73,10 @@ void BleUart::startConnect(QString addr)
     // a controller using a devices address is not supported on macOS or iOS.
     QBluetoothDeviceInfo deviceInfo = QBluetoothDeviceInfo();
     deviceInfo.setDeviceUuid(QBluetoothUuid(addr));
-    mControl = new QLowEnergyController(deviceInfo);
+    mControl = QLowEnergyController::createCentral(deviceInfo, this);
 
 #else
-    mControl = new QLowEnergyController(QBluetoothAddress(addr));
+    mControl = QLowEnergyController::createCentral(QBluetoothAddress(addr), this);
 #endif
 
     mControl->setRemoteAddressType(QLowEnergyController::RandomAddress);
@@ -304,7 +304,7 @@ void BleUart::serviceStateChanged(QLowEnergyService::ServiceState s)
         // Bluetooth LE spec Where a characteristic can be notified, a Client Characteristic Configuration descriptor
         // shall be included in that characteristic as required by the Bluetooth Core Specification
         // Tx notify is enabled
-        mNotificationDescTx = txChar.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
+        mNotificationDescTx = txChar.descriptor(QBluetoothUuid(QBluetoothUuid::DescriptorType::ClientCharacteristicConfiguration));
 
         if (mNotificationDescTx.isValid()) {
             // enable notification

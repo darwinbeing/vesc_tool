@@ -19,6 +19,7 @@
 
 #include "pagemotorsettings.h"
 #include "ui_pagemotorsettings.h"
+#include <QRegularExpression>
 #include "setupwizardmotor.h"
 #include "utility.h"
 
@@ -58,7 +59,7 @@ void PageMotorSettings::reloadParams()
     if (mVesc) {
         ConfigParam *p = mVesc->infoConfig()->getParam("motor_setting_description");
         if (p != nullptr) {
-            QRegExp rx("(<img src=)|( width=)");
+            QRegularExpression rx("(<img src=)|( width=)");
             QStringList htmls = p->description.split(rx);
             QStringList imgs = {"motor_up", "motor_default" , "motor_down","Upload-96","Data Backup-96","Help-96"};
             QString theme = "<img src=\"" + Utility::getThemePath() + "icons/";

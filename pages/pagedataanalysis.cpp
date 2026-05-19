@@ -19,6 +19,7 @@
 
 #include "pagedataanalysis.h"
 #include "ui_pagedataanalysis.h"
+#include <QRegularExpression>
 #include "utility.h"
 
 PageDataAnalysis::PageDataAnalysis(QWidget *parent) :
@@ -47,7 +48,7 @@ void PageDataAnalysis::setVesc(VescInterface *vesc)
     if (mVesc) {
         ConfigParam *p = mVesc->infoConfig()->getParam("data_analysis_description");
         if (p != nullptr) {
-            QRegExp rx("(<img src=)|( width=)");
+            QRegularExpression rx("(<img src=)|( width=)");
             QStringList htmls = p->description.split(rx);
             QStringList imgs = {"expand_off","expand_on","expand_v_off","expand_v_on","size_off", "size_on","size_off","rt_on","Upload-96","motor"};
             QString theme = "<img src=\"" + Utility::getThemePath() + "icons/";

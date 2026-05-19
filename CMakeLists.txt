@@ -26,6 +26,11 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core Gui Widgets Network Qml Quick QuickControls2 QuickWidgets Svg
     PrintSupport SerialPort Bluetooth Positioning Core5Compat)
 
+# QOpenGLWidget moved to the OpenGLWidgets module in Qt6.
+if(QT_VERSION_MAJOR EQUAL 6)
+    find_package(Qt6 REQUIRED COMPONENTS OpenGL OpenGLWidgets)
+endif()
+
 # qt_add_executable was introduced in Qt6; provide a shim for Qt5 builds.
 if(QT_VERSION_MAJOR EQUAL 5 AND NOT COMMAND qt_add_executable)
     macro(qt_add_executable name)
@@ -96,6 +101,13 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Core5Compat
     Qt${QT_VERSION_MAJOR}::Qml
 )
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    target_link_libraries(vesc_tool PRIVATE
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
+    )
+endif()
 
 # --- Resources ---
 option(VT_EXCLUDE_FW "Exclude built-in firmwares" ON)
