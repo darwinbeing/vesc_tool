@@ -1,0 +1,32 @@
+name: Cleanup Old Runs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Delete old workflow runs (keep 10 most recent)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -uo pipefail
+          KEEP=10
+          mapfile -t ids < <(gh api "repos/$REPO/actions/runs" --paginate --jq '.workflow_runs[].id')
+          echo "Total runs: ${#ids[@]}; keeping the newest $KEEP"
+          if [ "${#ids[@]}" -le "$KEEP" ]; then
+            echo "Nothing to delete."
+            exit 0
+          fi
+          for id in "${ids[@]:$KEEP}"; do
+            if gh api -X DELETE "repos/$REPO/actions/runs/$id" >/dev/null 2>&1; then
+              echo "deleted run $id"
+            else
+              echo "skipped run $id (in progress or already removed)"
+            fi
+          done
