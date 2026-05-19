@@ -20,7 +20,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import Qt.labs.settings 1.0 as QSettings
+import QtCore as QSettings
 
 import Vedder.vesc.vescinterface 1.0
 import Vedder.vesc.utility 1.0

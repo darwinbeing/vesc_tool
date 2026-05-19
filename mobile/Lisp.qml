@@ -3,7 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import QtQuick.Dialogs 1.3 as Dl
 import Qt.labs.folderlistmodel 2.1
-import Qt.labs.settings 1.0 as QSettings
+import QtCore as QSettings
 
 import Vedder.vesc.vescinterface 1.0
 import Vedder.vesc.commands 1.0
