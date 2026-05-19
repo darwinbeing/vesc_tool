@@ -24,7 +24,12 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core Gui Widgets Network Qml Quick QuickControls2 QuickWidgets Svg
-    PrintSupport SerialPort Bluetooth Positioning Core5Compat)
+    Bluetooth Positioning Core5Compat)
+
+# SerialPort and PrintSupport are desktop-only (no Android/iOS Qt packages).
+if(NOT ANDROID AND NOT IOS)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS PrintSupport SerialPort)
+endif()
 
 # QOpenGLWidget moved to the OpenGLWidgets module in Qt6.
 if(QT_VERSION_MAJOR EQUAL 6)
@@ -99,7 +104,7 @@ endif()
 
 if(ANDROID)
     # Mobile QML GUI
-    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE)
+    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE QT_NO_PRINTER)
 
     # Generate AndroidManifest.xml from the .in template.
     # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
@@ -149,13 +154,19 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::QuickControls2
     Qt${QT_VERSION_MAJOR}::QuickWidgets
     Qt${QT_VERSION_MAJOR}::Svg
-    Qt${QT_VERSION_MAJOR}::PrintSupport
-    Qt${QT_VERSION_MAJOR}::SerialPort
     Qt${QT_VERSION_MAJOR}::Bluetooth
     Qt${QT_VERSION_MAJOR}::Positioning
     Qt${QT_VERSION_MAJOR}::Core5Compat
     Qt${QT_VERSION_MAJOR}::Qml
 )
+
+# SerialPort and PrintSupport are desktop-only.
+if(NOT ANDROID AND NOT IOS)
+    target_link_libraries(vesc_tool PRIVATE
+        Qt${QT_VERSION_MAJOR}::PrintSupport
+        Qt${QT_VERSION_MAJOR}::SerialPort
+    )
+endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
     target_link_libraries(vesc_tool PRIVATE

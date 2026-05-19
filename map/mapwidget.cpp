@@ -20,7 +20,7 @@
 #include <QDebug>
 #include <math.h>
 #include <qmath.h>
-#ifndef Q_OS_IOS
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
 #include <QPrinter>
 #include <QPrintEngine>
 #endif
@@ -1156,7 +1156,7 @@ void MapWidget::setInfoTraceNow(int infoTraceNow)
 
 void MapWidget::printPdf(QString path, int width, int height)
 {
-#ifndef Q_OS_IOS
+#if !defined(Q_OS_IOS) && !defined(Q_OS_ANDROID)
     if (width == 0) {
         width = this->width();
     }
