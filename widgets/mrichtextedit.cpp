@@ -199,8 +199,8 @@ MRichTextEdit::MRichTextEdit(QWidget *parent) : QWidget(parent) {
     foreach(int size, db.standardSizes())
         f_fontsize->addItem(QString::number(size));
 
-    connect(f_fontsize, SIGNAL(activated(QString)),
-            this, SLOT(textSize(QString)));
+    connect(f_fontsize, &QComboBox::textActivated,
+            this, &MRichTextEdit::textSize);
     f_fontsize->setCurrentIndex(f_fontsize->findText(QString::number(QApplication::font()
                                                                      .pointSize())));
 

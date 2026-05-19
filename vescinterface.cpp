@@ -142,7 +142,7 @@ VescInterface::VescInterface(QObject *parent) : QObject(parent)
 
     connect(mSerialPort, SIGNAL(readyRead()),
             this, SLOT(serialDataAvailable()));
-    connect(mSerialPort, SIGNAL(error(QSerialPort::SerialPortError)),
+    connect(mSerialPort, SIGNAL(errorOccurred(QSerialPort::SerialPortError)),
             this, SLOT(serialPortError(QSerialPort::SerialPortError)));
 #endif
 
@@ -168,14 +168,14 @@ VescInterface::VescInterface(QObject *parent) : QObject(parent)
     connect(mTcpSocket, SIGNAL(connected()), this, SLOT(tcpInputConnected()));
     connect(mTcpSocket, SIGNAL(disconnected()),
             this, SLOT(tcpInputDisconnected()));
-    connect(mTcpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+    connect(mTcpSocket, SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
             this, SLOT(tcpInputError(QAbstractSocket::SocketError)));
 
     // UDP
     mUdpSocket = new QUdpSocket(this);
     mUdpConnected = false;
     connect(mUdpSocket, SIGNAL(readyRead()), this, SLOT(udpInputDataAvailable()));
-    connect(mUdpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+    connect(mUdpSocket, SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
             this, SLOT(udpInputError(QAbstractSocket::SocketError)));
 
     // BLE
