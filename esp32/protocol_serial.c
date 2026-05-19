@@ -570,7 +570,13 @@ esp_loader_error_t loader_get_security_info_cmd(get_security_info_response_data_
 }
 
 
+/* Weak fallback definition of loader_port_debug_print(). The port layer
+ * (esp32flash.cpp) always provides a strong definition, so on MSVC -- which
+ * has no GCC/Clang-style weak symbols -- this fallback is simply omitted to
+ * avoid a duplicate-symbol link error. */
+#if !defined(_MSC_VER)
 __attribute__ ((weak)) void loader_port_debug_print(const char *str)
 {
     (void) str;
 }
+#endif
