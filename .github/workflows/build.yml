@@ -95,7 +95,9 @@ jobs:
           -DANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
           -DANDROID_NDK=$ANDROID_NDK_ROOT
       - name: Build
-        run: cmake --build build --parallel
+        # Resource-heavy qrc_res compilation can OOM with unlimited parallelism
+        # on the 16 GB ubuntu runner — cap to 2 jobs.
+        run: cmake --build build --parallel 2
 
   ios:
     runs-on: macos-14
