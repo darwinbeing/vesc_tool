@@ -116,6 +116,10 @@ jobs:
         with:
           ndk-version: ${{ env.NDK_VERSION }}
           add-to-path: false
+      - name: Overlay Build Scripts
+        run: |
+          bash .workflow-src/.github/scripts/overlay_files.sh
+        shell: bash
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}

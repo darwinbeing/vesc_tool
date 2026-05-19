@@ -128,6 +128,10 @@ jobs:
         uses: egor-tensin/vs-shell@v2
         with:
           arch: x64
+      - name: Overlay Build Scripts
+        run: |
+          .\.workflow-src\.github\scripts\overlay_files.ps1
+        shell: pwsh
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}

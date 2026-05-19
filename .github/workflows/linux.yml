@@ -98,6 +98,10 @@ jobs:
           workflow: firmware.yml
           workflow_conclusion: success
           search_artifacts: true
+      - name: Overlay Build Scripts
+        run: |
+          bash .workflow-src/.github/scripts/overlay_files.sh
+        shell: bash
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}
@@ -106,11 +110,10 @@ jobs:
           bash .workflow-src/.github/scripts/apply_patch.sh
         shell: bash
       - name: Configure And Compile
-        continue-on-error: true
         run: |
             mkdir -p res/firmwares
             cp -rv ${{ env.FW_TMP_DIR }}/* res/firmwares/
-            ./build_lin
+            ./build_lin4CI
       # - name: Upload Artifact
       #   uses: actions/upload-artifact@v3
       #   with:

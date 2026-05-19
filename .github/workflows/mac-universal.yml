@@ -134,6 +134,10 @@ jobs:
           workflow: firmware.yml
           workflow_conclusion: success
           search_artifacts: true
+      - name: Overlay Build Scripts
+        run: |
+          bash .workflow-src/.github/scripts/overlay_files.sh
+        shell: bash
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}

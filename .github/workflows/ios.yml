@@ -132,6 +132,10 @@ jobs:
       #     # apply provisioning profile
       #     mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
       #     cp $PP_PATH ~/Library/MobileDevice/Provisioning\ Profiles
+      - name: Overlay Build Scripts
+        run: |
+          bash .workflow-src/.github/scripts/overlay_files.sh
+        shell: bash
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}

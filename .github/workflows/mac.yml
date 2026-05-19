@@ -117,6 +117,10 @@ jobs:
           workflow: firmware.yml
           workflow_conclusion: success
           search_artifacts: true
+      - name: Overlay Build Scripts
+        run: |
+          bash .workflow-src/.github/scripts/overlay_files.sh
+        shell: bash
       - name: Apply Patch
         env:
           VT_VER: ${{ inputs.vt_ver }}
@@ -128,7 +132,7 @@ jobs:
         run: |
             mkdir -p res/firmwares
             cp -rv ${{ env.FW_TMP_DIR }}/* res/firmwares/
-            ./build_macos
+            ./build_macos4CI
       # - name: Upload Artifact
       #   uses: actions/upload-artifact@v3
       #   with:
