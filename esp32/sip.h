@@ -21,6 +21,8 @@
 
 #define SIP_PACKET_SIZE 256
 
+#include "packed_struct.h"
+
 typedef enum {
     SIP_PACKET_TYPE_CTRL = 0,
     SIP_PACKET_TYPE_DATA,
@@ -32,7 +34,9 @@ typedef enum {
     SIP_CMD_ID_BOOTUP = 5,
 } sip_cmd_id_t;
 
-typedef struct __attribute__((packed))
+PACKED_STRUCT_BEGIN
+
+typedef struct PACKED
 {
     uint8_t tid;
     uint8_t ac;
@@ -41,7 +45,7 @@ typedef struct __attribute__((packed))
     uint8_t hw_kid;
 } sip_tx_data_info_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     union {
         uint32_t cmdid;
@@ -49,7 +53,7 @@ typedef struct __attribute__((packed))
     } u;
 } sip_tx_info_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t fc[2];
     uint16_t len; // Length of packet, including the header itself, must align to 4
@@ -60,14 +64,16 @@ typedef struct __attribute__((packed))
     uint32_t sequence_num;
 } sip_header_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint32_t addr;
     uint32_t len;
 } sip_cmd_write_memory;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint32_t boot_addr;
     uint32_t discard_link;
 } sip_cmd_bootup;
+
+PACKED_STRUCT_END

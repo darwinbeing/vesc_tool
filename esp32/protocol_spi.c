@@ -19,12 +19,14 @@
 #include <stddef.h>
 #include <assert.h>
 
-typedef struct __attribute__((packed))
+PACKED_STRUCT_BEGIN
+typedef struct PACKED
 {
     uint8_t cmd;
     uint8_t addr;
     uint8_t dummy;
 } transaction_preamble_t;
+PACKED_STRUCT_END
 
 typedef enum {
     TRANS_CMD_WRBUF = 0x01,

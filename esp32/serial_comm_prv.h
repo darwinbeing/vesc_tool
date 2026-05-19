@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "packed_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +31,9 @@ extern "C" {
 
 #define MD5_SIZE 32
 
-typedef enum __attribute__((packed))
+PACKED_STRUCT_BEGIN
+
+typedef enum PACKED
 {
     FLASH_BEGIN = 0x02,
     FLASH_DATA  = 0x03,
@@ -51,7 +54,7 @@ typedef enum __attribute__((packed))
     SPI_FLASH_MD5    = 0x13,
 } command_t;
 
-typedef enum __attribute__((packed))
+typedef enum PACKED
 {
     RESPONSE_OK     = 0x00,
     INVALID_COMMAND = 0x05, // parameters or length field is invalid
@@ -63,7 +66,7 @@ typedef enum __attribute__((packed))
     DEFLATE_ERROR   = 0x0b, // ESP32 compressed uploads only
 } error_code_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t direction;
     uint8_t command;    // One of command_t
@@ -71,7 +74,7 @@ typedef struct __attribute__((packed))
     uint32_t checksum;
 } command_common_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t erase_size;
@@ -81,7 +84,7 @@ typedef struct __attribute__((packed))
     uint32_t encrypted;
 } begin_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t data_size;
@@ -90,26 +93,26 @@ typedef struct __attribute__((packed))
     uint32_t zero_1;
 } data_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t stay_in_loader;
 } flash_end_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t stay_in_loader;
     uint32_t entry_point_address;
 } mem_end_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint8_t sync_sequence[36];
 } sync_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
@@ -118,27 +121,27 @@ typedef struct __attribute__((packed))
     uint32_t delay_us;
 } write_reg_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
 } read_reg_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t configuration;
     uint32_t zero; // ESP32 ROM only
 } spi_attach_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t new_baudrate;
     uint32_t old_baudrate;
 } change_baudrate_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
@@ -147,7 +150,7 @@ typedef struct __attribute__((packed))
     uint32_t reserved_1;
 } spi_flash_md5_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t direction;
     uint8_t command;    // One of command_t
@@ -155,26 +158,26 @@ typedef struct __attribute__((packed))
     uint32_t value;
 } common_response_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t failed;
     uint8_t error;
 } response_status_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     common_response_t common;
     response_status_t status;
 } response_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     common_response_t common;
     uint8_t md5[MD5_SIZE];     // ROM only
     response_status_t status;
 } rom_md5_response_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t id;
@@ -185,6 +188,7 @@ typedef struct __attribute__((packed))
     uint32_t status_mask;
 } write_spi_command_t;
 
+PACKED_STRUCT_END
 
 #ifdef __cplusplus
 }

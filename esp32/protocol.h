@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_loader.h"
+#include "packed_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,7 +55,9 @@ extern "C" {
 #define MAX_RESP_DATA_SIZE 64
 #define READ_FLASH_ROM_DATA_SIZE 64
 
-typedef enum __attribute__((packed))
+PACKED_STRUCT_BEGIN
+
+typedef enum PACKED
 {
     FLASH_BEGIN = 0x02,
     FLASH_DATA = 0x03,
@@ -79,7 +82,7 @@ typedef enum __attribute__((packed))
     READ_FLASH_STUB = 0xd2,
 } command_t;
 
-typedef enum __attribute__((packed))
+typedef enum PACKED
 {
     RESPONSE_OK     = 0x00,
     INVALID_COMMAND = 0x05, // parameters or length field is invalid
@@ -103,7 +106,7 @@ typedef enum __attribute__((packed))
     STUB_CMD_NOT_IMPLEMENTED = 0xFF,
 } error_code_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t direction;
     uint8_t command;    // One of command_t
@@ -111,7 +114,7 @@ typedef struct __attribute__((packed))
     uint32_t checksum;
 } command_common_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t erase_size;
@@ -121,7 +124,7 @@ typedef struct __attribute__((packed))
     uint32_t encrypted;
 } flash_begin_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t data_size;
@@ -130,20 +133,20 @@ typedef struct __attribute__((packed))
     uint32_t zero_1;
 } data_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t stay_in_loader;
 } flash_end_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
     uint32_t size;
 } flash_read_rom_cmd;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
@@ -152,19 +155,19 @@ typedef struct __attribute__((packed))
     uint32_t max_inflight_packets;
 } flash_read_stub_cmd;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
 } flash_erase_chip_cmd;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t offset;
     uint32_t size;
 } flash_erase_region_cmd;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t total_size;
@@ -173,20 +176,20 @@ typedef struct __attribute__((packed))
     uint32_t offset;
 } mem_begin_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t stay_in_loader;
     uint32_t entry_point_address;
 } mem_end_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint8_t sync_sequence[36];
 } sync_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
@@ -195,27 +198,27 @@ typedef struct __attribute__((packed))
     uint32_t delay_us;
 } write_reg_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
 } read_reg_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t configuration;
     uint32_t zero; // ESP32 ROM only
 } spi_attach_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t new_baudrate;
     uint32_t old_baudrate;
 } change_baudrate_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t address;
@@ -224,12 +227,12 @@ typedef struct __attribute__((packed))
     uint32_t reserved_1;
 } spi_flash_md5_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
 } get_security_info_command_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t direction;
     uint8_t command;    // One of command_t
@@ -237,13 +240,13 @@ typedef struct __attribute__((packed))
     uint32_t value;
 } common_response_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     uint8_t failed;
     uint8_t error;
 } response_status_t;
 
-typedef struct __attribute__((packed))
+typedef struct PACKED
 {
     command_common_t common;
     uint32_t id;
@@ -253,6 +256,8 @@ typedef struct __attribute__((packed))
     uint32_t page_size;
     uint32_t status_mask;
 } write_spi_command_t;
+
+PACKED_STRUCT_END
 
 #define GET_SECURITY_INFO_SECURE_BOOT_EN (1 << 0)
 #define GET_SECURITY_INFO_SECURE_BOOT_AGGRESSIVE_REVOKE (1 << 1)
@@ -266,7 +271,8 @@ typedef struct __attribute__((packed))
 #define GET_SECURITY_INFO_DIS_DOWNLOAD_DCACHE (1 << 9)
 #define GET_SECURITY_INFO_DIS_DOWNLOAD_ICACHE (1 << 10)
 
-typedef struct __attribute__((packed))
+PACKED_STRUCT_BEGIN
+typedef struct PACKED
 {
     uint32_t flags;
     uint8_t flash_crypt_cnt;
@@ -274,6 +280,7 @@ typedef struct __attribute__((packed))
     uint32_t chip_id;
     uint32_t eco_version;
 } get_security_info_response_data_t;
+PACKED_STRUCT_END
 
 esp_loader_error_t loader_initialize_conn(esp_loader_connect_args_t *connect_args);
 

@@ -116,9 +116,11 @@ typedef struct {
                                100 millisecond delay is inserted after each try. */
 } esp_loader_connect_args_t;
 
+/* Positional (not designated) initializers so the macro is valid in both C
+ * and pre-C++20 C++. Member order: sync_timeout, trials. */
 #define ESP_LOADER_CONNECT_DEFAULT() { \
-  .sync_timeout = 100, \
-  .trials = 10, \
+  100, /* sync_timeout */ \
+  10,  /* trials */ \
 }
 
 /**
