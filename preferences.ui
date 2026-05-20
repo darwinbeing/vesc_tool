@@ -640,6 +640,12 @@
             </property>
             <item row="1" column="1">
              <widget class="QPushButton" name="jsConnectButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>Connect</string>
               </property>
@@ -651,6 +657,12 @@
             </item>
             <item row="1" column="0">
              <widget class="QPushButton" name="jsScanButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="text">
                <string>Scan</string>
               </property>
