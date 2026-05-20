@@ -105,13 +105,13 @@ jobs:
       - name: Package DMG
         run: |
           "$QT_ROOT_DIR/bin/macdeployqt" "build/VESC Tool.app" -qmldir=mobile -dmg
-          mv "build/VESC Tool.dmg" "VESC_Tool-${PACKAGE_VERSION}-mac-qt6.dmg"
+          mv "build/VESC Tool.dmg" "VESC_Tool-${PACKAGE_VERSION}-mac-x86_64-qt6.dmg"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-qt6.dmg
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-qt6.dmg
+          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-x86_64-qt6.dmg
+          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-x86_64-qt6.dmg
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           overwrite: true
