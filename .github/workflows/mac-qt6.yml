@@ -59,9 +59,12 @@ jobs:
           bash .workflow-src/.github/scripts/generate_release_notes.sh
         shell: bash
       - name: Select Xcode
+        # Pin to 16.4 — newer Xcodes (26+) on macos-15 runners have removed
+        # AGL.framework from their SDK, but Qt 6.8.3 still emits `-framework AGL`
+        # in many .prl files and FindWrapOpenGL.cmake. 16.4 retains AGL.
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
+          xcode-version: '16.4'
       - name: Install Qt 6.8.3 (macOS desktop)
         uses: jurplel/install-qt-action@v4
         with:
@@ -72,27 +75,6 @@ jobs:
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
-      - name: Patch Qt to drop dead AGL.framework references
-        # Qt 6.8.3 emits `-framework AGL` from:
-        #   1. FindWrapOpenGL.cmake (hardcoded fallback)
-        #   2. .prl files everywhere: top-level lib/*.prl AND framework-internal
-        #      lib/<Name>.framework/Versions/A/Resources/<Name>.prl
-        # Xcode 14+/macOS 14+ SDKs removed AGL → link fails. Strip every ref.
-        run: |
-          set -e
-          F="$QT_ROOT_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
-          sed -i.bak 's/"-framework AGL"/""/' "$F"
-          # Patch every .prl under lib/ that mentions AGL (top-level + per-framework).
-          while IFS= read -r p; do
-            sed -i.bak -e 's/ -framework AGL//g' -e 's/-framework AGL;//g' "$p"
-            echo "  patched: $p"
-          done < <(grep -rl "framework AGL" "$QT_ROOT_DIR/lib" 2>/dev/null | grep -v '\.bak$')
-          echo "=== remaining AGL references in Qt install ==="
-          if grep -rln "framework AGL" "$QT_ROOT_DIR/lib" 2>/dev/null | grep -v '\.bak$'; then
-            echo "ERROR: AGL refs remain — patch insufficient"; exit 1
-          else
-            echo "(none)"
-          fi
       - name: Create TMP Dir
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
