@@ -48,6 +48,11 @@ Preferences::Preferences(QWidget *parent) :
     ui->pathScriptOutputChooseButton->setIcon(Utility::getIcon("icons/Open Folder-96.png"));
     ui->jsConnectButton->setIcon(Utility::getIcon("icons/Connected-96.png"));
     ui->jsScanButton->setIcon(Utility::getIcon("icons/Connected-96.png"));
+    ui->jsConf1Button->setIcon(Utility::getIcon("icons/Horizontal Settings Mixer-96.png"));
+    ui->jsConf2Button->setIcon(Utility::getIcon("icons/Horizontal Settings Mixer-96.png"));
+    ui->jsConf3Button->setIcon(Utility::getIcon("icons/Horizontal Settings Mixer-96.png"));
+    ui->jsConf4Button->setIcon(Utility::getIcon("icons/Horizontal Settings Mixer-96.png"));
+    ui->jsResetConfigButton->setIcon(Utility::getIcon("icons/Restart-96.png"));
     ui->pathLocalLogChooseButton->setIcon(Utility::getIcon("icons/Open Folder-96.png"));
 
     ui->uiScaleBox->setValue(mSettings.value("app_scale_factor", 1.0).toDouble());
@@ -109,9 +114,15 @@ Preferences::Preferences(QWidget *parent) :
                     mGamepad->deleteLater();
                 }
                 mGamepad = new Gamepad(g, this);
+                mGamepad->setAxisMapString(mSettings.value("js_axis_map").toString());
             }
         }
     }
+
+    connect(ui->jsConf1Button, &QPushButton::clicked, [=]() { if (mGamepad) mGamepad->startConfigureAxis(0); });
+    connect(ui->jsConf2Button, &QPushButton::clicked, [=]() { if (mGamepad) mGamepad->startConfigureAxis(1); });
+    connect(ui->jsConf3Button, &QPushButton::clicked, [=]() { if (mGamepad) mGamepad->startConfigureAxis(2); });
+    connect(ui->jsConf4Button, &QPushButton::clicked, [=]() { if (mGamepad) mGamepad->startConfigureAxis(3); });
 #endif
 
     ui->uploadContentEditorButton->setChecked(mSettings.value("scripting/uploadContentEditor", true).toBool());
@@ -211,6 +222,7 @@ void Preferences::timerSlot()
 {
 #ifdef HAS_GAMEPAD
     if (mGamepad) {
+        mGamepad->update();
         ui->jsAxis1Bar->setValue(mGamepad->axisLeftX() * 1000.0);
         ui->jsAxis2Bar->setValue(mGamepad->axisLeftY() * 1000.0);
         ui->jsAxis3Bar->setValue(mGamepad->axisRightX() * 1000.0);
@@ -327,6 +339,16 @@ void Preferences::on_jsConnectButton_clicked()
             mGamepad->deleteLater();
         }
         mGamepad = new Gamepad(item.toInt(), this);
+        mGamepad->setAxisMapString(mSettings.value("js_axis_map").toString());
+    }
+#endif
+}
+
+void Preferences::on_jsResetConfigButton_clicked()
+{
+#ifdef HAS_GAMEPAD
+    if (mGamepad) {
+        mGamepad->resetConfiguration();
     }
 #endif
 }
@@ -438,6 +460,7 @@ void Preferences::saveSettingsChanged()
     mSettings.setValue("js_range_max", ui->jsMaxBox->value());
     if (mGamepad) {
         mSettings.setValue("js_name", mGamepad->name());
+        mSettings.setValue("js_axis_map", mGamepad->axisMapString());
     }
 #endif
 

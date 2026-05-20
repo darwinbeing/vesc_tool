@@ -71,6 +71,7 @@ private slots:
     void on_uiPlotWidthBox_valueChanged(double arg1);
     void on_jsScanButton_clicked();
     void on_jsConnectButton_clicked();
+    void on_jsResetConfigButton_clicked();
     void on_loadQmlUiConnectBox_toggled(bool checked);
     void on_qmlUiAskBox_toggled(bool checked);
     void on_pathRtLogChooseButton_clicked();
