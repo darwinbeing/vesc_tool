@@ -116,14 +116,15 @@ jobs:
           APP="build/Release-iphoneos/VESC Tool.app"
           test -d "$APP"
           ditto -c -k --sequesterRsrc --keepParent "$APP" \
-            "VESC_Tool-${PACKAGE_VERSION}-ios-qt6.zip"
+            "VESC_Tool-ios-Qt6.zip"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-qt6.zip
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-qt6.zip
+          file: VESC_Tool-ios-Qt6.zip
+          asset_name: VESC_Tool-ios-Qt6.zip
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           overwrite: true
           prerelease: ${{ inputs.prerelease }}

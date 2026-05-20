@@ -1,4 +1,4 @@
-name: macOS-x86_64-qt6
+name: macOS-qt6
 
 on:
   # Allows you to run this workflow manually from the Actions tab
@@ -31,6 +31,22 @@ permissions:
 jobs:
   build:
     runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # x86_64-only, arm64-only and universal share the same recipe; only
+          # CMAKE_OSX_ARCHITECTURES and the artifact suffix differ.
+          - arch_name: x86_64
+            osx_arch: x86_64
+            suffix: mac-x86_64-Qt6
+          - arch_name: arm64
+            osx_arch: arm64
+            suffix: mac-arm64-Qt6
+          - arch_name: universal
+            osx_arch: "x86_64;arm64"
+            suffix: mac-universal-Qt6
+    name: build (${{ matrix.arch_name }})
     steps:
       - name: Clone Repository
         uses: actions/checkout@v4
@@ -92,8 +108,8 @@ jobs:
       - name: Install Ninja
         run: brew install ninja
       - name: Install SDL3
-        # macos-15 runners are Apple Silicon, so brew's sdl3 is arm64-only.
-        # Build SDL3 from source for the x86_64 target arch so it links/bundles.
+        # macos-15 runners are Apple Silicon; build SDL3 for the target arch(s)
+        # so it links/bundles for this matrix leg.
         run: |
           set -e
           SDL3_VER=3.2.10
@@ -102,7 +118,7 @@ jobs:
           cmake -S /tmp/SDL3-${SDL3_VER} -B /tmp/sdl3-build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX=/usr/local \
-            -DCMAKE_OSX_ARCHITECTURES=x86_64
+            -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}"
           cmake --build /tmp/sdl3-build --parallel
           sudo cmake --install /tmp/sdl3-build
       - name: Configure
@@ -111,12 +127,14 @@ jobs:
           cp -rv "${{ env.FW_TMP_DIR }}"/* res/firmwares/
           cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_OSX_ARCHITECTURES=x86_64
+            -DCMAKE_OSX_ARCHITECTURES="${{ matrix.osx_arch }}"
       - name: Build
         # qrc_res.cpp compilation is memory-heavy and OOMs/swap-thrashes the
         # 7 GB macos-15 runner under unrestricted parallelism — cap to 2 jobs.
         run: cmake --build build --parallel 2
       - name: Package DMG
+        env:
+          DMG_SUFFIX: ${{ matrix.suffix }}
         run: |
           APP="build/VESC Tool.app"
           BIN="$APP/Contents/MacOS/VESC Tool"
@@ -138,14 +156,15 @@ jobs:
           cp -R "$APP" "$STAGE/"
           ln -s /Applications "$STAGE/Applications"
           hdiutil create -volname "VESC Tool" -srcfolder "$STAGE" -ov -format UDZO -fs HFS+ \
-            -o "VESC_Tool-${PACKAGE_VERSION}-mac-x86_64-qt6.dmg"
+            -o "VESC_Tool-${DMG_SUFFIX}.dmg"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-x86_64-qt6.dmg
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-mac-x86_64-qt6.dmg
+          file: VESC_Tool-${{ matrix.suffix }}.dmg
+          asset_name: VESC_Tool-${{ matrix.suffix }}.dmg
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           overwrite: true
           prerelease: ${{ inputs.prerelease }}

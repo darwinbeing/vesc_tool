@@ -137,15 +137,16 @@ jobs:
           curl -fLs -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
           chmod +x linuxdeploy linuxdeploy-plugin-qt
           ./linuxdeploy --appdir AppDir --plugin qt --output appimage
-          mv VESC*AppImage "vesc_tool-${PACKAGE_VERSION}-qt6.AppImage" 2>/dev/null || \
-            mv *AppImage "vesc_tool-${PACKAGE_VERSION}-qt6.AppImage"
+          mv VESC*AppImage "VESC_Tool-linux-Qt6.AppImage" 2>/dev/null || \
+            mv *AppImage "VESC_Tool-linux-Qt6.AppImage"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: vesc_tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.AppImage
-          asset_name: vesc_tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.AppImage
+          file: VESC_Tool-linux-Qt6.AppImage
+          asset_name: VESC_Tool-linux-Qt6.AppImage
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           overwrite: true
           prerelease: ${{ inputs.prerelease }}

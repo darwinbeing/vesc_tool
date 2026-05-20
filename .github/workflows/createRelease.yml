@@ -151,12 +151,6 @@ jobs:
           workflow: Android
           token: ${{ secrets.GITHUB_TOKEN }}
           inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
-      # - name: Invoke workflow Android2
-      #   uses: benc-uk/workflow-dispatch@v1
-      #   with:
-      #     workflow: Android2
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-      #     inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow iOS
         uses: benc-uk/workflow-dispatch@v1
         with:
@@ -177,22 +171,12 @@ jobs:
           workflow: Windows-qt6
           token: ${{ secrets.GITHUB_TOKEN }}
           inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
-      - name: Invoke workflow macOS-x86_64-qt6
+      # macOS-qt6 fans out to x86_64 / arm64 / universal via its own job matrix,
+      # so a single dispatch produces all three DMGs.
+      - name: Invoke workflow macOS-qt6
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: macOS-x86_64-qt6
-          token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
-      - name: Invoke workflow macOS-arm64-qt6
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: macOS-arm64-qt6
-          token: ${{ secrets.GITHUB_TOKEN }}
-          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
-      - name: Invoke workflow macOS-universal-qt6
-        uses: benc-uk/workflow-dispatch@v1
-        with:
-          workflow: macOS-universal-qt6
+          workflow: macOS-qt6
           token: ${{ secrets.GITHUB_TOKEN }}
           inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
       - name: Invoke workflow Android-qt6

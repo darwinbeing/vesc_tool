@@ -109,7 +109,7 @@ jobs:
       - name: Package (windeployqt + zip)
         shell: pwsh
         run: |
-          $stage = "VESC_Tool-$env:PACKAGE_VERSION-qt6"
+          $stage = "VESC_Tool-win-Qt6"
           New-Item -ItemType Directory -Path $stage | Out-Null
           $exe = Get-ChildItem -Path build -Filter "vesc_tool*.exe" -Recurse | Select-Object -First 1
           Copy-Item $exe.FullName (Join-Path $stage "VESC_Tool.exe")
@@ -120,9 +120,10 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.zip
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-win-qt6.zip
+          file: VESC_Tool-win-Qt6.zip
+          asset_name: VESC_Tool-win-Qt6.zip
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           overwrite: true
           prerelease: ${{ inputs.prerelease }}

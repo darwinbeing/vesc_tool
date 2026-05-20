@@ -124,15 +124,16 @@ jobs:
           # Match the Qt5 Android artifact convention (a .zip containing the APK).
           # Qt6 Android is mobile-only (USE_MOBILE), so there is a single APK.
           cp "$APK" vesc_tool_mobile.apk
-          zip "VESC_Tool-${PACKAGE_VERSION}-android-qt6.zip" vesc_tool_mobile.apk
+          zip "VESC_Tool-android-Qt6.zip" vesc_tool_mobile.apk
           rm -f vesc_tool_mobile.apk
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.zip
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.zip
+          file: VESC_Tool-android-Qt6.zip
+          asset_name: VESC_Tool-android-Qt6.zip
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           overwrite: true
           prerelease: ${{ inputs.prerelease }}

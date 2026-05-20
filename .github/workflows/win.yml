@@ -159,7 +159,7 @@ jobs:
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           file: .\build\win\vesc_tool_platinum-win.zip
-          asset_name: VESC_Tool-win.zip
+          asset_name: VESC_Tool-win-Qt5.zip
           overwrite: true
           prerelease: ${{ inputs.prerelease }}
           target_commit: ${{ env.VT_REF }}

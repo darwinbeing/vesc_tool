@@ -165,7 +165,7 @@ jobs:
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           file: ./build/macos/VESC_Tool_platinum-macOS-arm64.dmg
-          asset_name: VESC_Tool-mac-arm64.dmg
+          asset_name: VESC_Tool-mac-arm64-Qt5.dmg
           overwrite: true
           prerelease: ${{ inputs.prerelease }}
           target_commit: ${{ env.VT_REF }}

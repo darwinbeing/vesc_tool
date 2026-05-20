@@ -189,7 +189,7 @@ jobs:
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           body: ${{ steps.GetVersion.outputs.RELEASE_NOTES }}
           file: Release-iphoneos/VESC_Tool-iOS.zip
-          asset_name: VESC_Tool-iOS.zip
+          asset_name: VESC_Tool-iOS-Qt5.zip
           overwrite: true
           prerelease: ${{ inputs.prerelease }}
           target_commit: ${{ env.VT_REF }}
