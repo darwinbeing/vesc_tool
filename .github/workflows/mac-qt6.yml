@@ -86,15 +86,19 @@ jobs:
           workflow: firmware.yml
           workflow_conclusion: success
           search_artifacts: true
+      - name: Install Ninja
+        run: brew install ninja
       - name: Configure
         run: |
           mkdir -p res/firmwares
           cp -rv "${{ env.FW_TMP_DIR }}"/* res/firmwares/
-          cmake -S . -B build \
+          cmake -S . -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_OSX_ARCHITECTURES=x86_64
       - name: Build
-        run: cmake --build build --parallel
+        # qrc_res.cpp compilation is memory-heavy and OOMs/swap-thrashes the
+        # 7 GB macos-15 runner under unrestricted parallelism — cap to 2 jobs.
+        run: cmake --build build --parallel 2
       - name: Package DMG
         run: |
           "$Qt6_DIR/bin/macdeployqt" "build/VESC Tool.app" -qmldir=mobile -dmg
