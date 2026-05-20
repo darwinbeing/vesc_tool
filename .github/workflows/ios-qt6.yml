@@ -106,22 +106,23 @@ jobs:
             -DCMAKE_TOOLCHAIN_FILE=$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake \
             -DQT_HOST_PATH=$QT_HOST_PATH \
             -DCMAKE_BUILD_TYPE=Release
-      - name: Build (unsigned simulator)
+      - name: Build (unsigned device, matches the Qt5 iOS artifact)
         run: >
           cmake --build build --config Release --
-          -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO
+          -sdk iphoneos -arch arm64
+          CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
       - name: Package .app -> .zip
         run: |
-          APP="build/Release-iphonesimulator/VESC Tool.app"
+          APP="build/Release-iphoneos/VESC Tool.app"
           test -d "$APP"
           ditto -c -k --sequesterRsrc --keepParent "$APP" \
-            "VESC_Tool-${PACKAGE_VERSION}-ios-simulator-qt6.zip"
+            "VESC_Tool-${PACKAGE_VERSION}-ios-qt6.zip"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-simulator-qt6.zip
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-simulator-qt6.zip
+          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-qt6.zip
+          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-ios-qt6.zip
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           overwrite: true
