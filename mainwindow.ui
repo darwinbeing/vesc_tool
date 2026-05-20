@@ -589,6 +589,7 @@
    <addaction name="actionWriteAppconf"/>
    <addaction name="separator"/>
    <addaction name="actionKeyboardControl"/>
+   <addaction name="actionGamepadControl"/>
    <addaction name="actionRtData"/>
    <addaction name="actionRtDataApp"/>
    <addaction name="actionIMU"/>
@@ -1109,6 +1110,17 @@ p, li { white-space: pre-wrap; }
    </property>
    <property name="toolTip">
     <string>Stream BMS realtime data</string>
+   </property>
+  </action>
+  <action name="actionGamepadControl">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Gamepad Control</string>
+   </property>
+   <property name="toolTip">
+    <string>Use Gamepad Control</string>
    </property>
   </action>
   <action name="actionParameterEditorCustomConf0">

@@ -182,6 +182,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QIcon mycon = QIcon(Utility::getIcon("icons/keys_off.png"));
     mycon.addPixmap(Utility::getIcon("icons/keys_on.png"), QIcon::Normal, QIcon::On);
     ui->actionKeyboardControl->setIcon(mycon);
+    ui->actionGamepadControl->setIcon(Utility::getIcon("icons/Controller-96.png"));
     mycon = QIcon(Utility::getIcon("icons/rt_off.png"));
     mycon.addPixmap(Utility::getIcon("icons/rt_on.png"), QIcon::Normal, QIcon::On);
     ui->actionRtData->setIcon(mycon);
@@ -1905,6 +1906,15 @@ void MainWindow::on_actionParameterEditorAppconf_triggered()
     p->setAttribute(Qt::WA_DeleteOnClose);
     p->setParams(mVesc->appConfig());
     p->show();
+}
+
+void MainWindow::on_actionGamepadControl_triggered(bool checked)
+{
+    mPreferences->setUseGamepadControl(checked);
+
+    if (!mPreferences->isUsingGamepadControl()) {
+        ui->actionGamepadControl->setChecked(false);
+    }
 }
 
 void MainWindow::on_actionPreferences_triggered()
