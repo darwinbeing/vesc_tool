@@ -30,10 +30,7 @@ permissions:
 
 jobs:
   build:
-    # macos-15/14 ship Xcode 16+ with AGL.framework removed; Qt 6.8's
-    # FindWrapOpenGL.cmake hardcodes `-framework AGL` as a fallback and fails
-    # to link. macos-13 keeps AGL.
-    runs-on: macos-13
+    runs-on: macos-15
     steps:
       - name: Clone Repository
         uses: actions/checkout@v4
@@ -75,6 +72,15 @@ jobs:
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
+      - name: Patch Qt FindWrapOpenGL — drop dead AGL fallback
+        # Qt 6.8.3's FindWrapOpenGL.cmake hardcodes `-framework AGL` as a
+        # fallback when find_library(AGL) returns NOTFOUND. Xcode 14+ /
+        # macOS 14+ SDKs removed AGL → link error on macos-15 runners.
+        # AGL hasn't been needed by Qt for years; drop the dead string.
+        run: |
+          F="$Qt6_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
+          sed -i.bak 's/"-framework AGL"/""/' "$F"
+          grep -n AGL "$F" || true
       - name: Create TMP Dir
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
