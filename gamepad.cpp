@@ -1,5 +1,6 @@
 #include "gamepad.h"
 #include <SDL3/SDL.h>
+#include <cstdlib>
 
 void Gamepad::ensureInit()
 {
@@ -23,20 +24,85 @@ Gamepad::~Gamepad()
     }
 }
 
-double Gamepad::axis(int sdlAxis)
+double Gamepad::readLogicalAxis(int idx)
 {
-    if (!mPad) {
-        return 0.0;
-    }
+    if (!mPad) return 0.0;
     SDL_UpdateGamepads();
-    Sint16 v = SDL_GetGamepadAxis(mPad, static_cast<SDL_GamepadAxis>(sdlAxis));
-    return static_cast<double>(v) / 32767.0;
+    if (mAxisOverride.contains(idx)) {
+        SDL_Joystick *js = SDL_GetGamepadJoystick(mPad);
+        int phys = mAxisOverride.value(idx);
+        if (js && phys >= 0 && phys < SDL_GetNumJoystickAxes(js)) {
+            return static_cast<double>(SDL_GetJoystickAxis(js, phys)) / 32767.0;
+        }
+    }
+    static const SDL_GamepadAxis logical[4] = {
+        SDL_GAMEPAD_AXIS_LEFTX, SDL_GAMEPAD_AXIS_LEFTY,
+        SDL_GAMEPAD_AXIS_RIGHTX, SDL_GAMEPAD_AXIS_RIGHTY };
+    return static_cast<double>(SDL_GetGamepadAxis(mPad, logical[idx])) / 32767.0;
 }
 
-double Gamepad::axisLeftX()  { return axis(SDL_GAMEPAD_AXIS_LEFTX); }
-double Gamepad::axisLeftY()  { return axis(SDL_GAMEPAD_AXIS_LEFTY); }
-double Gamepad::axisRightX() { return axis(SDL_GAMEPAD_AXIS_RIGHTX); }
-double Gamepad::axisRightY() { return axis(SDL_GAMEPAD_AXIS_RIGHTY); }
+double Gamepad::axisLeftX()  { return readLogicalAxis(0); }
+double Gamepad::axisLeftY()  { return readLogicalAxis(1); }
+double Gamepad::axisRightX() { return readLogicalAxis(2); }
+double Gamepad::axisRightY() { return readLogicalAxis(3); }
+
+void Gamepad::startConfigureAxis(int logicalAxis)
+{
+    if (!mPad) return;
+    SDL_UpdateGamepads();
+    mCaptureBaseline.clear();
+    SDL_Joystick *js = SDL_GetGamepadJoystick(mPad);
+    if (js) {
+        int n = SDL_GetNumJoystickAxes(js);
+        for (int i = 0; i < n; ++i) mCaptureBaseline.append(SDL_GetJoystickAxis(js, i));
+    }
+    mConfiguringAxis = logicalAxis;
+}
+
+void Gamepad::update()
+{
+    if (!mPad || mConfiguringAxis < 0) return;
+    SDL_UpdateGamepads();
+    SDL_Joystick *js = SDL_GetGamepadJoystick(mPad);
+    if (!js) return;
+    const int THRESH = 16000;            // require a clear deflection
+    int n = SDL_GetNumJoystickAxes(js);
+    int best = -1, bestDelta = THRESH;
+    for (int i = 0; i < n && i < mCaptureBaseline.size(); ++i) {
+        int delta = std::abs(static_cast<int>(SDL_GetJoystickAxis(js, i)) - mCaptureBaseline[i]);
+        if (delta > bestDelta) { bestDelta = delta; best = i; }
+    }
+    if (best >= 0) {
+        mAxisOverride[mConfiguringAxis] = best;
+        int done = mConfiguringAxis;
+        mConfiguringAxis = -1;
+        emit axisConfigured(done);
+    }
+}
+
+void Gamepad::resetConfiguration()
+{
+    mAxisOverride.clear();
+    mConfiguringAxis = -1;
+}
+
+QString Gamepad::axisMapString() const
+{
+    QStringList parts;
+    for (auto it = mAxisOverride.constBegin(); it != mAxisOverride.constEnd(); ++it)
+        parts << QString("%1:%2").arg(it.key()).arg(it.value());
+    return parts.join(",");
+}
+
+void Gamepad::setAxisMapString(const QString &s)
+{
+    mAxisOverride.clear();
+    const QStringList parts = s.split(",", Qt::SkipEmptyParts);
+    for (const QString &p : parts) {
+        const QStringList kv = p.split(":");
+        if (kv.size() == 2) mAxisOverride[kv[0].toInt()] = kv[1].toInt();
+    }
+}
 
 bool Gamepad::isConnected()
 {
