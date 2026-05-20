@@ -10,4 +10,15 @@ cmake -S . -B build/macos \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
 cmake --build build/macos --parallel
+
+# Bundle SDL3 dylib into the app
+APP="build/macos/VESC Tool.app"
+SDL3_DYLIB=$(brew --prefix sdl3)/lib/libSDL3.0.dylib
+if [ -f "$SDL3_DYLIB" ]; then
+    mkdir -p "$APP/Contents/Frameworks"
+    cp -L "$SDL3_DYLIB" "$APP/Contents/Frameworks/libSDL3.0.dylib"
+    install_name_tool -change "$SDL3_DYLIB" "@executable_path/../Frameworks/libSDL3.0.dylib" \
+        "$APP/Contents/MacOS/VESC Tool" 2>/dev/null || true
+fi
+
 echo "Built: build/macos/VESC Tool.app"
