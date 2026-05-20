@@ -138,6 +138,11 @@ if(NOT IOS)
     target_sources(vesc_tool PRIVATE systemcommandexecutor.h)
 endif()
 
+# SDL3 Gamepad backend — desktop only.
+if(NOT ANDROID AND NOT IOS)
+    target_sources(vesc_tool PRIVATE gamepad.cpp gamepad.h)
+endif()
+
 if(IOS)
     # Objective-C++ source only compiled on iOS.
     target_sources(vesc_tool PRIVATE
