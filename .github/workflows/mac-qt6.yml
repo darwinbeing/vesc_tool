@@ -73,23 +73,26 @@ jobs:
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
       - name: Patch Qt to drop dead AGL.framework references
-        # Qt 6.8.3 still emits `-framework AGL` in two places:
+        # Qt 6.8.3 emits `-framework AGL` from:
         #   1. FindWrapOpenGL.cmake (hardcoded fallback)
-        #   2. .prl files for FbSupport / QuickTestUtils / QuickControlsTestUtils
-        #      (QMAKE_PRL_LIBS_FOR_CMAKE injected directly by Qt6Gui/etc.)
-        # Xcode 14+/macOS 14+ SDKs removed AGL → link fails. Strip the refs.
+        #   2. .prl files everywhere: top-level lib/*.prl AND framework-internal
+        #      lib/<Name>.framework/Versions/A/Resources/<Name>.prl
+        # Xcode 14+/macOS 14+ SDKs removed AGL → link fails. Strip every ref.
         run: |
           set -e
           F="$QT_ROOT_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
           sed -i.bak 's/"-framework AGL"/""/' "$F"
-          for p in "$QT_ROOT_DIR"/lib/*.prl; do
-            if grep -q "framework AGL" "$p" 2>/dev/null; then
-              sed -i.bak -e 's/ -framework AGL//g' -e 's/-framework AGL;//g' "$p"
-              echo "  patched: $p"
-            fi
-          done
+          # Patch every .prl under lib/ that mentions AGL (top-level + per-framework).
+          while IFS= read -r p; do
+            sed -i.bak -e 's/ -framework AGL//g' -e 's/-framework AGL;//g' "$p"
+            echo "  patched: $p"
+          done < <(grep -rl "framework AGL" "$QT_ROOT_DIR/lib" 2>/dev/null | grep -v '\.bak$')
           echo "=== remaining AGL references in Qt install ==="
-          grep -rln "framework AGL" "$QT_ROOT_DIR"/lib/ "$QT_ROOT_DIR"/lib/cmake/ || echo "(none)"
+          if grep -rln "framework AGL" "$QT_ROOT_DIR/lib" 2>/dev/null | grep -v '\.bak$'; then
+            echo "ERROR: AGL refs remain — patch insufficient"; exit 1
+          else
+            echo "(none)"
+          fi
       - name: Create TMP Dir
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
