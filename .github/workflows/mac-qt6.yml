@@ -30,7 +30,10 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15
+    # macos-15/14 ship Xcode 16+ with AGL.framework removed; Qt 6.8's
+    # FindWrapOpenGL.cmake hardcodes `-framework AGL` as a fallback and fails
+    # to link. macos-13 keeps AGL.
+    runs-on: macos-13
     steps:
       - name: Clone Repository
         uses: actions/checkout@v4
