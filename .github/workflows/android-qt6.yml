@@ -53,6 +53,7 @@ jobs:
           echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
           echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
           export VT_VERSION
+          export VT_REF="${{ inputs.vt_ver }}"
           export PRERELEASE="${{ inputs.prerelease }}"
           bash .workflow-src/.github/scripts/generate_release_notes.sh
       - name: Set up JDK 17
