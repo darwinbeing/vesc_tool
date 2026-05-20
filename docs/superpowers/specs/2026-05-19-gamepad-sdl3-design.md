@@ -19,12 +19,15 @@ original desktop behavior — no redesign.
   QML UI has no gamepad screen and is unchanged.
 - **Scope:** faithful restore of the original Preferences "Gamepad" tab and the
   axis→command control loop.
-- **One deliberate divergence:** the original per-axis "configure" buttons
-  (`jsConf1–4`) and "reset config" button used `QGamepadManager::configureAxis()`
-  (Qt runtime axis calibration), which has **no SDL3 equivalent**. These buttons
-  are **removed**. SDL3's built-in controller-mapping database auto-maps known
-  gamepads; the existing min/max calibration boxes (`jsMinBox`/`jsMaxBox`) still
-  provide manual range scaling. Everything else in the tab is restored 1:1.
+- **Full fidelity (updated 2026-05-19):** the original per-axis "configure"
+  buttons (`jsConf1–4`) and "reset config" button are **restored**, including
+  their behavior. The original used `QGamepadManager::configureAxis()` (click,
+  then move a physical control to bind it to a logical axis). SDL3 has no such
+  call, so the SDL3 backend implements equivalent **axis remapping** itself: a
+  logical→physical axis override map applied by the axis getters,
+  `startConfigureAxis(k)` (snapshot raw axes, then the poll loop binds the next
+  deflected raw joystick axis), and `resetConfiguration()` (clear the map).
+  Bindings persist in settings. The whole Gamepad tab is restored 1:1.
 
 ## Architecture
 
