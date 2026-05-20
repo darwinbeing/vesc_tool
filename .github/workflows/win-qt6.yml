@@ -82,12 +82,25 @@ jobs:
           workflow: firmware.yml
           workflow_conclusion: success
           search_artifacts: true
+      - name: Install SDL3
+        shell: pwsh
+        run: |
+          # Use the official SDL3 VC dev release (ships SDL3Config.cmake +
+          # SDL3.dll); faster/more reliable than building via vcpkg.
+          $ver = "3.2.10"
+          $url = "https://github.com/libsdl-org/SDL/releases/download/release-$ver/SDL3-devel-$ver-VC.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\sdl3.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\sdl3.zip" -DestinationPath "$env:RUNNER_TEMP\sdl3" -Force
+          $sdl3root = "$env:RUNNER_TEMP\sdl3\SDL3-$ver"
+          echo "SDL3_ROOT=$sdl3root" >> $env:GITHUB_ENV
+          echo "CMAKE_PREFIX_PATH=$sdl3root" >> $env:GITHUB_ENV
       - name: Configure
         shell: bash
         run: |
           mkdir -p res/firmwares
           cp -rv "${FW_TMP_DIR}"/* res/firmwares/ || true
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
       - name: Build
         shell: bash
         # qrc_res.cpp compilation is memory-heavy; cap parallelism to 2 to keep
@@ -101,6 +114,7 @@ jobs:
           $exe = Get-ChildItem -Path build -Filter "vesc_tool*.exe" -Recurse | Select-Object -First 1
           Copy-Item $exe.FullName (Join-Path $stage "VESC_Tool.exe")
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --qmldir mobile (Join-Path $stage "VESC_Tool.exe")
+          Copy-Item "$env:SDL3_ROOT\lib\x64\SDL3.dll" $stage
           Compress-Archive -Path "$stage\*" -DestinationPath "$stage.zip"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2

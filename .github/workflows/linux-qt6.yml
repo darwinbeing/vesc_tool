@@ -75,6 +75,18 @@ jobs:
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
+      - name: Install SDL3
+        run: |
+          set -e
+          # ubuntu-22.04 has no libsdl3 package; build a pinned release so
+          # find_package(SDL3) resolves.
+          SDL3_VER=3.2.10
+          curl -fLs -o /tmp/sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VER}/SDL3-${SDL3_VER}.tar.gz
+          tar -xzf /tmp/sdl3.tar.gz -C /tmp
+          cmake -S /tmp/SDL3-${SDL3_VER} -B /tmp/sdl3-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build /tmp/sdl3-build --parallel
+          sudo cmake --install /tmp/sdl3-build
+          sudo ldconfig
       - name: Create TMP Dir
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
@@ -115,6 +127,11 @@ jobs:
             printf '\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82' \
               > AppDir/usr/share/icons/hicolor/256x256/apps/vesc_tool.png
           fi
+          # Bundle SDL3 explicitly so linuxdeploy picks it up (it is a direct
+          # dependency of the binary, but stage it to be safe).
+          mkdir -p AppDir/usr/lib
+          cp -L /usr/local/lib/libSDL3.so* AppDir/usr/lib/ 2>/dev/null || true
+          cp -L /usr/local/lib/x86_64-linux-gnu/libSDL3.so* AppDir/usr/lib/ 2>/dev/null || true
           # Run linuxdeploy with the Qt plugin
           curl -fLs -o linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
           curl -fLs -o linuxdeploy-plugin-qt https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage

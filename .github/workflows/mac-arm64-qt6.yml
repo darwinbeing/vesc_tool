@@ -91,6 +91,20 @@ jobs:
           search_artifacts: true
       - name: Install Ninja
         run: brew install ninja
+      - name: Install SDL3
+        # macos-15 runners are Apple Silicon; build SDL3 for arm64 so it
+        # links/bundles for the arm64 target.
+        run: |
+          set -e
+          SDL3_VER=3.2.10
+          curl -fLs -o /tmp/sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VER}/SDL3-${SDL3_VER}.tar.gz
+          tar -xzf /tmp/sdl3.tar.gz -C /tmp
+          cmake -S /tmp/SDL3-${SDL3_VER} -B /tmp/sdl3-build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build /tmp/sdl3-build --parallel
+          sudo cmake --install /tmp/sdl3-build
       - name: Configure
         run: |
           mkdir -p res/firmwares
@@ -104,7 +118,19 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Package DMG
         run: |
-          "$QT_ROOT_DIR/bin/macdeployqt" "build/VESC Tool.app" -qmldir=mobile -dmg
+          APP="build/VESC Tool.app"
+          BIN="$APP/Contents/MacOS/VESC Tool"
+          # Bundle the SDL3 dylib and repoint the binary at it BEFORE macdeployqt
+          # (macdeployqt then relocates/signs the copy under Frameworks).
+          mkdir -p "$APP/Contents/Frameworks"
+          SDL3_DYLIB=$(ls /usr/local/lib/libSDL3.*.dylib | head -1)
+          SDL3_BASE=$(basename "$SDL3_DYLIB")
+          cp -L "$SDL3_DYLIB" "$APP/Contents/Frameworks/"
+          OLD_REF=$(otool -L "$BIN" | awk '/libSDL3/{print $1; exit}')
+          if [ -n "$OLD_REF" ]; then
+            install_name_tool -change "$OLD_REF" "@executable_path/../Frameworks/$SDL3_BASE" "$BIN"
+          fi
+          "$QT_ROOT_DIR/bin/macdeployqt" "$APP" -qmldir=mobile -dmg
           mv "build/VESC Tool.dmg" "VESC_Tool-${PACKAGE_VERSION}-mac-arm64-qt6.dmg"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
