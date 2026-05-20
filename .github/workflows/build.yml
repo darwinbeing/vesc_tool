@@ -26,6 +26,16 @@ jobs:
           target: desktop
           arch: linux_gcc_64
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+      - name: Install SDL3
+        run: |
+          set -e
+          SDL3_VER=3.2.10
+          curl -fLs -o /tmp/sdl3.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-${SDL3_VER}/SDL3-${SDL3_VER}.tar.gz
+          tar -xzf /tmp/sdl3.tar.gz -C /tmp
+          cmake -S /tmp/SDL3-${SDL3_VER} -B /tmp/sdl3-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local
+          cmake --build /tmp/sdl3-build --parallel
+          sudo cmake --install /tmp/sdl3-build
+          sudo ldconfig
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Build
@@ -45,6 +55,14 @@ jobs:
           modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Enable MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install SDL3
+        shell: pwsh
+        run: |
+          $ver = "3.2.10"
+          $url = "https://github.com/libsdl-org/SDL/releases/download/release-$ver/SDL3-devel-$ver-VC.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:RUNNER_TEMP\sdl3.zip"
+          Expand-Archive -Path "$env:RUNNER_TEMP\sdl3.zip" -DestinationPath "$env:RUNNER_TEMP\sdl3" -Force
+          echo "CMAKE_PREFIX_PATH=$env:RUNNER_TEMP\sdl3\SDL3-$ver" >> $env:GITHUB_ENV
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
       - name: Build
