@@ -130,8 +130,14 @@ jobs:
           if [ -n "$OLD_REF" ]; then
             install_name_tool -change "$OLD_REF" "@executable_path/../Frameworks/$SDL3_BASE" "$BIN"
           fi
-          "$QT_ROOT_DIR/bin/macdeployqt" "$APP" -qmldir=mobile -dmg
-          mv "build/VESC Tool.dmg" "VESC_Tool-${PACKAGE_VERSION}-mac-arm64-qt6.dmg"
+          "$QT_ROOT_DIR/bin/macdeployqt" "$APP" -qmldir=mobile
+          # Drag-to-install layout: app + /Applications symlink (matches the Qt5 DMGs).
+          STAGE=dmgroot
+          rm -rf "$STAGE"; mkdir -p "$STAGE"
+          cp -R "$APP" "$STAGE/"
+          ln -s /Applications "$STAGE/Applications"
+          hdiutil create -volname "VESC Tool" -srcfolder "$STAGE" -ov -format UDZO -fs HFS+ \
+            -o "VESC_Tool-${PACKAGE_VERSION}-mac-arm64-qt6.dmg"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
