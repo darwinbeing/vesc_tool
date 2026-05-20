@@ -163,3 +163,47 @@ jobs:
           workflow: iOS
           token: ${{ secrets.GITHUB_TOKEN }}
           inputs: '{ "vt_ver": "${{ inputs.vt_ver }}", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+
+      # ----- Qt6 builds (from the qt6-port branch; same firmware + release) -----
+      - name: Invoke workflow Linux-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Linux-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow Windows-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Windows-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow macOS-x86_64-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: macOS-x86_64-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow macOS-arm64-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: macOS-arm64-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow macOS-universal-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: macOS-universal-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow Android-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: Android-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
+      - name: Invoke workflow iOS-qt6
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: iOS-qt6
+          token: ${{ secrets.GITHUB_TOKEN }}
+          inputs: '{ "vt_ver": "qt6-port", "fw_ver": "${{ inputs.fw_ver }}", "prerelease": "${{ inputs.prerelease }}", "release_notes": ${{ toJSON(inputs.release_notes) }} }'
