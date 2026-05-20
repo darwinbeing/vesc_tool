@@ -117,17 +117,21 @@ jobs:
             -DANDROID_NDK=$ANDROID_NDK_ROOT
       - name: Build (parallelism capped to avoid OOM)
         run: cmake --build build --parallel 2
-      - name: Locate APK and rename
+      - name: Locate APK and zip
         run: |
           APK=$(find build -path '*/android-build/*' -name '*.apk' | head -1)
           test -n "$APK"
-          cp "$APK" "VESC_Tool-${PACKAGE_VERSION}-android-qt6.apk"
+          # Match the Qt5 Android artifact convention (a .zip containing the APK).
+          # Qt6 Android is mobile-only (USE_MOBILE), so there is a single APK.
+          cp "$APK" vesc_tool_mobile.apk
+          zip "VESC_Tool-${PACKAGE_VERSION}-android-qt6.zip" vesc_tool_mobile.apk
+          rm -f vesc_tool_mobile.apk
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.apk
-          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.apk
+          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.zip
+          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.zip
           tag: ${{ steps.GetVersion.outputs.VERSION }}
           release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
           overwrite: true
