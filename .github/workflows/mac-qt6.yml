@@ -78,7 +78,7 @@ jobs:
         # macOS 14+ SDKs removed AGL → link error on macos-15 runners.
         # AGL hasn't been needed by Qt for years; drop the dead string.
         run: |
-          F="$Qt6_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
+          F="$QT_ROOT_DIR/lib/cmake/Qt6/FindWrapOpenGL.cmake"
           sed -i.bak 's/"-framework AGL"/""/' "$F"
           grep -n AGL "$F" || true
       - name: Create TMP Dir
@@ -110,7 +110,7 @@ jobs:
         run: cmake --build build --parallel 2
       - name: Package DMG
         run: |
-          "$Qt6_DIR/bin/macdeployqt" "build/VESC Tool.app" -qmldir=mobile -dmg
+          "$QT_ROOT_DIR/bin/macdeployqt" "build/VESC Tool.app" -qmldir=mobile -dmg
           mv "build/VESC Tool.dmg" "VESC_Tool-${PACKAGE_VERSION}-mac-qt6.dmg"
       - name: Upload Release
         uses: svenstaro/upload-release-action@v2
