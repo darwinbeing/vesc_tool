@@ -1,0 +1,113 @@
+name: Windows-qt6
+
+on:
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool branch/tag"
+        required: true
+        default: "qt6-port"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      release_notes:
+        description: "Release Notes"
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.vt_ver }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Checkout Workflow Scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .workflow-src
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          CUSTOM_RELEASE_NOTES: ${{ inputs.release_notes }}
+        id: GetVersion
+        shell: bash
+        run: |
+          VT_VERSION=$(grep -m1 'set(VT_VERSION' CMakeLists.txt | sed 's/.*set(VT_VERSION //; s/).*//')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          export VT_VERSION
+          export PRERELEASE="${{ inputs.prerelease }}"
+          bash .workflow-src/.github/scripts/generate_release_notes.sh
+      - name: Install Qt 6.8.3 (Windows MSVC)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.3
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          cache: 'true'
+          cache-key-prefix: install-qt-action-qt6
+      - name: Enable MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Create TMP Dir
+        id: mktemp
+        shell: bash
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir -p res/firmwares
+          cp -rv "${FW_TMP_DIR}"/* res/firmwares/ || true
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        shell: bash
+        # qrc_res.cpp compilation is memory-heavy; cap parallelism to 2 to keep
+        # peak RSS under the 16 GB windows runner ceiling.
+        run: cmake --build build --parallel 2
+      - name: Package (windeployqt + zip)
+        shell: pwsh
+        run: |
+          $stage = "VESC_Tool-$env:PACKAGE_VERSION-qt6"
+          New-Item -ItemType Directory -Path $stage | Out-Null
+          $exe = Get-ChildItem -Path build -Filter "vesc_tool*.exe" -Recurse | Select-Object -First 1
+          Copy-Item $exe.FullName (Join-Path $stage "VESC_Tool.exe")
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --qmldir mobile (Join-Path $stage "VESC_Tool.exe")
+          Compress-Archive -Path "$stage\*" -DestinationPath "$stage.zip"
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-qt6.zip
+          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-win-qt6.zip
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}

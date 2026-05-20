@@ -1,0 +1,133 @@
+name: Android-qt6
+
+on:
+  workflow_dispatch:
+    inputs:
+      vt_ver:
+        description: "VESC Tool branch/tag"
+        required: true
+        default: "qt6-port"
+        type: string
+      fw_ver:
+        description: "Firmware Version"
+        required: true
+        default: "master"
+        type: string
+      release_notes:
+        description: "Release Notes"
+        required: false
+        default: ""
+        type: string
+      prerelease:
+        description: "Release as Prerelease"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.vt_ver }}
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Checkout Workflow Scripts
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .workflow-src
+      - name: Setup
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
+          CUSTOM_RELEASE_NOTES: ${{ inputs.release_notes }}
+        id: GetVersion
+        shell: bash
+        run: |
+          VT_VERSION=$(grep -m1 'set(VT_VERSION' CMakeLists.txt | sed 's/.*set(VT_VERSION //; s/).*//')
+          echo "VERSION=${VT_VERSION}" >> $GITHUB_OUTPUT
+          echo "PACKAGE_VERSION=${VT_VERSION}" >> $GITHUB_ENV
+          export VT_VERSION
+          export PRERELEASE="${{ inputs.prerelease }}"
+          bash .workflow-src/.github/scripts/generate_release_notes.sh
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Android NDK 26.1.10909125 (Qt 6.8 requirement)
+        run: |
+          set -e
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "ndk;26.1.10909125" "platforms;android-34" "build-tools;34.0.0"
+          echo "ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/26.1.10909125" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (host linux desktop, for androiddeployqt)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.3
+          host: linux
+          target: desktop
+          arch: linux_gcc_64
+          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          cache: 'true'
+          cache-key-prefix: install-qt-action-qt6
+      - name: Capture host Qt path
+        run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
+      - name: Install Qt 6.8.3 (Android arm64)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: 6.8.3
+          host: linux
+          target: android
+          arch: android_arm64_v8a
+          modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          cache: 'true'
+          cache-key-prefix: install-qt-action-qt6-android
+      - name: Create TMP Dir
+        id: mktemp
+        run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
+      - name: Download FW Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: firmware-${{ inputs.fw_ver }}
+          path: ${{ env.FW_TMP_DIR }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: darwinbeing/bldc
+          workflow: firmware.yml
+          workflow_conclusion: success
+          search_artifacts: true
+      - name: Configure
+        run: |
+          mkdir -p res/firmwares
+          cp -rv "${FW_TMP_DIR}"/* res/firmwares/ || true
+          cmake -S . -B build \
+            -DCMAKE_TOOLCHAIN_FILE=$QT_ROOT_DIR/lib/cmake/Qt6/qt.toolchain.cmake \
+            -DQT_HOST_PATH=$QT_HOST_PATH \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-23 \
+            -DANDROID_SDK_ROOT=$ANDROID_SDK_ROOT \
+            -DANDROID_NDK=$ANDROID_NDK_ROOT
+      - name: Build (parallelism capped to avoid OOM)
+        run: cmake --build build --parallel 2
+      - name: Locate APK and rename
+        run: |
+          APK=$(find build -path '*/android-build/*' -name '*.apk' | head -1)
+          test -n "$APK"
+          cp "$APK" "VESC_Tool-${PACKAGE_VERSION}-android-qt6.apk"
+      - name: Upload Release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.apk
+          asset_name: VESC_Tool-${{ steps.GetVersion.outputs.VERSION }}-android-qt6.apk
+          tag: ${{ steps.GetVersion.outputs.VERSION }}
+          release_name: Release ${{ steps.GetVersion.outputs.VERSION }}
+          overwrite: true
+          prerelease: ${{ inputs.prerelease }}
