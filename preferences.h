@@ -38,6 +38,10 @@
 #include "widgets/adcmap.h"
 #include "widgets/aspectimglabel.h"
 
+#ifdef HAS_GAMEPAD
+#include "gamepad.h"
+#endif
+
 #include "vescinterface.h"
 
 namespace Ui {
@@ -54,6 +58,9 @@ public:
 
     VescInterface *vesc() const;
     void setVesc(VescInterface *vesc);
+    void setUseGamepadControl(bool useControl);
+    bool isUsingGamepadControl();
+
 protected:
     void closeEvent(QCloseEvent *event);
     void showEvent(QShowEvent *event);
@@ -62,6 +69,8 @@ private slots:
     void timerSlot();
     void on_uiScaleBox_valueChanged(double arg1);
     void on_uiPlotWidthBox_valueChanged(double arg1);
+    void on_jsScanButton_clicked();
+    void on_jsConnectButton_clicked();
     void on_loadQmlUiConnectBox_toggled(bool checked);
     void on_qmlUiAskBox_toggled(bool checked);
     void on_pathRtLogChooseButton_clicked();
@@ -89,6 +98,11 @@ private:
     VescInterface *mVesc;
     QSettings mSettings;
     QTimer *mTimer;
+
+#ifdef HAS_GAMEPAD
+    Gamepad *mGamepad;
+    bool mUseGamepadControl;
+#endif
 
     double mLastScaling;
     bool mLastIsDark;
