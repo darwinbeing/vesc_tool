@@ -25,13 +25,17 @@ SDL3 linked + bundled, and mobile / Qt5-upstream are untouched.
 - **Packaging** — `build_macos_cmake.sh` bundles `libSDL3.0.dylib` into the
   `.app`; the 5 desktop CI workflows install SDL3 and bundle its runtime.
 
-## Deliberate divergence
+## Full fidelity (updated)
 
-The original per-axis "configure" buttons (`jsConf1–4`) and "reset config" button
-used `QGamepadManager::configureAxis()` (Qt runtime axis calibration), which has
-no SDL3 equivalent. **These buttons were removed.** SDL3's built-in
-controller-mapping database auto-maps known gamepads; the existing min/max boxes
-still provide manual range scaling.
+Initially the per-axis "configure" buttons (`jsConf1–4`) and "reset config"
+button were dropped (Qt6 has no `QGamepadManager::configureAxis()`). Per the
+user's "this is a port — keep it consistent with the original" directive, they
+were **fully restored**: the SDL3 `Gamepad` backend now implements equivalent
+axis remapping — a logical→physical axis override map applied by the axis
+getters, `startConfigureAxis(k)` (click, then move a control → the next deflected
+raw joystick axis binds, matching the old UX), and `resetConfiguration()`.
+Bindings persist as `js_axis_map`. The entire original Gamepad tab is restored
+1:1. Verified building on all 4 platforms (run 26140928453).
 
 ## CI verification (all green)
 
