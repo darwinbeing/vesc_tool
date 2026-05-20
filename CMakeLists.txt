@@ -31,6 +31,11 @@ if(NOT ANDROID AND NOT IOS)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS PrintSupport SerialPort)
 endif()
 
+# Gamepad support via SDL3 — desktop only (matches original !android !ios).
+if(NOT ANDROID AND NOT IOS)
+    find_package(SDL3 CONFIG REQUIRED)
+endif()
+
 # QOpenGLWidget moved to the OpenGLWidgets module in Qt6.
 if(QT_VERSION_MAJOR EQUAL 6)
     find_package(Qt6 REQUIRED COMPONENTS OpenGL OpenGLWidgets)
@@ -89,6 +94,11 @@ target_compile_definitions(vesc_tool PRIVATE
 # Serial port is desktop-only (not Android/iOS).
 if(NOT ANDROID AND NOT IOS)
     target_compile_definitions(vesc_tool PRIVATE HAS_SERIALPORT)
+endif()
+
+# Gamepad support is desktop-only.
+if(NOT ANDROID AND NOT IOS)
+    target_compile_definitions(vesc_tool PRIVATE HAS_GAMEPAD)
 endif()
 
 # Positioning is not used on Windows (matches the original vesc_tool.pro: !win32).
@@ -171,6 +181,11 @@ if(NOT ANDROID AND NOT IOS)
         Qt${QT_VERSION_MAJOR}::PrintSupport
         Qt${QT_VERSION_MAJOR}::SerialPort
     )
+endif()
+
+# SDL3 gamepad is desktop-only.
+if(NOT ANDROID AND NOT IOS)
+    target_link_libraries(vesc_tool PRIVATE SDL3::SDL3)
 endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
