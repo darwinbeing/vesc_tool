@@ -1,0 +1,553 @@
+diff --git a/android/build.gradle b/android/build.gradle
+index d35d2a9..b1cc61e 100644
+--- a/android/build.gradle
++++ b/android/build.gradle
+@@ -5,7 +5,7 @@ buildscript {
+     }
+ 
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:3.2.0'
++        classpath 'com.android.tools.build:gradle:7.2.2'
+     }
+ }
+ 
+@@ -17,7 +17,7 @@ repositories {
+ apply plugin: 'com.android.application'
+ 
+ dependencies {
+-    compile fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
++    implementation fileTree(dir: 'libs', include: ['*.jar', '*.aar'])
+ }
+ 
+ android {
+diff --git a/android/gradle/wrapper/gradle-wrapper.properties b/android/gradle/wrapper/gradle-wrapper.properties
+index bf3de21..92f06b5 100644
+--- a/android/gradle/wrapper/gradle-wrapper.properties
++++ b/android/gradle/wrapper/gradle-wrapper.properties
+@@ -1,5 +1,5 @@
+ distributionBase=GRADLE_USER_HOME
+ distributionPath=wrapper/dists
+-distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-bin.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-7.4.2-all.zip
+ zipStoreBase=GRADLE_USER_HOME
+ zipStorePath=wrapper/dists
+diff --git a/esp32/esp_loader.h b/esp32/esp_loader.h
+index 0dcdabb..39595df 100644
+--- a/esp32/esp_loader.h
++++ b/esp32/esp_loader.h
+@@ -116,10 +116,7 @@ typedef struct {
+                                100 millisecond delay is inserted after each try. */
+ } esp_loader_connect_args_t;
+ 
+-#define ESP_LOADER_CONNECT_DEFAULT() { \
+-  .sync_timeout = 100, \
+-  .trials = 10, \
+-}
++#define ESP_LOADER_CONNECT_DEFAULT() {100, 10}
+ 
+ /**
+   * @brief Connects to the target
+diff --git a/esp32/protocol.h b/esp32/protocol.h
+index 823f909..d5b6698 100644
+--- a/esp32/protocol.h
++++ b/esp32/protocol.h
+@@ -54,7 +54,9 @@ extern "C" {
+ #define MAX_RESP_DATA_SIZE 64
+ #define READ_FLASH_ROM_DATA_SIZE 64
+ 
+-typedef enum __attribute__((packed))
++#pragma pack(push, 1)
++
++typedef enum
+ {
+     FLASH_BEGIN = 0x02,
+     FLASH_DATA = 0x03,
+@@ -79,7 +81,7 @@ typedef enum __attribute__((packed))
+     READ_FLASH_STUB = 0xd2,
+ } command_t;
+ 
+-typedef enum __attribute__((packed))
++typedef enum
+ {
+     RESPONSE_OK     = 0x00,
+     INVALID_COMMAND = 0x05, // parameters or length field is invalid
+@@ -103,7 +105,7 @@ typedef enum __attribute__((packed))
+     STUB_CMD_NOT_IMPLEMENTED = 0xFF,
+ } error_code_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -111,7 +113,7 @@ typedef struct __attribute__((packed))
+     uint32_t checksum;
+ } command_common_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t erase_size;
+@@ -121,7 +123,7 @@ typedef struct __attribute__((packed))
+     uint32_t encrypted;
+ } flash_begin_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t data_size;
+@@ -130,20 +132,20 @@ typedef struct __attribute__((packed))
+     uint32_t zero_1;
+ } data_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+ } flash_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+     uint32_t size;
+ } flash_read_rom_cmd;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -152,19 +154,19 @@ typedef struct __attribute__((packed))
+     uint32_t max_inflight_packets;
+ } flash_read_stub_cmd;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+ } flash_erase_chip_cmd;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t offset;
+     uint32_t size;
+ } flash_erase_region_cmd;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t total_size;
+@@ -173,20 +175,20 @@ typedef struct __attribute__((packed))
+     uint32_t offset;
+ } mem_begin_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+     uint32_t entry_point_address;
+ } mem_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint8_t sync_sequence[36];
+ } sync_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -195,27 +197,27 @@ typedef struct __attribute__((packed))
+     uint32_t delay_us;
+ } write_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+ } read_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t configuration;
+     uint32_t zero; // ESP32 ROM only
+ } spi_attach_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t new_baudrate;
+     uint32_t old_baudrate;
+ } change_baudrate_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -224,12 +226,12 @@ typedef struct __attribute__((packed))
+     uint32_t reserved_1;
+ } spi_flash_md5_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+ } get_security_info_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -237,13 +239,13 @@ typedef struct __attribute__((packed))
+     uint32_t value;
+ } common_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t failed;
+     uint8_t error;
+ } response_status_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t id;
+@@ -266,7 +268,7 @@ typedef struct __attribute__((packed))
+ #define GET_SECURITY_INFO_DIS_DOWNLOAD_DCACHE (1 << 9)
+ #define GET_SECURITY_INFO_DIS_DOWNLOAD_ICACHE (1 << 10)
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint32_t flags;
+     uint8_t flash_crypt_cnt;
+@@ -331,6 +333,8 @@ esp_loader_error_t loader_change_baudrate_cmd(uint32_t new_baudrate, uint32_t ol
+ 
+ #endif /* SERIAL_FLASHER_INTERFACE_SDIO */
+ 
++#pragma pack(pop)
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/esp32/protocol_serial.c b/esp32/protocol_serial.c
+index 6590d28..aebe8b9 100644
+--- a/esp32/protocol_serial.c
++++ b/esp32/protocol_serial.c
+@@ -570,7 +570,9 @@ esp_loader_error_t loader_get_security_info_cmd(get_security_info_response_data_
+ }
+ 
+ 
++#if defined(__GNUC__) || defined(__clang__)
+ __attribute__ ((weak)) void loader_port_debug_print(const char *str)
+ {
+     (void) str;
+ }
++#endif
+diff --git a/esp32/serial_comm_prv.h b/esp32/serial_comm_prv.h
+index 4d21fcd..603db59 100644
+--- a/esp32/serial_comm_prv.h
++++ b/esp32/serial_comm_prv.h
+@@ -30,7 +30,8 @@ extern "C" {
+ 
+ #define MD5_SIZE 32
+ 
+-typedef enum __attribute__((packed))
++#pragma pack(push, 1)
++typedef enum
+ {
+     FLASH_BEGIN = 0x02,
+     FLASH_DATA  = 0x03,
+@@ -51,7 +52,7 @@ typedef enum __attribute__((packed))
+     SPI_FLASH_MD5    = 0x13,
+ } command_t;
+ 
+-typedef enum __attribute__((packed))
++typedef enum
+ {
+     RESPONSE_OK     = 0x00,
+     INVALID_COMMAND = 0x05, // parameters or length field is invalid
+@@ -63,7 +64,7 @@ typedef enum __attribute__((packed))
+     DEFLATE_ERROR   = 0x0b, // ESP32 compressed uploads only
+ } error_code_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -71,7 +72,7 @@ typedef struct __attribute__((packed))
+     uint32_t checksum;
+ } command_common_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t erase_size;
+@@ -81,7 +82,7 @@ typedef struct __attribute__((packed))
+     uint32_t encrypted;
+ } begin_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t data_size;
+@@ -90,26 +91,26 @@ typedef struct __attribute__((packed))
+     uint32_t zero_1;
+ } data_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+ } flash_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t stay_in_loader;
+     uint32_t entry_point_address;
+ } mem_end_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint8_t sync_sequence[36];
+ } sync_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -118,27 +119,27 @@ typedef struct __attribute__((packed))
+     uint32_t delay_us;
+ } write_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+ } read_reg_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t configuration;
+     uint32_t zero; // ESP32 ROM only
+ } spi_attach_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t new_baudrate;
+     uint32_t old_baudrate;
+ } change_baudrate_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t address;
+@@ -147,7 +148,7 @@ typedef struct __attribute__((packed))
+     uint32_t reserved_1;
+ } spi_flash_md5_command_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t direction;
+     uint8_t command;    // One of command_t
+@@ -155,26 +156,26 @@ typedef struct __attribute__((packed))
+     uint32_t value;
+ } common_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     uint8_t failed;
+     uint8_t error;
+ } response_status_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     response_status_t status;
+ } response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     common_response_t common;
+     uint8_t md5[MD5_SIZE];     // ROM only
+     response_status_t status;
+ } rom_md5_response_t;
+ 
+-typedef struct __attribute__((packed))
++typedef struct
+ {
+     command_common_t common;
+     uint32_t id;
+@@ -184,7 +185,7 @@ typedef struct __attribute__((packed))
+     uint32_t page_size;
+     uint32_t status_mask;
+ } write_spi_command_t;
+-
++#pragma pack(pop)
+ 
+ #ifdef __cplusplus
+ }
+diff --git a/ios/src/setIosParameters.h b/ios/src/setIosParameters.h
+index ba077f5..4b83dea 100644
+--- a/ios/src/setIosParameters.h
++++ b/ios/src/setIosParameters.h
+@@ -1,10 +1,8 @@
+ #ifndef SETIOSPARAMETERS_H
+ #define SETIOSPARAMETERS_H
+-#include <QObject>
+-#include <QApplication>
++#include <QtGlobal>
+ #ifdef Q_OS_IOS
+-class SetIosParams : public QObject{
+-  Q_OBJECT
++class SetIosParams {
+ public:
+   SetIosParams();
+   void NoSleep();
+diff --git a/mainwindow.cpp b/mainwindow.cpp
+index 6a9f762..1344b18 100755
+--- a/mainwindow.cpp
++++ b/mainwindow.cpp
+@@ -1294,6 +1294,9 @@ void MainWindow::on_actionLaunchMobileTool_triggered()
+     qApp->quit();
+     QProcess::startDetached(program, params);
+ }
++#else
++void MainWindow::on_actionLaunchBoardConfigurator_triggered() {}
++void MainWindow::on_actionLaunchMobileTool_triggered() {}
+ #endif
+ 
+ void MainWindow::on_actionAbout_triggered()
+diff --git a/mainwindow.h b/mainwindow.h
+index efd3c8e..782add8 100644
+--- a/mainwindow.h
++++ b/mainwindow.h
+@@ -117,10 +117,8 @@ private slots:
+     void on_actionSaveAppconfXml_triggered();
+     void on_actionLoadAppconfXml_triggered();
+     void on_actionExit_triggered();
+-    #ifndef Q_OS_IOS
+     void on_actionLaunchBoardConfigurator_triggered();
+     void on_actionLaunchMobileTool_triggered();
+-    #endif
+     void on_actionAbout_triggered();
+     void on_actionLibrariesUsed_triggered();
+     void on_dutyButton_clicked();
+@@ -162,7 +160,7 @@ private slots:
+     void on_actionRestoreConfigurationsCAN_triggered();
+     void on_scanCanButton_clicked();
+     void on_canList_currentRowChanged(int currentRow);
+-    void on_actionGamepadControl_triggered(bool checked);   
++    void on_actionGamepadControl_triggered(bool checked);
+     void on_actionPreferences_triggered();
+     void on_actionRestartLispBM_triggered();
+     void on_actionRemoveDownloadedConfigs_triggered();
+diff --git a/pages/pagecananalyzer.h b/pages/pagecananalyzer.h
+index be5d9a5..75d2001 100644
+--- a/pages/pagecananalyzer.h
++++ b/pages/pagecananalyzer.h
+@@ -21,6 +21,7 @@
+ #define PAGECANANALYZER_H
+ 
+ #include <QWidget>
++#include <QMessageBox>
+ #include "vescinterface.h"
+ #include "widgets/paramtable.h"
+ 
+diff --git a/vesc_tool.pro b/vesc_tool.pro
+index 117200f..887c3e4 100644
+--- a/vesc_tool.pro
++++ b/vesc_tool.pro
+@@ -81,10 +81,11 @@ DEFINES += HAS_BLUETOOTH
+ 
+ !ios: {
+     QT      += printsupport
++    DEFINES += HAS_SERIALPORT
+ !android: {
+     # Serial port available
+-    DEFINES += HAS_SERIALPORT
+     DEFINES += HAS_GAMEPAD
++    DEFINES += HAS_CANBUS
+ }
+ }
+ 
+@@ -181,9 +182,6 @@ release_win {
+ }
+ 
+ release_lin {
+-    # http://micro.nicholaswilson.me.uk/post/31855915892/rules-of-static-linking-libstdc-libc-libgcc
+-    # http://insanecoding.blogspot.se/2012/07/creating-portable-linux-binaries.html
+-    QMAKE_LFLAGS += -static-libstdc++ -static-libgcc
+     DESTDIR = build/lin
+     OBJECTS_DIR = build/lin/obj
+     MOC_DIR = build/lin/obj
+@@ -336,7 +334,7 @@ DISTFILES += \
+ ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+ 
+ macx-clang:contains(QMAKE_HOST.arch, arm.*): {
+-    QMAKE_APPLE_DEVICE_ARCHS=arm64
++    # QMAKE_APPLE_DEVICE_ARCHS=arm64
+ }
+ 
+ macx {
+@@ -347,7 +345,7 @@ macx {
+     QMAKE_CXXFLAGS_RELEASE = $$QMAKE_CXXFLAGS_RELEASE_WITH_DEBUGINFO
+     QMAKE_OBJECTIVE_CFLAGS_RELEASE = $$QMAKE_OBJECTIVE_CFLAGS_RELEASE_WITH_DEBUGINFO
+     QMAKE_LFLAGS_RELEASE = $$QMAKE_LFLAGS_RELEASE_WITH_DEBUGINFO
+-    QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
++    # QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+ }
+ 
+ ios {
+diff --git a/widgets/mtextedit.cpp b/widgets/mtextedit.cpp
+index b30be1d..b921b00 100644
+--- a/widgets/mtextedit.cpp
++++ b/widgets/mtextedit.cpp
+@@ -22,7 +22,7 @@
+ #include <QTextCursor>
+ #include <QImage>
+ #include <QByteArray>
+-#include <QBuffer>
++#include <QtCore/QBuffer>
+ #include <stdlib.h>
+ #include <QInputDialog>
+ 

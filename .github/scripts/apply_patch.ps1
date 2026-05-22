@@ -21,7 +21,8 @@ if ($env:VT_VER -match '^\d+\.\d+$') {
 $PatchFile = Join-Path $PatchRoot "$PatchVersion/vesc_tool.patch"
 
 if (-not (Test-Path $PatchFile)) {
-    throw "Patch file not found: $PatchFile"
+    Write-Host "No patch for version '$PatchVersion' ($PatchFile); building upstream source unpatched."
+    exit 0
 }
 
 Write-Host "Applying patch: $PatchFile"

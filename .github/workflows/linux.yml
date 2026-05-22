@@ -103,7 +103,6 @@ jobs:
           bash .workflow-src/.github/scripts/overlay_files.sh
         shell: bash
       - name: Apply Patch
-        if: ${{ inputs.vt_ver == 'master' }}
         env:
           VT_VER: ${{ inputs.vt_ver }}
           PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}

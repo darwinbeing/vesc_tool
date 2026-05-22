@@ -18,8 +18,8 @@ fi
 PATCH_FILE="${PATCH_ROOT}/${PATCH_VERSION}/vesc_tool.patch"
 
 if [[ ! -f "${PATCH_FILE}" ]]; then
-  echo "Patch file not found: ${PATCH_FILE}" >&2
-  exit 1
+  echo "No patch for version '${PATCH_VERSION}' (${PATCH_FILE}); building upstream source unpatched."
+  exit 0
 fi
 
 echo "Applying patch: ${PATCH_FILE}"
