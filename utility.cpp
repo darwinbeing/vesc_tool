@@ -1777,7 +1777,7 @@ bool Utility::configCheckCompatibility(int fwMajor, int fwMinor)
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
@@ -1802,15 +1802,15 @@ bool Utility::configLoad(VescInterface *vesc, int fwMajor, int fwMinor)
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
                     int minor = parts.at(1).toInt();
                     if (major == fwMajor && minor == fwMinor) {
-                        QFileInfo fMc(it.filePath() + "/parameters_mcconf.xml");
-                        QFileInfo fApp(it.filePath() + "/parameters_appconf.xml");
-                        QFileInfo fInfo(it.filePath() + "/info.xml");
+                        QFileInfo fMc(Utility::configPath(it.fileName() + "/parameters_mcconf.xml"));
+                        QFileInfo fApp(Utility::configPath(it.fileName() + "/parameters_appconf.xml"));
+                        QFileInfo fInfo(Utility::configPath(it.fileName() + "/info.xml"));
 
                         if (fMc.exists() && fApp.exists() && fInfo.exists()) {
                             vesc->mcConfig()->loadParamsXml(fMc.absoluteFilePath());
@@ -1860,7 +1860,7 @@ QVector<QPair<int, int> > Utility::configSupportedFws()
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
@@ -2531,10 +2531,27 @@ QString Utility::configPath(QString subPath)
         resourceLoaded = true;
     }
 
+    QString path = QString("://res/config/") + subPath;
+    QString pathDl = QString("://res/config_download/") + subPath;
+
     if (QDir("://res/config_download/").exists()) {
-        return QString("://res/config_download/") + subPath;
+        QFileInfo file(path);
+        QFileInfo fileDl(pathDl);
+
+        auto date = file.lastModified();
+        auto dateDl = fileDl.lastModified();
+
+        if (date.isValid() && dateDl.isValid()) {
+            if (date > dateDl) {
+                return path;
+            } else {
+                return pathDl;
+            }
+        } else {
+            return pathDl;
+        }
     } else {
-        return QString("://res/config/") + subPath;
+        return path;
     }
 }
 
