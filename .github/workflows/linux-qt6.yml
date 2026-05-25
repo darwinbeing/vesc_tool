@@ -72,7 +72,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
       - name: Install SDL3

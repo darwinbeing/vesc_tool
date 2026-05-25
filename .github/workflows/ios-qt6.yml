@@ -69,7 +69,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
       - name: Capture host Qt path
@@ -81,7 +81,7 @@ jobs:
           host: mac
           target: ios
           arch: ios
-          modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6-ios
       - name: Create TMP Dir

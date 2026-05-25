@@ -75,7 +75,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6
       - name: Capture host Qt path
@@ -87,7 +87,7 @@ jobs:
           host: linux
           target: android
           arch: android_arm64_v8a
-          modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
           cache: 'true'
           cache-key-prefix: install-qt-action-qt6-android
       - name: Create TMP Dir
