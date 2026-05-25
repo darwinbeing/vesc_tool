@@ -25,7 +25,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Install SDL3
         run: |
           set -e
@@ -52,7 +52,7 @@ jobs:
           host: windows
           target: desktop
           arch: win64_msvc2022_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Enable MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install SDL3
@@ -91,7 +91,7 @@ jobs:
           host: linux
           target: desktop
           arch: linux_gcc_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Capture host Qt path
         run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
       - name: Install Qt 6.8.3 (Android arm64)
@@ -101,7 +101,7 @@ jobs:
           host: linux
           target: android
           arch: android_arm64_v8a
-          modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Configure
         run: >
           cmake -S . -B build
@@ -132,7 +132,7 @@ jobs:
           host: mac
           target: desktop
           arch: clang_64
-          modules: qt5compat qtconnectivity qtserialport qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialport qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Capture host Qt path
         run: echo "QT_HOST_PATH=$QT_ROOT_DIR" >> "$GITHUB_ENV"
       - name: Install Qt 6.8.3 (iOS)
@@ -142,7 +142,7 @@ jobs:
           host: mac
           target: ios
           arch: ios
-          modules: qt5compat qtconnectivity qtpositioning qt3d qtquick3d qtshadertools qtimageformats
+          modules: qt5compat qtconnectivity qtserialbus qtpositioning qt3d qtquick3d qtshadertools qtimageformats
       - name: Configure
         run: >
           cmake -S . -B build -G Xcode

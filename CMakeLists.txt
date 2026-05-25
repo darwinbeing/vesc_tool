@@ -20,20 +20,36 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+# CAN bus support (Qt SerialBus). All platforms, mirroring vesc_tool.pro.
+# Kept behind an option because adding serialbus broke the serial port on
+# static builds in the old qmake build; disable with -DVT_ENABLE_CANBUS=OFF.
+option(VT_ENABLE_CANBUS "Enable CAN bus support (Qt SerialBus). May conflict with static builds." ON)
+
 # --- Qt (version-agnostic: prefers Qt6 if present, falls back to Qt5) ---
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core Gui Widgets Network Qml Quick QuickControls2 QuickWidgets Svg
     Bluetooth Positioning Core5Compat)
 
-# SerialPort and PrintSupport are desktop-only (no Android/iOS Qt packages).
+# PrintSupport is desktop-only.
 if(NOT ANDROID AND NOT IOS)
-    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS PrintSupport SerialPort)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS PrintSupport)
+endif()
+
+# SerialPort: enabled wherever Qt ships the module — desktop and Android.
+# Qt provides no qtserialport for iOS, so it stays off there.
+if(NOT IOS)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS SerialPort)
 endif()
 
 # Gamepad support via SDL3 — desktop only (matches original !android !ios).
 if(NOT ANDROID AND NOT IOS)
     find_package(SDL3 CONFIG REQUIRED)
+endif()
+
+# CAN bus via Qt SerialBus — all platforms (matches original vesc_tool.pro).
+if(VT_ENABLE_CANBUS)
+    find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS SerialBus)
 endif()
 
 # QOpenGLWidget moved to the OpenGLWidgets module in Qt6.
@@ -91,9 +107,15 @@ target_compile_definitions(vesc_tool PRIVATE
     VER_NEUTRAL
 )
 
-# Serial port is desktop-only (not Android/iOS).
-if(NOT ANDROID AND NOT IOS)
+# Serial port: enabled wherever Qt ships qtserialport — desktop and Android.
+# Not available on iOS.
+if(NOT IOS)
     target_compile_definitions(vesc_tool PRIVATE HAS_SERIALPORT)
+endif()
+
+# CAN bus support — all platforms (matches original vesc_tool.pro DEFINES).
+if(VT_ENABLE_CANBUS)
+    target_compile_definitions(vesc_tool PRIVATE HAS_CANBUS)
 endif()
 
 # Gamepad support is desktop-only.
@@ -180,17 +202,24 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
 )
 
-# SerialPort and PrintSupport are desktop-only.
+# PrintSupport is desktop-only.
 if(NOT ANDROID AND NOT IOS)
-    target_link_libraries(vesc_tool PRIVATE
-        Qt${QT_VERSION_MAJOR}::PrintSupport
-        Qt${QT_VERSION_MAJOR}::SerialPort
-    )
+    target_link_libraries(vesc_tool PRIVATE Qt${QT_VERSION_MAJOR}::PrintSupport)
+endif()
+
+# SerialPort: desktop and Android (not iOS).
+if(NOT IOS)
+    target_link_libraries(vesc_tool PRIVATE Qt${QT_VERSION_MAJOR}::SerialPort)
 endif()
 
 # SDL3 gamepad is desktop-only.
 if(NOT ANDROID AND NOT IOS)
     target_link_libraries(vesc_tool PRIVATE SDL3::SDL3)
+endif()
+
+# CAN bus via Qt SerialBus — all platforms.
+if(VT_ENABLE_CANBUS)
+    target_link_libraries(vesc_tool PRIVATE Qt${QT_VERSION_MAJOR}::SerialBus)
 endif()
 
 if(QT_VERSION_MAJOR EQUAL 6)
