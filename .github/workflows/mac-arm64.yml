@@ -51,7 +51,7 @@ jobs:
       fail-fast: false
       max-parallel: 6
       matrix:
-        qt: [5.15.18]
+        qt: [5.15.19]
         os: ["${{ inputs.os_ver }}"]
     steps:
       - name: Version2Ref
@@ -113,13 +113,13 @@ jobs:
           repository: "darwinbeing/qt5-macos-universal"
           token: ${{ secrets.GITHUB_TOKEN }}
           version: "1.0"
-          asset-file: 'qt-5.15.18-macos-universal.tar.gz'
+          asset-file: 'qt-5.15.19-macos-universal.tar.gz'
           asset-output: '${{ runner.temp }}/'
       - name: Extract Qt
         run: |
-          tar -xzf ${{ runner.temp }}/qt-5.15.18-macos-universal.tar.gz -C ${{ runner.temp }}/
-          echo "QT_ROOT=${{ runner.temp }}/Qt5.15.18/5.15.18/clang_64" >> $GITHUB_ENV
-          echo "${{ runner.temp }}/Qt5.15.18/5.15.18/clang_64/bin" >> $GITHUB_PATH
+          tar -xzf ${{ runner.temp }}/qt-5.15.19-macos-universal.tar.gz -C ${{ runner.temp }}/
+          echo "QT_ROOT=${{ runner.temp }}/Qt5.15.19/5.15.19/clang_64" >> $GITHUB_ENV
+          echo "${{ runner.temp }}/Qt5.15.19/5.15.19/clang_64/bin" >> $GITHUB_PATH
       - name: Create TMP Dir
         id: mktemp
         run: echo "FW_TMP_DIR=$(mktemp -d)" >> $GITHUB_ENV
