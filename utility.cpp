@@ -2591,26 +2591,31 @@ QVariantMap Utility::getSafeAreaMargins(QQuickWindow *window)
                                                   "(Landroid/content/Context;)I",
                                                   QNativeInterface::QAndroidApplication::context().object());
 
+    qreal pixelRatio = window->devicePixelRatio();
+    if (pixelRatio < 0.01) {
+        pixelRatio = 1.0;
+    }
+
     if (top > 0) {
-        map["top"] = top / window->devicePixelRatio();
+        map["top"] = (int)((qreal)top / pixelRatio);
     } else {
         map["top"] = margins.top();
     }
 
     if (bottom > 0) {
-        map["bottom"] = bottom / window->devicePixelRatio();
+        map["bottom"] = (int)((qreal)bottom / pixelRatio);
     } else {
         map["bottom"] = margins.bottom();
     }
 
     if (right > 0) {
-        map["right"] = right / window->devicePixelRatio();
+        map["right"] = (int)((qreal)right / pixelRatio);
     } else {
         map["right"] = margins.right();
     }
 
     if (left > 0) {
-        map["left"] = left / window->devicePixelRatio();
+        map["left"] = (int)((qreal)left / pixelRatio);
     } else {
         map["left"] = margins.left();
     }
