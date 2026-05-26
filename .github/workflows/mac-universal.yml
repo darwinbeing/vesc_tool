@@ -113,7 +113,7 @@ jobs:
           repository: "darwinbeing/qt5-macos-universal"
           token: ${{ secrets.GITHUB_TOKEN }}
           version: "1.0"
-          asset-file: 'qt-5.15.18-macos-universal.tar.gz'
+          asset-file: 'qt-5.15.19-macos-universal.tar.gz'
           asset-output: '${{ runner.temp }}/'
       - name: Extract Qt
         run: |
