@@ -2576,8 +2576,12 @@ QString Utility::getThemePath()
 
 QVariantMap Utility::getSafeAreaMargins(QQuickWindow *window)
 {
-    QPlatformWindow *platformWindow = static_cast<QPlatformWindow *>(window->handle());
-    QMargins margins = platformWindow->safeAreaMargins();
+    QMargins margins;
+    QPlatformWindow *platformWindow = dynamic_cast<QPlatformWindow *>(window->handle());
+    if (platformWindow) {
+        margins = platformWindow->safeAreaMargins();
+    }
+
     QVariantMap map;
 #ifdef Q_OS_ANDROID
     int top = QAndroidJniObject::callStaticMethod<jint>("com/vedder/vesc/Utils",
