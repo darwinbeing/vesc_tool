@@ -580,6 +580,7 @@ QString CodeLoader::lispRead(QWidget *parent, QString &lispPath)
         }
 
         if (mAbortDownloadUpload) {
+            disconnect(conn);
             return res;
         }
 
@@ -651,6 +652,7 @@ QString CodeLoader::lispRead(QWidget *parent, QString &lispPath)
                             if (!file.open(QIODevice::WriteOnly)) {
                                 QMessageBox::critical(parent, tr("Save Import"),
                                                       "Could not open\n" + file.fileName() + "\nfor writing");
+                                disconnect(conn);
                                 return QByteArray();
                             }
 
