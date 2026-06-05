@@ -31,33 +31,66 @@ CANListItem::CANListItem(FW_RX_PARAMS p,
     mIdLabel = new QLabel;
     mSpaceStart = new QSpacerItem(6, 0);
 
+    static QStringList vlDevs = {
+        "duet",
+        "classic",
+        "Classicp",
+        "DUET XS60",
+        "DUET XS100",
+        "Maxim_120",
+        "Maxim_150",
+        "Maxim_120_PH",
+        "Maxim_150_PH",
+        "Maximp_120",
+        "Maximp_150",
+        "Maximp_120_PH",
+        "Maximp_150_PH",
+        "Minim",
+        "Minim W60",
+        "Pronto",
+        "rmcore",
+        "duet expr",
+        "vbms16",
+        "Dash16",
+        "VL Link",
+        "Nanolog",
+        "Rmcore",
+        "VL Scope",
+        "VBMS32",
+        "VDisp 900",
+        "Wcore"
+    };
+
     QString name, icon;
     QString theme = Utility::getThemePath();
+
+    QString img = "";
+    if (vlDevs.contains(p.hw, Qt::CaseInsensitive)) {
+        img = "<img src=\"" + theme + "icons/vesc-96.png\" height = 10/> ";
+    }
+
     if (ok) {
         if (p.hwType == HW_TYPE_VESC) {
             icon = theme +"icons/motor_side.png";
             if (p.hw.contains("STORMCORE", Qt::CaseInsensitive)) {
                 name = "<p align=\"right\"> <img src=\"" + theme + "icons/stormcore-96.png\" height = 9/> " +
                         p.hw.remove("STORMCORE_");
-            } else if (p.hw.at(0).isDigit() || p.hw.contains("HD",Qt::CaseInsensitive)) {
-                name = "<img src=\"" + theme + "icons/vesc-96.png\" height = 9/>"
-                     + " " + p.hw.replace("_", " ");
             } else {
                 if (p.fwName.isEmpty()) {
-                    name = p.hw;
+                    name = img + p.hw;
                 } else {
-                    name = p.hw + "-" + p.fwName;
+                    name = img + p.hw + "-" + p.fwName;
                 }
             }
         } else if (p.hwType == HW_TYPE_VESC_BMS) {
             icon = theme +"icons/icons8-battery-100.png";
-            name = "BMS (" + p.hw + "):";
+            name = img + "BMS (" + p.hw + "):";
         } else {
-            icon = theme +"icons/Electronics-96.png";
+            icon = theme + "icons/Electronics-96.png";
             if (p.fwName.isEmpty()) {
-                name = "Device (" + p.hw + ")";
+                name = img + p.hw;
             } else {
-                name = "Device (" + p.hw + "-" + p.fwName + ")";
+                name = img + p.hw + "-" + p.fwName;
             }
         }
     } else {
@@ -96,6 +129,7 @@ void CANListItem::setName(const QString &name)
     QFont f = mNameLabel->font();
     f.setPointSize(this->font().pointSize()*0.9);
     f.setBold(true);
+    f.setStyleStrategy(QFont::PreferAntialias);
     mNameLabel->setAlignment(Qt::AlignCenter);
     mNameLabel->setFont(f);
 }
