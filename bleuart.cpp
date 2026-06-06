@@ -88,8 +88,13 @@ void BleUart::startConnect(QString addr)
             this, SLOT(serviceDiscovered(QBluetoothUuid)));
     connect(mControl, SIGNAL(discoveryFinished()),
             this, SLOT(serviceScanDone()));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(mControl, SIGNAL(errorOccurred(QLowEnergyController::Error)),
+            this, SLOT(controllerError(QLowEnergyController::Error)));
+#else
     connect(mControl, SIGNAL(error(QLowEnergyController::Error)),
             this, SLOT(controllerError(QLowEnergyController::Error)));
+#endif
     connect(mControl, SIGNAL(connected()),
             this, SLOT(deviceConnected()));
     connect(mControl, SIGNAL(disconnected()),
@@ -240,8 +245,13 @@ void BleUart::serviceScanDone()
 
         connect(mService, SIGNAL(stateChanged(QLowEnergyService::ServiceState)),
                 this, SLOT(serviceStateChanged(QLowEnergyService::ServiceState)));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        connect(mService, SIGNAL(errorOccurred(QLowEnergyService::ServiceError)),
+                this, SLOT(serviceError(QLowEnergyService::ServiceError)));
+#else
         connect(mService, SIGNAL(error(QLowEnergyService::ServiceError)),
                 this, SLOT(serviceError(QLowEnergyService::ServiceError)));
+#endif
         connect(mService, SIGNAL(characteristicChanged(QLowEnergyCharacteristic,QByteArray)),
                 this, SLOT(updateData(QLowEnergyCharacteristic,QByteArray)));
         connect(mService, SIGNAL(descriptorWritten(QLowEnergyDescriptor,QByteArray)),
@@ -384,8 +394,13 @@ void BleUart::init()
 
     connect(mDeviceDiscoveryAgent, SIGNAL(deviceDiscovered(const QBluetoothDeviceInfo&)),
             this, SLOT(addDevice(const QBluetoothDeviceInfo&)));
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(mDeviceDiscoveryAgent, SIGNAL(errorOccurred(QBluetoothDeviceDiscoveryAgent::Error)),
+            this, SLOT(deviceScanError(QBluetoothDeviceDiscoveryAgent::Error)));
+#else
     connect(mDeviceDiscoveryAgent, SIGNAL(error(QBluetoothDeviceDiscoveryAgent::Error)),
             this, SLOT(deviceScanError(QBluetoothDeviceDiscoveryAgent::Error)));
+#endif
     connect(mDeviceDiscoveryAgent, SIGNAL(finished()), this, SLOT(scanFinished()));
 
     mInitDone = true;

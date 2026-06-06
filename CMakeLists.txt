@@ -135,9 +135,15 @@ endif()
 
 if(ANDROID)
     # Mobile QML GUI. PrintSupport is available on Android (matches vesc_tool.pro
-    # !ios), so QT_NO_PRINTER is NOT defined here — mapwidget.cpp uses QPrinter
-    # unguarded. Only iOS defines QT_NO_PRINTER.
+    # !ios), so QT_NO_PRINTER is NOT defined here — mapwidget.cpp's QPrinter code
+    # (guarded by #ifndef QT_NO_PRINTER) stays compiled. Only iOS defines QT_NO_PRINTER.
     target_compile_definitions(vesc_tool PRIVATE USE_MOBILE)
+
+    # Align segments to 16KB pages so the .so loads on Android 15+ / 16KB-page
+    # devices (Google Play requirement). Matches vesc_tool.pro's android: QMAKE_LFLAGS.
+    target_link_options(vesc_tool PRIVATE
+        -Wl,-z,max-page-size=16384
+        -Wl,-z,common-page-size=16384)
 
     # Generate AndroidManifest.xml from the .in template.
     # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
