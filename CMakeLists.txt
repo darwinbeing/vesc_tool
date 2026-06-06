@@ -31,8 +31,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS
     Core Gui Widgets Network Qml Quick QuickControls2 QuickWidgets Svg
     Bluetooth Positioning Core5Compat)
 
-# PrintSupport is desktop-only.
-if(NOT ANDROID AND NOT IOS)
+# PrintSupport: desktop and Android (matches vesc_tool.pro !ios). Not on iOS.
+if(NOT IOS)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS PrintSupport)
 endif()
 
@@ -134,8 +134,10 @@ if(WIN32)
 endif()
 
 if(ANDROID)
-    # Mobile QML GUI
-    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE QT_NO_PRINTER)
+    # Mobile QML GUI. PrintSupport is available on Android (matches vesc_tool.pro
+    # !ios), so QT_NO_PRINTER is NOT defined here — mapwidget.cpp uses QPrinter
+    # unguarded. Only iOS defines QT_NO_PRINTER.
+    target_compile_definitions(vesc_tool PRIVATE USE_MOBILE)
 
     # Generate AndroidManifest.xml from the .in template.
     # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
@@ -202,8 +204,8 @@ target_link_libraries(vesc_tool PRIVATE
     Qt${QT_VERSION_MAJOR}::Qml
 )
 
-# PrintSupport is desktop-only.
-if(NOT ANDROID AND NOT IOS)
+# PrintSupport: desktop and Android (matches vesc_tool.pro !ios). Not on iOS.
+if(NOT IOS)
     target_link_libraries(vesc_tool PRIVATE Qt${QT_VERSION_MAJOR}::PrintSupport)
 endif()
 
