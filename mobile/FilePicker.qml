@@ -147,10 +147,16 @@ Item {
                 }
             }
 
-            ListView {
-                id: view
+            Rectangle {
                 Layout.fillHeight: true
                 Layout.fillWidth: true
+                // Paint the area below the last row with the Qt5 TableView
+                // rowDelegate colour that filled the whole viewport.
+                color: Utility.getAppHexColor("lightBackground")
+
+            ListView {
+                id: view
+                anchors.fill: parent
                 clip: true
                 model: folderListModel
 
@@ -189,6 +195,7 @@ Item {
                         }
                     }
                 }
+            }
             }
         }
 

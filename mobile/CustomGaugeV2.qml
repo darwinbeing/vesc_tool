@@ -193,10 +193,11 @@ Item {
                                       : Utility.getAppHexColor("lightestBackground")
                     var ang = gaugeArea.d2r(gauge.valueToAngle(v) - 90)
 
-                    // Major tickmark: 2 x (outerRadius * 0.09), drawn radially.
+                    // Major tickmark: 2 x (outerRadius * 0.09), drawn radially,
+                    // inset 2px from the rim (was CircularGaugeStyle.tickmarkInset).
                     var tickLen = outerRadius * 0.09
-                    var tickOuter = outerRadius
-                    var tickInner = outerRadius - tickLen
+                    var tickOuter = outerRadius - 2
+                    var tickInner = tickOuter - tickLen
                     ctx.beginPath()
                     ctx.strokeStyle = col
                     ctx.lineWidth = 2
@@ -222,13 +223,15 @@ Item {
                                                 : Utility.getAppHexColor("normalText")
                             var mAng = gaugeArea.d2r(gauge.valueToAngle(mv) - 90)
                             var mLen = outerRadius * 0.05
+                            // inset 2px from the rim (was minorTickmarkInset)
+                            var mOuter = outerRadius - 2
                             ctx.beginPath()
                             ctx.strokeStyle = mCol
                             ctx.lineWidth = 1.5
-                            ctx.moveTo(outerRadius + Math.cos(mAng) * (outerRadius - mLen),
-                                       outerRadius + Math.sin(mAng) * (outerRadius - mLen))
-                            ctx.lineTo(outerRadius + Math.cos(mAng) * outerRadius,
-                                       outerRadius + Math.sin(mAng) * outerRadius)
+                            ctx.moveTo(outerRadius + Math.cos(mAng) * (mOuter - mLen),
+                                       outerRadius + Math.sin(mAng) * (mOuter - mLen))
+                            ctx.lineTo(outerRadius + Math.cos(mAng) * mOuter,
+                                       outerRadius + Math.sin(mAng) * mOuter)
                             ctx.stroke()
                         }
                     }
