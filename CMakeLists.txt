@@ -140,7 +140,7 @@ if(ANDROID)
     # Generate AndroidManifest.xml from the .in template.
     # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
     # are androiddeployqt placeholders that configure_file leaves intact.
-    set(VT_ANDROID_VERSION 214)
+    set(VT_ANDROID_VERSION 220)
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml.in
         ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml
@@ -149,7 +149,7 @@ if(ANDROID)
     set_target_properties(vesc_tool PROPERTIES
         QT_ANDROID_PACKAGE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/android
         QT_ANDROID_VERSION_NAME ${VT_VERSION}
-        QT_ANDROID_VERSION_CODE 214
+        QT_ANDROID_VERSION_CODE ${VT_ANDROID_VERSION}
         QT_ANDROID_TARGET_SDK_VERSION 34
         QT_ANDROID_MIN_SDK_VERSION 28)
 endif()
