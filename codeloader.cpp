@@ -1059,7 +1059,7 @@ bool CodeLoader::loadPackageArchiveResource()
 
 QVariantList CodeLoader::reloadPackageArchive()
 {
-    QVariantList res;
+    QList<VescPackage> resList;
     QString pkgDir = "://vesc_packages";
 
     if (QDir(pkgDir).exists()) {
@@ -1078,11 +1078,20 @@ QVariantList CodeLoader::reloadPackageArchive()
                         auto pkg = unpackVescPackage(f.readAll());
                         name = pkg.name;
                         pkg.isLibrary = fi2.absoluteFilePath().startsWith("://vesc_packages/lib_");
-                        res.append(QVariant::fromValue(pkg));
+                        resList.append(pkg);
                     }
                 }
             }
         }
+    }
+
+    std::sort(resList.begin(), resList.end(), [](const VescPackage& a, const VescPackage& b) {
+        return a.name < b.name;
+    });
+
+    QVariantList res;
+    foreach (auto pkg, resList) {
+        res.append(QVariant::fromValue(pkg));
     }
 
     return res;
