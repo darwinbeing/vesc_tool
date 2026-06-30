@@ -1086,7 +1086,7 @@ QVariantList CodeLoader::reloadPackageArchive()
     }
 
     std::sort(resList.begin(), resList.end(), [](const VescPackage& a, const VescPackage& b) {
-        return a.name < b.name;
+        return a.name.toLower() < b.name.toLower();
     });
 
     QVariantList res;
