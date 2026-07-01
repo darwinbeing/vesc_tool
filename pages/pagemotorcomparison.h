@@ -324,6 +324,16 @@ public:
         vd = r * id - e_rps * lq * iq;
         vbus_min = (3.0 / 2.0) * sqrt(vq * vq + vd * vd) / (sqrt(3.0) / 2.0) / 0.95;
 
+        double p_real = (3.0 / 2.0) * (vq * iq + vd * id);
+        double p_reactive = (3.0 / 2.0) * (vq * id - vd * iq);
+        double den = (sqrt(p_real * p_real + p_reactive * p_reactive));
+
+        if (den > 0.01) {
+            power_factor = p_real / den;
+        } else {
+            power_factor = -1.0;
+        }
+
         km_h = 3.6 * M_PI * wheel_diam * rpm_out / 60.0;
         mph = km_h * 0.621371192;
 
@@ -364,6 +374,7 @@ public:
     double wh_mi;
     double kv_bldc;
     double kv_bldc_noload;
+    double power_factor;
 
     double extraVal;
     double extraVal2;
