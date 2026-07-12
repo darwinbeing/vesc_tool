@@ -1,3 +1,6 @@
+### 7.01
+#### TBD
+
 ### 7.00
 #### 2026-05-15
 * Firmwares are no longer included. They are now downloaded on demand.
