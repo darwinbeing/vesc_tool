@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 
 # --- Version (mirrors vesc_tool.pro) ---
-set(VT_VERSION 7.00)
+set(VT_VERSION 7.01)
 set(VT_INTRO_VERSION 1)
 set(VT_CONFIG_VERSION 4)
-set(VT_IS_TEST_VERSION 0)
+set(VT_IS_TEST_VERSION 1)
 execute_process(
     COMMAND git rev-parse --short=8 HEAD
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -148,7 +148,7 @@ if(ANDROID)
     # Generate AndroidManifest.xml from the .in template.
     # The .in file uses @VAR@ CMake tokens for version substitution; %%...%% tokens
     # are androiddeployqt placeholders that configure_file leaves intact.
-    set(VT_ANDROID_VERSION 220)
+    set(VT_ANDROID_VERSION 223)
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml.in
         ${CMAKE_CURRENT_SOURCE_DIR}/android/AndroidManifest.xml
