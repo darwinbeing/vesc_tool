@@ -1270,7 +1270,7 @@ p, li { white-space: pre-wrap; }
             <enumNames>No Fault</enumNames>
         </app_adc_conf.safe_start>
         <app_adc_conf.buttons>
-            <longName>Button Inputs</longName>
+            <longName>Input Config</longName>
             <type>6</type>
             <transmittable>1</transmittable>
             <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1293,13 +1293,16 @@ p, li { white-space: pre-wrap; }
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Invert the polarity of the cruise control button.&lt;/p&gt;
 &lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
 &lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Invert Reverse Button&lt;/span&gt;&lt;/p&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Invert the polarity of the reverse button.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Invert the polarity of the reverse button.&lt;/p&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;ADC2 Brake Priority&lt;/span&gt;&lt;/p&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Give the ADC2 brake priority over the ADC1 throttle. If enabled the throttle will be completely disabled by any amount of brake input. Otherwise the brake and throttle inputs are added together.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
             <cDefine>APPCONF_ADC_BUTTONS</cDefine>
             <valInt>0</valInt>
             <enumNames>Enable Cruise Control</enumNames>
             <enumNames>Invert CC Button</enumNames>
             <enumNames>Invert Reverse Button</enumNames>
-            <enumNames>Unused</enumNames>
+            <enumNames>Brake Priority</enumNames>
             <enumNames>Unused</enumNames>
             <enumNames>Unused</enumNames>
             <enumNames>Unused</enumNames>
