@@ -564,7 +564,10 @@
 <name>qml-erase</name>
 <name>qml-write</name>
 <name>shutdown-hold</name>
+<name>shutdown</name>
+<name>shutdown-btn-read</name>
 <name>override-speed</name>
+<name>override-led</name>
 <name>reboot</name>
 <name>color-make</name>
 <name>color-split</name>
