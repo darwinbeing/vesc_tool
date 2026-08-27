@@ -1427,6 +1427,8 @@ void Commands::setMcconf(bool check)
         VByteArray vb;
         vb.vbAppendInt8(COMM_SET_MCCONF);
         mMcConfig->serialize(vb);
+
+        emitData(vb);
         emitData(vb);
 
         if (check) {
@@ -1468,7 +1470,9 @@ void Commands::setAppConf()
     if (mAppConfig) {
         VByteArray vb;
         vb.vbAppendInt8(COMM_SET_APPCONF);
+
         mAppConfig->serialize(vb);
+        emitData(vb);
         emitData(vb);
     }
 }
@@ -1478,7 +1482,9 @@ void Commands::setAppConfNoStore()
     if (mAppConfig) {
         VByteArray vb;
         vb.vbAppendInt8(COMM_SET_APPCONF_NO_STORE);
+
         mAppConfig->serialize(vb);
+        emitData(vb);
         emitData(vb);
     }
 }

@@ -72,6 +72,7 @@ qt_add_executable(vesc_tool
     mainwindow.cpp
     boardsetupwindow.cpp
     packet.cpp
+    pollmanager.cpp
     preferences.cpp
     tcphub.cpp
     udpserversimple.cpp
