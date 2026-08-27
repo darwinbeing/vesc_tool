@@ -1777,7 +1777,7 @@ bool Utility::configCheckCompatibility(int fwMajor, int fwMinor)
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
@@ -1802,15 +1802,15 @@ bool Utility::configLoad(VescInterface *vesc, int fwMajor, int fwMinor)
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
                     int minor = parts.at(1).toInt();
                     if (major == fwMajor && minor == fwMinor) {
-                        QFileInfo fMc(it.filePath() + "/parameters_mcconf.xml");
-                        QFileInfo fApp(it.filePath() + "/parameters_appconf.xml");
-                        QFileInfo fInfo(it.filePath() + "/info.xml");
+                        QFileInfo fMc(Utility::configPath(it.fileName() + "/parameters_mcconf.xml"));
+                        QFileInfo fApp(Utility::configPath(it.fileName() + "/parameters_appconf.xml"));
+                        QFileInfo fInfo(Utility::configPath(it.fileName() + "/info.xml"));
 
                         if (fMc.exists() && fApp.exists() && fInfo.exists()) {
                             vesc->mcConfig()->loadParamsXml(fMc.absoluteFilePath());
@@ -1860,7 +1860,7 @@ QVector<QPair<int, int> > Utility::configSupportedFws()
         QStringList names = fi.fileName().split("_o_");
 
         if (fi.isDir()) {
-            for(auto name: names) {
+            foreach (auto name, names) {
                 auto parts = name.split(".");
                 if (parts.size() == 2) {
                     int major = parts.at(0).toInt();
@@ -2531,10 +2531,27 @@ QString Utility::configPath(QString subPath)
         resourceLoaded = true;
     }
 
+    QString path = QString("://res/config/") + subPath;
+    QString pathDl = QString("://res/config_download/") + subPath;
+
     if (QDir("://res/config_download/").exists()) {
-        return QString("://res/config_download/") + subPath;
+        QFileInfo file(path);
+        QFileInfo fileDl(pathDl);
+
+        auto date = file.lastModified();
+        auto dateDl = fileDl.lastModified();
+
+        if (date.isValid() && dateDl.isValid()) {
+            if (date > dateDl) {
+                return path;
+            } else {
+                return pathDl;
+            }
+        } else {
+            return pathDl;
+        }
     } else {
-        return QString("://res/config/") + subPath;
+        return path;
     }
 }
 
@@ -2559,8 +2576,12 @@ QString Utility::getThemePath()
 
 QVariantMap Utility::getSafeAreaMargins(QQuickWindow *window)
 {
-    QPlatformWindow *platformWindow = static_cast<QPlatformWindow *>(window->handle());
-    QMargins margins = platformWindow->safeAreaMargins();
+    QMargins margins;
+    QPlatformWindow *platformWindow = dynamic_cast<QPlatformWindow *>(window->handle());
+    if (platformWindow) {
+        margins = platformWindow->safeAreaMargins();
+    }
+
     QVariantMap map;
 #ifdef Q_OS_ANDROID
     int top = QAndroidJniObject::callStaticMethod<jint>("com/vedder/vesc/Utils",
@@ -2580,26 +2601,31 @@ QVariantMap Utility::getSafeAreaMargins(QQuickWindow *window)
                                                          "(Landroid/content/Context;)I",
                                                          QtAndroid::androidActivity().object());
 
+    qreal pixelRatio = window->devicePixelRatio();
+    if (pixelRatio < 0.01) {
+        pixelRatio = 1.0;
+    }
+
     if (top > 0) {
-        map["top"] = top / window->devicePixelRatio();
+        map["top"] = (int)((qreal)top / pixelRatio);
     } else {
         map["top"] = margins.top();
     }
 
     if (bottom > 0) {
-        map["bottom"] = bottom / window->devicePixelRatio();
+        map["bottom"] = (int)((qreal)bottom / pixelRatio);
     } else {
         map["bottom"] = margins.bottom();
     }
 
     if (right > 0) {
-        map["right"] = right / window->devicePixelRatio();
+        map["right"] = (int)((qreal)right / pixelRatio);
     } else {
         map["right"] = margins.right();
     }
 
     if (left > 0) {
-        map["left"] = left / window->devicePixelRatio();
+        map["left"] = (int)((qreal)left / pixelRatio);
     } else {
         map["left"] = margins.left();
     }

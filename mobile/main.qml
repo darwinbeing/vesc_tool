@@ -54,14 +54,16 @@ ApplicationWindow {
     flags: Qt.platform.os === "ios" ? (Qt.Window | Qt.MaximizeUsingFullscreenGeometryHint) : Qt.Window
 
     function updateNotch() {
-        notchTop   = Utility.getSafeAreaMargins(appWindow)["top"]
-        notchLeft  = Utility.getSafeAreaMargins(appWindow)["left"]
-        notchRight = Utility.getSafeAreaMargins(appWindow)["right"]
+        var margins = Utility.getSafeAreaMargins(appWindow)
+
+        notchTop   = margins["top"]
+        notchLeft  = margins["left"]
+        notchRight = margins["right"]
         if (Qt.platform.os === "ios") {
             // leaving too much room at the bottom
-            notchBot = Utility.getSafeAreaMargins(appWindow)["bottom"] / 2
+            notchBot = margins["bottom"] / 2
         } else {
-            notchBot = Utility.getSafeAreaMargins(appWindow)["bottom"]
+            notchBot = margins["bottom"]
         }
     }
 

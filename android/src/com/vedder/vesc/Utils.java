@@ -76,45 +76,61 @@ public class Utils
     }
 
     public static int topBarHeight(Context ctx) {
-        if (Build.VERSION.SDK_INT >= 35) {
-            WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
-            return windowInsets.getInsets(WindowInsets.Type.systemBars()).top;
-        } else {
+        try {
+            if (Build.VERSION.SDK_INT >= 35) {
+                WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
+                return windowInsets.getInsets(WindowInsets.Type.systemBars()).top;
+            } else {
+                return 0;
+            }
+        } catch (Exception e) {
             return 0;
         }
     }
 
     public static int bottomBarHeight(Context ctx) {
-        if (Build.VERSION.SDK_INT >= 35) {
-            WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
+        try {
+            if (Build.VERSION.SDK_INT >= 35) {
+                WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
 
-            int hKeyboard = windowInsets.getInsets(WindowInsets.Type.ime()).bottom;
-            int hBars = windowInsets.getInsets(WindowInsets.Type.systemBars()).bottom;
+                int hKeyboard = windowInsets.getInsets(WindowInsets.Type.ime()).bottom;
+                int hBars = windowInsets.getInsets(WindowInsets.Type.systemBars()).bottom;
 
-            if (hKeyboard > 0) {
-                return hKeyboard;
+                if (hKeyboard > 0) {
+                    return hKeyboard;
+                } else {
+                    return hBars;
+                }
             } else {
-                return hBars;
+                return 0;
             }
-        } else {
+        } catch (Exception e) {
             return 0;
         }
     }
 
     public static int rightBarHeight(Context ctx) {
-        if (Build.VERSION.SDK_INT >= 35) {
-            WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
-            return windowInsets.getInsets(WindowInsets.Type.systemBars()).right;
-        } else {
+        try {
+            if (Build.VERSION.SDK_INT >= 35) {
+                WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
+                return windowInsets.getInsets(WindowInsets.Type.systemBars()).right;
+            } else {
+                return 0;
+            }
+        } catch (Exception e) {
             return 0;
         }
     }
 
     public static int leftBarHeight(Context ctx) {
-        if (Build.VERSION.SDK_INT >= 35) {
-            WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
-            return windowInsets.getInsets(WindowInsets.Type.systemBars()).left;
-        } else {
+        try {
+            if (Build.VERSION.SDK_INT >= 35) {
+                WindowInsets windowInsets = getActivity(ctx).getWindow().getDecorView().getRootWindowInsets();
+                return windowInsets.getInsets(WindowInsets.Type.systemBars()).left;
+            } else {
+                return 0;
+            }
+        } catch (Exception e) {
             return 0;
         }
     }

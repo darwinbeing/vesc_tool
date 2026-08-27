@@ -390,6 +390,7 @@ PageMotorComparison::PageMotorComparison(QWidget *parent) :
     addDataItemBoth("Torque Shaft");
     addDataItemBoth("RPM Out");
     addDataItemBoth("RPM Shaft");
+    addDataItemBoth("Power Factor");
     addDataItemBoth("ExtraVal");
     addDataItemBoth("ExtraVal2");
     addDataItemBoth("ExtraVal3");
@@ -526,6 +527,7 @@ void PageMotorComparison::updateDataAndPlot(double posx, double yMin, double yMa
         table->item(ind++, 1)->setText(QString::number(md.torque_motor_shaft, 'f', 3) + " Nm");
         table->item(ind++, 1)->setText(QString::number(md.rpm_out, 'f', 1));
         table->item(ind++, 1)->setText(QString::number(md.rpm_motor_shaft, 'f', 1));
+        table->item(ind++, 1)->setText(QString::number(md.power_factor, 'f', 3));
         table->item(ind++, 1)->setText(QString::number(md.extraVal, 'f', 1));
         table->item(ind++, 1)->setText(QString::number(md.extraVal2, 'f', 1));
         table->item(ind++, 1)->setText(QString::number(md.extraVal3, 'f', 1));
@@ -784,30 +786,35 @@ void PageMotorComparison::on_testRunButton_clicked()
                 rowInd++; break;
             case 18:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
-                yAxes[rowInd].append(md.extraVal * rowScale);
-                names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
+                yAxes[rowInd].append(md.power_factor * rowScale);
+                names.append(namePrefix + QString("(PF * %1)").arg(rowScale));
                 rowInd++; break;
             case 19:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
-                yAxes[rowInd].append(md.extraVal2 * rowScale);
+                yAxes[rowInd].append(md.extraVal * rowScale);
                 names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
                 rowInd++; break;
             case 20:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
-                yAxes[rowInd].append(md.extraVal3 * rowScale);
+                yAxes[rowInd].append(md.extraVal2 * rowScale);
                 names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
                 rowInd++; break;
             case 21:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
-                yAxes[rowInd].append(md.extraVal4 * rowScale);
+                yAxes[rowInd].append(md.extraVal3 * rowScale);
                 names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
                 rowInd++; break;
             case 22:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
-                yAxes[rowInd].append(md.erpm * rowScale);
+                yAxes[rowInd].append(md.extraVal4 * rowScale);
                 names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
                 rowInd++; break;
             case 23:
+                if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
+                yAxes[rowInd].append(md.erpm * rowScale);
+                names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));
+                rowInd++; break;
+            case 24:
                 if (yAxes.size() <= rowInd) yAxes.append(QVector<double>());
                 yAxes[rowInd].append(md.km_h * rowScale);
                 names.append(namePrefix + QString("(Unit * %1)").arg(rowScale));

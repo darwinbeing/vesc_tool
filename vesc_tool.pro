@@ -5,19 +5,19 @@
 #-------------------------------------------------
 
 # Version
-VT_VERSION = 7.00
+VT_VERSION = 7.01
 VT_INTRO_VERSION = 1
 VT_CONFIG_VERSION = 4
 
 # Set to 0 for stable versions and to test version number for development versions.
-VT_IS_TEST_VERSION = 0
+VT_IS_TEST_VERSION = 1
 
 # GIT commit
 VT_GIT_COMMIT = $$system(git rev-parse --short=8 HEAD)
 
-VT_ANDROID_VERSION_ARMV7 = 206
-VT_ANDROID_VERSION_ARM64 = 207
-VT_ANDROID_VERSION_X86 = 208
+VT_ANDROID_VERSION_ARMV7 = 221
+VT_ANDROID_VERSION_ARM64 = 222
+VT_ANDROID_VERSION_X86 = 223
 
 VT_ANDROID_VERSION = $$VT_ANDROID_VERSION_X86
 
@@ -218,6 +218,7 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     boardsetupwindow.cpp \
     packet.cpp \
+    pollmanager.cpp \
     preferences.cpp \
     tcphub.cpp \
     udpserversimple.cpp \
@@ -240,6 +241,7 @@ HEADERS  += mainwindow.h \
     codeloader.h \
     boardsetupwindow.h \
     packet.h \
+    pollmanager.h \
     preferences.h \
     tcphub.h \
     udpserversimple.h \

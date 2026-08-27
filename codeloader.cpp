@@ -141,8 +141,7 @@ QString CodeLoader::reduceLispFile(QString fileData)
             line.chop(1);
         }
 
-        if (!line.startsWith("(import", Qt::CaseInsensitive) &&
-            !line.isEmpty()) {
+        if (!line.isEmpty()) {
             res.append(line + "\n");
         }
     }
@@ -580,6 +579,7 @@ QString CodeLoader::lispRead(QWidget *parent, QString &lispPath)
         }
 
         if (mAbortDownloadUpload) {
+            disconnect(conn);
             return res;
         }
 
@@ -651,6 +651,7 @@ QString CodeLoader::lispRead(QWidget *parent, QString &lispPath)
                             if (!file.open(QIODevice::WriteOnly)) {
                                 QMessageBox::critical(parent, tr("Save Import"),
                                                       "Could not open\n" + file.fileName() + "\nfor writing");
+                                disconnect(conn);
                                 return QByteArray();
                             }
 
@@ -1057,7 +1058,7 @@ bool CodeLoader::loadPackageArchiveResource()
 
 QVariantList CodeLoader::reloadPackageArchive()
 {
-    QVariantList res;
+    QList<VescPackage> resList;
     QString pkgDir = "://vesc_packages";
 
     if (QDir(pkgDir).exists()) {
@@ -1076,11 +1077,20 @@ QVariantList CodeLoader::reloadPackageArchive()
                         auto pkg = unpackVescPackage(f.readAll());
                         name = pkg.name;
                         pkg.isLibrary = fi2.absoluteFilePath().startsWith("://vesc_packages/lib_");
-                        res.append(QVariant::fromValue(pkg));
+                        resList.append(pkg);
                     }
                 }
             }
         }
+    }
+
+    std::sort(resList.begin(), resList.end(), [](const VescPackage& a, const VescPackage& b) {
+        return a.name.toLower() < b.name.toLower();
+    });
+
+    QVariantList res;
+    foreach (auto pkg, resList) {
+        res.append(QVariant::fromValue(pkg));
     }
 
     return res;

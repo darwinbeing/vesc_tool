@@ -103,6 +103,7 @@ void BleUart::startConnect(QString addr)
 void BleUart::disconnectBle()
 {
     init();
+
     if (mService) {
         mService->deleteLater();
         mService = nullptr;
@@ -132,7 +133,7 @@ void BleUart::emitScanDone()
 
 void BleUart::writeData(QByteArray data)
 {
-    if (isConnected()) {
+    if (isConnected() && mService) {
         const QLowEnergyCharacteristic  rxChar = mService->characteristic(QBluetoothUuid(QUuid(mRxUuid)));
         if (rxChar.isValid()) {
             int chunk = 20;
@@ -150,11 +151,6 @@ void BleUart::writeData(QByteArray data)
 void BleUart::addDevice(const QBluetoothDeviceInfo &dev)
 {
     if ((dev.coreConfigurations() & QBluetoothDeviceInfo::LowEnergyCoreConfiguration)) {
-        qDebug() << "BLE scan found device:" << dev.name() <<
-                    "Valid:" << dev.isValid() <<
-                    "Cached:" << dev.isCached() <<
-                    "rssi:" << dev.rssi();
-
 #if defined(Q_OS_MACOS) || defined(Q_OS_IOS)
         // macOS and iOS do not expose the hardware address of BLTE devices, must use
         // the OS generated UUID.
@@ -195,7 +191,6 @@ void BleUart::addDevice(const QBluetoothDeviceInfo &dev)
 
 void BleUart::scanFinished()
 {
-    qDebug() << "BLE scan finished";
     mScanFinished = true;
     mConnectTimeoutTimer.stop();
     emit scanDone(mDevs, true);
@@ -221,7 +216,6 @@ void BleUart::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error e)
 void BleUart::serviceDiscovered(const QBluetoothUuid &gatt)
 {
     if (gatt==QBluetoothUuid(QUuid(mServiceUuid))){
-        qDebug() << "BLE UART service found!";
         mUartServiceFound = true;
     }
 }
@@ -233,8 +227,12 @@ void BleUart::serviceScanDone()
         mService = nullptr;
     }
 
+    if (!mControl) {
+        qWarning() << "mControl invalid";
+        return;
+    }
+
     if (mUartServiceFound) {
-        qDebug() << "Connecting to BLE UART service";
         mService = mControl->createServiceObject(QBluetoothUuid(QUuid(mServiceUuid)), this);
 
         connect(mService, SIGNAL(stateChanged(QLowEnergyService::ServiceState)),
@@ -263,13 +261,16 @@ void BleUart::controllerError(QLowEnergyController::Error e)
 
 void BleUart::deviceConnected()
 {
-    qDebug() << "BLE device connected";
+    if (!mControl) {
+        qWarning() << "mControl invalid";
+        return;
+    }
+
     mControl->discoverServices();
 }
 
 void BleUart::deviceDisconnected()
 {
-    qDebug() << "BLE service disconnected";
     disconnectBle();
 }
 
@@ -284,6 +285,11 @@ void BleUart::serviceStateChanged(QLowEnergyService::ServiceState s)
         break;
     }
     case QLowEnergyService::ServiceDiscovered: {
+        if (!mService) {
+            qWarning() << "mService invalid";
+            return;
+        }
+
         //looking for the TX characteristic
         const QLowEnergyCharacteristic txChar = mService->characteristic(
                     QBluetoothUuid(QUuid(mTxUuid)));
@@ -320,7 +326,7 @@ void BleUart::serviceStateChanged(QLowEnergyService::ServiceState s)
 }
 
 void BleUart::serviceError(QLowEnergyService::ServiceError e){
-    qDebug() << e;
+    qDebug() << "serviceError:" << e;
 }
 
 void BleUart::updateData(const QLowEnergyCharacteristic &c, const QByteArray &value)
@@ -360,7 +366,6 @@ void BleUart::controlStateChanged(QLowEnergyController::ControllerState state)
 void BleUart::connectionUpdated(const QLowEnergyConnectionParameters &newParameters)
 {
     (void)newParameters;
-    qDebug() << "BLE connection parameters updated";
 }
 
 void BleUart::init()
